@@ -1,3 +1,10 @@
+/*
+ * Rimrock Rooms
+ * Product concept and operating design: Ryan Kelly
+ * Original project owner: Ryan Kelly
+ * Everhome Suites Denver Airport (CO534)
+ * September 2026
+ */
 const ROLE_VIEWS={
   HOUSEKEEPER:['Home','Housekeeping'],
   INSPECTOR:['Home','Inspections'],
