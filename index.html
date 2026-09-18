@@ -54,6 +54,45 @@
       </div>
       <div class="banner"><div><strong>Great Stays<br>Start Here.</strong><small>Section 1 • WebUI Shell</small></div></div>
     </section>
+    <section id="importView" class="import-view" hidden>
+      <div class="import-head">
+        <div><h1>🧹 Import Housekeeping Board</h1><p>Upload your daily housekeeping report from Choice to update room status and assignments.</p></div>
+        <button type="button" class="history-btn" disabled title="Import history will be enabled later in Section 2">▣ View Import History</button>
+      </div>
+      <div class="steps" aria-label="Import progress">
+        <div class="step current"><b>1</b><span><strong>Upload</strong><small>Select your PDF file</small></span></div>
+        <div class="step"><b>2</b><span><strong>Preview</strong><small>Review extracted data</small></span></div>
+        <div class="step"><b>3</b><span><strong>Validate</strong><small>Check for issues</small></span></div>
+        <div class="step"><b>4</b><span><strong>Import</strong><small>Update your system</small></span></div>
+      </div>
+      <div class="import-card">
+        <div>
+          <h2>1. Upload Choice Housekeeping Board</h2>
+          <p>Upload the daily housekeeping PDF from Choice. Rimrock Rooms will show a preview before anything is imported.</p>
+          <label class="dropzone" id="dropzone">
+            <input id="hkPdf" type="file" accept="application/pdf,.pdf">
+            <span class="upload-icon">☁</span>
+            <strong>Drag and drop your PDF file here</strong>
+            <small>or</small>
+            <span class="choose-file">Choose File</span>
+            <em>Accepted file type: PDF &nbsp;|&nbsp; Max size: 10 MB</em>
+          </label>
+          <div id="fileStatus" class="file-status" aria-live="polite"></div>
+        </div>
+        <aside class="tips">
+          <h3>ⓘ Choice Report Tips</h3>
+          <p>✓ Use the daily Housekeeping Room Assignment report from Choice</p>
+          <p>✓ Ensure the most current business date</p>
+          <p>✓ Review the preview before importing</p>
+          <hr>
+          <h3>What Happens Next?</h3>
+          <p><b>2</b> We'll extract the room data and show a preview.</p>
+          <p><b>3</b> You'll validate issues or unmapped rooms.</p>
+          <p><b>4</b> Import updates the daily system snapshot.</p>
+        </aside>
+      </div>
+      <footer class="import-footer"><span>Rimrock Rooms &nbsp;|&nbsp; Everhome Suites Denver Airport (CO534)</span><span>Original concept and design by Ryan Kelly &nbsp;|&nbsp; September 2026</span></footer>
+    </section>
     <section id="placeholder" class="placeholder" hidden>
       <button id="backHome">← Home</button>
       <div><span id="placeholderIcon">◆</span><h2 id="placeholderTitle"></h2><p>Section 1 shell is ready. Operational functionality will be added in its approved build section.</p></div>
