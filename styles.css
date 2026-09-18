@@ -27,3 +27,21 @@
   .today strong{order:4;position:static!important;text-align:left!important;margin:12px 0 10px!important;font-size:13px!important;color:var(--muted)}
   .today em{order:5}
 }
+
+/* Section 1 mobile date containment fix — Ryan Kelly */
+@media(max-width:760px){
+  .welcome{display:block!important}
+  .welcome>div:first-child{display:block!important}
+  .today{display:block!important;text-align:left!important}
+  .today strong{
+    position:static!important;
+    display:block!important;
+    float:none!important;
+    width:auto!important;
+    right:auto!important;top:auto!important;
+    margin:12px 0!important;
+    font-size:13px!important;
+    color:var(--muted)!important;
+  }
+  .today em{display:block!important;margin-top:0!important}
+}
