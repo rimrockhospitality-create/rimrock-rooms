@@ -27,3 +27,21 @@ No Bedrock dependencies. Build and performance are kept deliberately small.
 ## Attribution
 
 The Rimrock Rooms concept, workflows, operating model, and design direction originated with **Ryan Kelly**. Project source files should retain this attribution as the application evolves.
+
+
+## Section 1 Lock — 2026-09-18
+
+**Status: APPROVED & LOCKED**
+
+Accepted by Ryan Kelly after live desktop and iPhone testing.
+
+Section 1 baseline includes:
+- Live GitHub Pages WebUI
+- Responsive desktop and mobile shell
+- CO534 property identity and 114-room master inventory
+- Ryan Kelly Manager / Inspector role recognition
+- Role-based navigation foundation
+- Mobile Home / More navigation
+- Performance-first static architecture
+
+Future sections must build into this shell without redesigning or bloating the Section 1 foundation.
