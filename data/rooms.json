@@ -1,0 +1,800 @@
+[
+  {
+    "propertyId": "CO534",
+    "roomNumber": "101",
+    "floor": "1",
+    "roomType": "NK",
+    "active": true
+  },
+  {
+    "propertyId": "CO534",
+    "roomNumber": "102",
+    "floor": "1",
+    "roomType": "NK",
+    "active": true
+  },
+  {
+    "propertyId": "CO534",
+    "roomNumber": "103",
+    "floor": "1",
+    "roomType": "NK",
+    "active": true
+  },
+  {
+    "propertyId": "CO534",
+    "roomNumber": "104",
+    "floor": "1",
+    "roomType": "NK",
+    "active": true
+  },
+  {
+    "propertyId": "CO534",
+    "roomNumber": "105",
+    "floor": "1",
+    "roomType": "NK",
+    "active": true
+  },
+  {
+    "propertyId": "CO534",
+    "roomNumber": "106",
+    "floor": "1",
+    "roomType": "NK",
+    "active": true
+  },
+  {
+    "propertyId": "CO534",
+    "roomNumber": "108",
+    "floor": "1",
+    "roomType": "NK",
+    "active": true
+  },
+  {
+    "propertyId": "CO534",
+    "roomNumber": "110",
+    "floor": "1",
+    "roomType": "NK",
+    "active": true
+  },
+  {
+    "propertyId": "CO534",
+    "roomNumber": "112",
+    "floor": "1",
+    "roomType": "NK",
+    "active": true
+  },
+  {
+    "propertyId": "CO534",
+    "roomNumber": "122",
+    "floor": "1",
+    "roomType": "NQQ",
+    "active": true
+  },
+  {
+    "propertyId": "CO534",
+    "roomNumber": "123",
+    "floor": "1",
+    "roomType": "NK",
+    "active": true
+  },
+  {
+    "propertyId": "CO534",
+    "roomNumber": "124",
+    "floor": "1",
+    "roomType": "NQQ",
+    "active": true
+  },
+  {
+    "propertyId": "CO534",
+    "roomNumber": "125",
+    "floor": "1",
+    "roomType": "NK",
+    "active": true
+  },
+  {
+    "propertyId": "CO534",
+    "roomNumber": "127",
+    "floor": "1",
+    "roomType": "NK",
+    "active": true
+  },
+  {
+    "propertyId": "CO534",
+    "roomNumber": "128",
+    "floor": "1",
+    "roomType": "SNHK",
+    "active": true
+  },
+  {
+    "propertyId": "CO534",
+    "roomNumber": "129",
+    "floor": "1",
+    "roomType": "NK",
+    "active": true
+  },
+  {
+    "propertyId": "CO534",
+    "roomNumber": "130",
+    "floor": "1",
+    "roomType": "NK",
+    "active": true
+  },
+  {
+    "propertyId": "CO534",
+    "roomNumber": "131",
+    "floor": "1",
+    "roomType": "NK",
+    "active": true
+  },
+  {
+    "propertyId": "CO534",
+    "roomNumber": "132",
+    "floor": "1",
+    "roomType": "NHQQ",
+    "active": true
+  },
+  {
+    "propertyId": "CO534",
+    "roomNumber": "133",
+    "floor": "1",
+    "roomType": "NK",
+    "active": true
+  },
+  {
+    "propertyId": "CO534",
+    "roomNumber": "135",
+    "floor": "1",
+    "roomType": "NK",
+    "active": true
+  },
+  {
+    "propertyId": "CO534",
+    "roomNumber": "201",
+    "floor": "2",
+    "roomType": "NK",
+    "active": true
+  },
+  {
+    "propertyId": "CO534",
+    "roomNumber": "202",
+    "floor": "2",
+    "roomType": "NK",
+    "active": true
+  },
+  {
+    "propertyId": "CO534",
+    "roomNumber": "203",
+    "floor": "2",
+    "roomType": "NK",
+    "active": true
+  },
+  {
+    "propertyId": "CO534",
+    "roomNumber": "204",
+    "floor": "2",
+    "roomType": "NK",
+    "active": true
+  },
+  {
+    "propertyId": "CO534",
+    "roomNumber": "205",
+    "floor": "2",
+    "roomType": "SNK",
+    "active": true
+  },
+  {
+    "propertyId": "CO534",
+    "roomNumber": "206",
+    "floor": "2",
+    "roomType": "NK",
+    "active": true
+  },
+  {
+    "propertyId": "CO534",
+    "roomNumber": "208",
+    "floor": "2",
+    "roomType": "NK",
+    "active": true
+  },
+  {
+    "propertyId": "CO534",
+    "roomNumber": "209",
+    "floor": "2",
+    "roomType": "NQQ",
+    "active": true
+  },
+  {
+    "propertyId": "CO534",
+    "roomNumber": "210",
+    "floor": "2",
+    "roomType": "NK",
+    "active": true
+  },
+  {
+    "propertyId": "CO534",
+    "roomNumber": "211",
+    "floor": "2",
+    "roomType": "NQQ",
+    "active": true
+  },
+  {
+    "propertyId": "CO534",
+    "roomNumber": "212",
+    "floor": "2",
+    "roomType": "NK",
+    "active": true
+  },
+  {
+    "propertyId": "CO534",
+    "roomNumber": "213",
+    "floor": "2",
+    "roomType": "NQQ",
+    "active": true
+  },
+  {
+    "propertyId": "CO534",
+    "roomNumber": "215",
+    "floor": "2",
+    "roomType": "NQQ",
+    "active": true
+  },
+  {
+    "propertyId": "CO534",
+    "roomNumber": "216",
+    "floor": "2",
+    "roomType": "NQQ",
+    "active": true
+  },
+  {
+    "propertyId": "CO534",
+    "roomNumber": "217",
+    "floor": "2",
+    "roomType": "NQQ",
+    "active": true
+  },
+  {
+    "propertyId": "CO534",
+    "roomNumber": "218",
+    "floor": "2",
+    "roomType": "NQQ",
+    "active": true
+  },
+  {
+    "propertyId": "CO534",
+    "roomNumber": "219",
+    "floor": "2",
+    "roomType": "NQQ",
+    "active": true
+  },
+  {
+    "propertyId": "CO534",
+    "roomNumber": "220",
+    "floor": "2",
+    "roomType": "NQQ",
+    "active": true
+  },
+  {
+    "propertyId": "CO534",
+    "roomNumber": "221",
+    "floor": "2",
+    "roomType": "NK",
+    "active": true
+  },
+  {
+    "propertyId": "CO534",
+    "roomNumber": "222",
+    "floor": "2",
+    "roomType": "NQQ",
+    "active": true
+  },
+  {
+    "propertyId": "CO534",
+    "roomNumber": "223",
+    "floor": "2",
+    "roomType": "NK",
+    "active": true
+  },
+  {
+    "propertyId": "CO534",
+    "roomNumber": "224",
+    "floor": "2",
+    "roomType": "NHK1",
+    "active": true
+  },
+  {
+    "propertyId": "CO534",
+    "roomNumber": "225",
+    "floor": "2",
+    "roomType": "NK",
+    "active": true
+  },
+  {
+    "propertyId": "CO534",
+    "roomNumber": "227",
+    "floor": "2",
+    "roomType": "NK",
+    "active": true
+  },
+  {
+    "propertyId": "CO534",
+    "roomNumber": "228",
+    "floor": "2",
+    "roomType": "SNK",
+    "active": true
+  },
+  {
+    "propertyId": "CO534",
+    "roomNumber": "229",
+    "floor": "2",
+    "roomType": "NK",
+    "active": true
+  },
+  {
+    "propertyId": "CO534",
+    "roomNumber": "230",
+    "floor": "2",
+    "roomType": "NK",
+    "active": true
+  },
+  {
+    "propertyId": "CO534",
+    "roomNumber": "231",
+    "floor": "2",
+    "roomType": "NK",
+    "active": true
+  },
+  {
+    "propertyId": "CO534",
+    "roomNumber": "232",
+    "floor": "2",
+    "roomType": "NHQQ1",
+    "active": true
+  },
+  {
+    "propertyId": "CO534",
+    "roomNumber": "233",
+    "floor": "2",
+    "roomType": "NK",
+    "active": true
+  },
+  {
+    "propertyId": "CO534",
+    "roomNumber": "235",
+    "floor": "2",
+    "roomType": "NK",
+    "active": true
+  },
+  {
+    "propertyId": "CO534",
+    "roomNumber": "301",
+    "floor": "3",
+    "roomType": "NK",
+    "active": true
+  },
+  {
+    "propertyId": "CO534",
+    "roomNumber": "302",
+    "floor": "3",
+    "roomType": "NK",
+    "active": true
+  },
+  {
+    "propertyId": "CO534",
+    "roomNumber": "303",
+    "floor": "3",
+    "roomType": "NK",
+    "active": true
+  },
+  {
+    "propertyId": "CO534",
+    "roomNumber": "304",
+    "floor": "3",
+    "roomType": "NK",
+    "active": true
+  },
+  {
+    "propertyId": "CO534",
+    "roomNumber": "305",
+    "floor": "3",
+    "roomType": "SNK",
+    "active": true
+  },
+  {
+    "propertyId": "CO534",
+    "roomNumber": "306",
+    "floor": "3",
+    "roomType": "NK",
+    "active": true
+  },
+  {
+    "propertyId": "CO534",
+    "roomNumber": "308",
+    "floor": "3",
+    "roomType": "NK",
+    "active": true
+  },
+  {
+    "propertyId": "CO534",
+    "roomNumber": "309",
+    "floor": "3",
+    "roomType": "NQQ",
+    "active": true
+  },
+  {
+    "propertyId": "CO534",
+    "roomNumber": "310",
+    "floor": "3",
+    "roomType": "NK",
+    "active": true
+  },
+  {
+    "propertyId": "CO534",
+    "roomNumber": "311",
+    "floor": "3",
+    "roomType": "NQQ",
+    "active": true
+  },
+  {
+    "propertyId": "CO534",
+    "roomNumber": "312",
+    "floor": "3",
+    "roomType": "NK",
+    "active": true
+  },
+  {
+    "propertyId": "CO534",
+    "roomNumber": "313",
+    "floor": "3",
+    "roomType": "NQQ",
+    "active": true
+  },
+  {
+    "propertyId": "CO534",
+    "roomNumber": "315",
+    "floor": "3",
+    "roomType": "NQQ",
+    "active": true
+  },
+  {
+    "propertyId": "CO534",
+    "roomNumber": "316",
+    "floor": "3",
+    "roomType": "NQQ",
+    "active": true
+  },
+  {
+    "propertyId": "CO534",
+    "roomNumber": "317",
+    "floor": "3",
+    "roomType": "NQQ",
+    "active": true
+  },
+  {
+    "propertyId": "CO534",
+    "roomNumber": "318",
+    "floor": "3",
+    "roomType": "NQQ",
+    "active": true
+  },
+  {
+    "propertyId": "CO534",
+    "roomNumber": "319",
+    "floor": "3",
+    "roomType": "NQQ",
+    "active": true
+  },
+  {
+    "propertyId": "CO534",
+    "roomNumber": "320",
+    "floor": "3",
+    "roomType": "NQQ",
+    "active": true
+  },
+  {
+    "propertyId": "CO534",
+    "roomNumber": "321",
+    "floor": "3",
+    "roomType": "NK",
+    "active": true
+  },
+  {
+    "propertyId": "CO534",
+    "roomNumber": "322",
+    "floor": "3",
+    "roomType": "NQQ",
+    "active": true
+  },
+  {
+    "propertyId": "CO534",
+    "roomNumber": "323",
+    "floor": "3",
+    "roomType": "NK",
+    "active": true
+  },
+  {
+    "propertyId": "CO534",
+    "roomNumber": "324",
+    "floor": "3",
+    "roomType": "NHK1",
+    "active": true
+  },
+  {
+    "propertyId": "CO534",
+    "roomNumber": "325",
+    "floor": "3",
+    "roomType": "NK",
+    "active": true
+  },
+  {
+    "propertyId": "CO534",
+    "roomNumber": "327",
+    "floor": "3",
+    "roomType": "NK",
+    "active": true
+  },
+  {
+    "propertyId": "CO534",
+    "roomNumber": "328",
+    "floor": "3",
+    "roomType": "SNK",
+    "active": true
+  },
+  {
+    "propertyId": "CO534",
+    "roomNumber": "329",
+    "floor": "3",
+    "roomType": "NK",
+    "active": true
+  },
+  {
+    "propertyId": "CO534",
+    "roomNumber": "330",
+    "floor": "3",
+    "roomType": "NK",
+    "active": true
+  },
+  {
+    "propertyId": "CO534",
+    "roomNumber": "331",
+    "floor": "3",
+    "roomType": "NK",
+    "active": true
+  },
+  {
+    "propertyId": "CO534",
+    "roomNumber": "332",
+    "floor": "3",
+    "roomType": "NHQQ1",
+    "active": true
+  },
+  {
+    "propertyId": "CO534",
+    "roomNumber": "333",
+    "floor": "3",
+    "roomType": "NK",
+    "active": true
+  },
+  {
+    "propertyId": "CO534",
+    "roomNumber": "335",
+    "floor": "3",
+    "roomType": "NK",
+    "active": true
+  },
+  {
+    "propertyId": "CO534",
+    "roomNumber": "401",
+    "floor": "4",
+    "roomType": "NK",
+    "active": true
+  },
+  {
+    "propertyId": "CO534",
+    "roomNumber": "402",
+    "floor": "4",
+    "roomType": "NK",
+    "active": true
+  },
+  {
+    "propertyId": "CO534",
+    "roomNumber": "403",
+    "floor": "4",
+    "roomType": "NK",
+    "active": true
+  },
+  {
+    "propertyId": "CO534",
+    "roomNumber": "404",
+    "floor": "4",
+    "roomType": "NK",
+    "active": true
+  },
+  {
+    "propertyId": "CO534",
+    "roomNumber": "405",
+    "floor": "4",
+    "roomType": "SNK",
+    "active": true
+  },
+  {
+    "propertyId": "CO534",
+    "roomNumber": "406",
+    "floor": "4",
+    "roomType": "NK",
+    "active": true
+  },
+  {
+    "propertyId": "CO534",
+    "roomNumber": "408",
+    "floor": "4",
+    "roomType": "NK",
+    "active": true
+  },
+  {
+    "propertyId": "CO534",
+    "roomNumber": "409",
+    "floor": "4",
+    "roomType": "NQQ",
+    "active": true
+  },
+  {
+    "propertyId": "CO534",
+    "roomNumber": "410",
+    "floor": "4",
+    "roomType": "NK",
+    "active": true
+  },
+  {
+    "propertyId": "CO534",
+    "roomNumber": "411",
+    "floor": "4",
+    "roomType": "NQQ",
+    "active": true
+  },
+  {
+    "propertyId": "CO534",
+    "roomNumber": "412",
+    "floor": "4",
+    "roomType": "NK",
+    "active": true
+  },
+  {
+    "propertyId": "CO534",
+    "roomNumber": "413",
+    "floor": "4",
+    "roomType": "NQQ",
+    "active": true
+  },
+  {
+    "propertyId": "CO534",
+    "roomNumber": "415",
+    "floor": "4",
+    "roomType": "NQQ",
+    "active": true
+  },
+  {
+    "propertyId": "CO534",
+    "roomNumber": "416",
+    "floor": "4",
+    "roomType": "NQQ",
+    "active": true
+  },
+  {
+    "propertyId": "CO534",
+    "roomNumber": "417",
+    "floor": "4",
+    "roomType": "NQQ",
+    "active": true
+  },
+  {
+    "propertyId": "CO534",
+    "roomNumber": "418",
+    "floor": "4",
+    "roomType": "NQQ",
+    "active": true
+  },
+  {
+    "propertyId": "CO534",
+    "roomNumber": "419",
+    "floor": "4",
+    "roomType": "NQQ",
+    "active": true
+  },
+  {
+    "propertyId": "CO534",
+    "roomNumber": "420",
+    "floor": "4",
+    "roomType": "NQQ",
+    "active": true
+  },
+  {
+    "propertyId": "CO534",
+    "roomNumber": "421",
+    "floor": "4",
+    "roomType": "NK",
+    "active": true
+  },
+  {
+    "propertyId": "CO534",
+    "roomNumber": "422",
+    "floor": "4",
+    "roomType": "NQQ",
+    "active": true
+  },
+  {
+    "propertyId": "CO534",
+    "roomNumber": "423",
+    "floor": "4",
+    "roomType": "NK",
+    "active": true
+  },
+  {
+    "propertyId": "CO534",
+    "roomNumber": "424",
+    "floor": "4",
+    "roomType": "NQQ",
+    "active": true
+  },
+  {
+    "propertyId": "CO534",
+    "roomNumber": "425",
+    "floor": "4",
+    "roomType": "NK",
+    "active": true
+  },
+  {
+    "propertyId": "CO534",
+    "roomNumber": "427",
+    "floor": "4",
+    "roomType": "NK",
+    "active": true
+  },
+  {
+    "propertyId": "CO534",
+    "roomNumber": "428",
+    "floor": "4",
+    "roomType": "SNK",
+    "active": true
+  },
+  {
+    "propertyId": "CO534",
+    "roomNumber": "429",
+    "floor": "4",
+    "roomType": "NK",
+    "active": true
+  },
+  {
+    "propertyId": "CO534",
+    "roomNumber": "430",
+    "floor": "4",
+    "roomType": "NK",
+    "active": true
+  },
+  {
+    "propertyId": "CO534",
+    "roomNumber": "431",
+    "floor": "4",
+    "roomType": "NK",
+    "active": true
+  },
+  {
+    "propertyId": "CO534",
+    "roomNumber": "432",
+    "floor": "4",
+    "roomType": "NHQQ1",
+    "active": true
+  },
+  {
+    "propertyId": "CO534",
+    "roomNumber": "433",
+    "floor": "4",
+    "roomType": "NK",
+    "active": true
+  },
+  {
+    "propertyId": "CO534",
+    "roomNumber": "435",
+    "floor": "4",
+    "roomType": "NK",
+    "active": true
+  }
+]
