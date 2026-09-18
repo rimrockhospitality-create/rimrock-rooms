@@ -41,7 +41,7 @@ function applyIdentity(user,property){
 }
 function applyPermissions(roles){
   const allowed=new Set(allowedViews(roles));
-  document.querySelectorAll('[data-view]').forEach(el=>{if(!allowed.has(el.dataset.view))el.hidden=true});
+  document.querySelectorAll('.nav[data-view],.mobile-nav [data-view]').forEach(el=>{el.hidden=!allowed.has(el.dataset.view)});
 }
 function show(view){
   if(currentUser&&!allowedViews(currentUser.roles).includes(view)) return;
@@ -53,6 +53,7 @@ function buildDrawer(roles){
   allowedViews(roles).forEach(v=>{const b=document.createElement('button');b.className='nav';b.dataset.view=v;b.innerHTML='◆ <span>'+v+'</span>';b.addEventListener('click',()=>show(v));drawerLinks.appendChild(b)});
 }
 document.querySelectorAll('[data-view]').forEach(b=>b.addEventListener('click',()=>show(b.dataset.view)));
+document.querySelectorAll('.tile[data-view]').forEach(b=>{ b.hidden=false; });
 document.getElementById('backHome').addEventListener('click',()=>show('Home'));
 document.getElementById('moreBtn').addEventListener('click',()=>drawer.hidden=false);
 document.getElementById('closeDrawer').addEventListener('click',()=>drawer.hidden=true);
