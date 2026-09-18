@@ -14,7 +14,7 @@ const ROLE_VIEWS={
 };
 const ROLE_LABELS={HOUSEKEEPER:'Housekeeper',INSPECTOR:'Inspector',MAINTENANCE:'Maintenance','FRONT DESK':'Front Desk',MANAGER:'Manager'};
 let currentUser=null;
-const home=document.getElementById('homeView'),placeholder=document.getElementById('placeholder'),title=document.getElementById('placeholderTitle'),drawer=document.getElementById('drawer'),drawerLinks=document.getElementById('drawerLinks');
+const home=document.getElementById('homeView'),importView=document.getElementById('importView'),placeholder=document.getElementById('placeholder'),title=document.getElementById('placeholderTitle'),drawer=document.getElementById('drawer'),drawerLinks=document.getElementById('drawerLinks');
 document.getElementById('today').textContent=new Intl.DateTimeFormat('en-US',{weekday:'long',month:'long',day:'numeric',year:'numeric'}).format(new Date());
 
 async function loadSession(){
@@ -45,7 +45,7 @@ function applyPermissions(roles){
 }
 function show(view){
   if(currentUser&&!allowedViews(currentUser.roles).includes(view)) return;
-  if(view==='Home'){home.hidden=false;placeholder.hidden=true}else{home.hidden=true;placeholder.hidden=false;title.textContent=view}
+  home.hidden=view!=='Home'; importView.hidden=view!=='Housekeeping'; placeholder.hidden=(view==='Home'||view==='Housekeeping'); if(!placeholder.hidden) title.textContent=view
   document.querySelectorAll('.nav').forEach(b=>b.classList.toggle('active',b.dataset.view===view)); drawer.hidden=true;
 }
 function buildDrawer(roles){
@@ -57,3 +57,16 @@ document.getElementById('backHome').addEventListener('click',()=>show('Home'));
 document.getElementById('moreBtn').addEventListener('click',()=>drawer.hidden=false);
 document.getElementById('closeDrawer').addEventListener('click',()=>drawer.hidden=true);
 loadSession().catch(err=>{home.innerHTML='<div class="placeholder"><div><h2>Unable to start Rimrock Rooms</h2><p>'+err.message+'</p></div></div>'});
+const hkPdf=document.getElementById('hkPdf'),dropzone=document.getElementById('dropzone'),fileStatus=document.getElementById('fileStatus');
+function acceptHousekeepingPdf(file){
+  fileStatus.className='file-status';
+  if(!file){fileStatus.textContent='';return}
+  if(!(file.type==='application/pdf'||file.name.toLowerCase().endsWith('.pdf'))){fileStatus.textContent='Please choose a PDF file.';fileStatus.classList.add('error');return}
+  if(file.size>10*1024*1024){fileStatus.textContent='That PDF is larger than the 10 MB Section 2 limit.';fileStatus.classList.add('error');return}
+  fileStatus.textContent='✓ '+file.name+' selected — ready for Preview (Step 2).';
+  fileStatus.classList.add('ok');
+}
+hkPdf.addEventListener('change',()=>acceptHousekeepingPdf(hkPdf.files[0]));
+['dragenter','dragover'].forEach(evt=>dropzone.addEventListener(evt,e=>{e.preventDefault();dropzone.classList.add('drag')}));
+['dragleave','drop'].forEach(evt=>dropzone.addEventListener(evt,e=>{e.preventDefault();dropzone.classList.remove('drag')}));
+dropzone.addEventListener('drop',e=>acceptHousekeepingPdf(e.dataTransfer.files[0]));
