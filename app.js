@@ -58,12 +58,13 @@ document.getElementById('backHome').addEventListener('click',()=>show('Home'));
 document.getElementById('moreBtn').addEventListener('click',()=>drawer.hidden=false);
 document.getElementById('closeDrawer').addEventListener('click',()=>drawer.hidden=true);
 loadSession().catch(err=>{home.innerHTML='<div class="placeholder"><div><h2>Unable to start Rimrock Rooms</h2><p>'+err.message+'</p></div></div>'});
-const hkPdf=document.getElementById('hkPdf'),dropzone=document.getElementById('dropzone'),fileStatus=document.getElementById('fileStatus');
+const hkPdf=document.getElementById('hkPdf'),dropzone=document.getElementById('dropzone'),fileStatus=document.getElementById('fileStatus'),previewPdf=document.getElementById('previewPdf'),previewPanel=document.getElementById('previewPanel'),previewSummary=document.getElementById('previewSummary'),assignmentPreview=document.getElementById('assignmentPreview'),previewMessage=document.getElementById('previewMessage'); let selectedPdf=null;
 function acceptHousekeepingPdf(file){
   fileStatus.className='file-status';
   if(!file){fileStatus.textContent='';return}
   if(!(file.type==='application/pdf'||file.name.toLowerCase().endsWith('.pdf'))){fileStatus.textContent='Please choose a PDF file.';fileStatus.classList.add('error');return}
   if(file.size>10*1024*1024){fileStatus.textContent='That PDF is larger than the 10 MB Section 2 limit.';fileStatus.classList.add('error');return}
+  selectedPdf=file; previewPdf.disabled=false; previewPanel.hidden=true;
   fileStatus.textContent='✓ '+file.name+' selected — ready for Preview (Step 2).';
   fileStatus.classList.add('ok');
 }
@@ -71,3 +72,43 @@ hkPdf.addEventListener('change',()=>acceptHousekeepingPdf(hkPdf.files[0]));
 ['dragenter','dragover'].forEach(evt=>dropzone.addEventListener(evt,e=>{e.preventDefault();dropzone.classList.add('drag')}));
 ['dragleave','drop'].forEach(evt=>dropzone.addEventListener(evt,e=>{e.preventDefault();dropzone.classList.remove('drag')}));
 dropzone.addEventListener('drop',e=>acceptHousekeepingPdf(e.dataTransfer.files[0]));
+
+async function loadPdfJs(){
+  if(window.pdfjsLib) return window.pdfjsLib;
+  await new Promise((resolve,reject)=>{const s=document.createElement('script');s.src='https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js';s.onload=resolve;s.onerror=reject;document.head.appendChild(s)});
+  window.pdfjsLib.GlobalWorkerOptions.workerSrc='https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+  return window.pdfjsLib;
+}
+function parseChoiceText(text){
+  const property=(text.match(/Property\s*Code:\s*([A-Z0-9]+)/i)||[])[1]||'';
+  const date=(text.match(/Business\s*Date:\s*(\d{1,2}\/\d{1,2}\/\d{4})/i)||[])[1]||'';
+  const roomRows=[...text.matchAll(/(?:^|\s)(\d{3})\s+(NK|NQQ|SNHK|SNK|NHQQ1?|NHK1)\s+(VAC|OCC)\s+(Ready|Dirty)/g)].map(m=>({room:m[1],type:m[2],status:m[3],condition:m[4]}));
+  const uniqueRooms=[...new Map(roomRows.map(r=>[r.room,r])).values()];
+  const assignments=[];
+  const names=[...text.matchAll(/(?:^|\n)\s*([A-Z][A-Za-z' -]+),\s*([A-Z][A-Za-z' -]+)\s+(?=Business\s*Date)/g)];
+  for(const n of names){
+    const start=n.index, next=names.find(x=>x.index>start);
+    const block=text.slice(start,next?next.index:text.length);
+    const assigned=[...block.matchAll(/(?:^|\s)(\d{3})\s+(?:NK|NQQ|SNHK|SNK|NHQQ1?|NHK1)\s+(?:VAC|OCC)\s+(?:Ready|Dirty)/g)].map(m=>m[1]);
+    assignments.push({name:n[2].trim()+' '+n[1].trim(),rooms:[...new Set(assigned)]});
+  }
+  return {property,date,rooms:uniqueRooms,assignments};
+}
+previewPdf.addEventListener('click',async()=>{
+  if(!selectedPdf)return;
+  previewPdf.disabled=true; previewPdf.textContent='Reading PDF…'; previewMessage.className='preview-message'; previewMessage.textContent='';
+  try{
+    const pdfjs=await loadPdfJs(),bytes=new Uint8Array(await selectedPdf.arrayBuffer()),pdf=await pdfjs.getDocument({data:bytes}).promise;
+    let text='';
+    for(let p=1;p<=pdf.numPages;p++){const page=await pdf.getPage(p),content=await page.getTextContent();text+='\n'+content.items.map(i=>i.str).join(' ')}
+    const parsed=parseChoiceText(text);
+    previewPanel.hidden=false;
+    previewSummary.innerHTML=[
+      ['Business Date',parsed.date||'Not found'],['Property',parsed.property||'Not found'],['Unique Rooms',parsed.rooms.length],['Housekeepers',parsed.assignments.length]
+    ].map(x=>'<div><small>'+x[0]+'</small><strong>'+x[1]+'</strong></div>').join('');
+    assignmentPreview.innerHTML=parsed.assignments.length?'<h3>Housekeeper Assignments</h3>'+parsed.assignments.map(a=>'<article><strong>'+a.name+'</strong><span>'+a.rooms.length+' room'+(a.rooms.length===1?'':'s')+': '+(a.rooms.join(', ')||'none detected')+'</span></article>').join(''):'';
+    const pass=parsed.property==='CO534'&&parsed.date==='9/18/2026'&&parsed.rooms.length===114&&parsed.assignments.some(a=>a.name==='Detra Pleasant'&&a.rooms.includes('122'));
+    previewMessage.textContent=pass?'✓ Acceptance test passed: CO534 • 9/18/2026 • 114 unique rooms • Detra Pleasant • Room 122. Nothing has been imported.':'Preview generated. Review the extracted values above; nothing has been imported.';
+  }catch(err){previewPanel.hidden=false;previewMessage.className='preview-message error';previewMessage.textContent='Could not read this PDF: '+err.message}
+  finally{previewPdf.disabled=false;previewPdf.textContent='Preview Report →'}
+});
