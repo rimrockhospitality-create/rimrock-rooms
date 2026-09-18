@@ -1,0 +1,70 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#073b63">
+  <title>Rimrock Rooms</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+<div class="app">
+  <header class="topbar">
+    <div class="brand"><div class="mark">⌁</div><div><strong>RIMROCK ROOMS</strong><small>PEOPLE • ROOMS • STANDARDS • RESULTS</small></div></div>
+    <div class="property"><strong>Everhome Suites Denver Airport</strong><span>CO534 &nbsp;|&nbsp; 114 Rooms</span></div>
+    <button class="profile" aria-label="Open profile"><span>Ryan Kelly<small>Manager / Inspector</small></span><b>RK</b></button>
+  </header>
+
+  <aside class="sidebar" aria-label="Primary navigation">
+    <nav>
+      <button class="nav active" data-view="Home">⌂ <span>Home</span></button>
+      <button class="nav" data-view="Housekeeping">♟ <span>Housekeeping</span></button>
+      <button class="nav" data-view="Inspections">☑ <span>Inspections</span></button>
+      <button class="nav" data-view="Maintenance">🔧 <span>Maintenance</span></button>
+      <button class="nav" data-view="Preventive Maintenance">⚙ <span>PM</span></button>
+      <button class="nav" data-view="Reports">▥ <span>Reports</span></button>
+    </nav>
+    <nav class="admin">
+      <button class="nav" data-view="Property Settings">▦ <span>Property</span></button>
+      <button class="nav" data-view="Users">♟ <span>Users</span></button>
+      <button class="nav" data-view="Settings">⚙ <span>Settings</span></button>
+    </nav>
+  </aside>
+
+  <main id="main">
+    <section id="homeView">
+      <div class="welcome">
+        <div><h1>Good afternoon, Ryan</h1><p>Everhome Suites Denver Airport &nbsp;(CO534)</p><small>Same standard. A better way.</small></div>
+        <div class="today"><strong id="today"></strong><em>“Clean rooms. Happy guests. Stronger tomorrow.”</em></div>
+      </div>
+      <div class="tiles">
+        <button class="tile hk" data-view="Housekeeping"><span class="icon">🧹</span><span><strong>Housekeeping</strong><small>Room assignments, progress and status</small></span><b>›</b></button>
+        <button class="tile inspect" data-view="Inspections"><span class="icon">☑</span><span><strong>Inspections</strong><small>Review and complete room inspections</small></span><b>›</b></button>
+        <button class="tile maint" data-view="Maintenance"><span class="icon">🔧</span><span><strong>Maintenance</strong><small>Work orders and repairs</small></span><b>›</b></button>
+        <button class="tile pm" data-view="Preventive Maintenance"><span class="icon">⚙</span><span><strong>Preventive Maintenance</strong><small>Guest rooms and property assets</small></span><b>›</b></button>
+        <button class="tile report" data-view="Reports"><span class="icon">▥</span><span><strong>Reports</strong><small>Performance, quality and history</small></span><b>›</b></button>
+        <button class="tile property-tile" data-view="Property Settings"><span class="icon">▦</span><span><strong>Property Settings</strong><small>Rooms, users and configuration</small></span><b>›</b></button>
+      </div>
+      <div class="banner"><div><strong>Great Stays<br>Start Here.</strong><small>Section 1 • WebUI Shell</small></div></div>
+    </section>
+    <section id="placeholder" class="placeholder" hidden>
+      <button id="backHome">← Home</button>
+      <div><span id="placeholderIcon">◆</span><h2 id="placeholderTitle"></h2><p>Section 1 shell is ready. Operational functionality will be added in its approved build section.</p></div>
+    </section>
+  </main>
+
+  <nav class="mobile-nav" aria-label="Mobile navigation">
+    <button class="mobile-active" data-view="Home">⌂<small>Home</small></button>
+    <button data-view="Search">⌕<small>Search</small></button>
+    <button data-view="Alerts">♟<small>Alerts</small></button>
+    <button id="moreBtn">☰<small>More</small></button>
+  </nav>
+  <div id="drawer" class="drawer" hidden>
+    <div class="drawer-head"><strong>RIMROCK ROOMS</strong><button id="closeDrawer">×</button></div>
+    <div class="drawer-user"><b>RK</b><span>Ryan Kelly<small>Manager / Inspector</small></span></div>
+    <div id="drawerLinks"></div>
+  </div>
+</div>
+<script src="app.js"></script>
+</body>
+</html>
