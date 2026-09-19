@@ -17,7 +17,7 @@ const ROLE_VIEWS={
 };
 const ROLE_LABELS={HOUSEKEEPER:'Housekeeper',INSPECTOR:'Inspector',MAINTENANCE:'Maintenance','FRONT DESK':'Front Desk',MANAGER:'Manager'};
 let currentUser=null;
-const home=document.getElementById('homeView'),housekeepingView=document.getElementById('housekeepingView'),importView=document.getElementById('importView'),placeholder=document.getElementById('placeholder'),title=document.getElementById('placeholderTitle'),drawer=document.getElementById('drawer'),drawerLinks=document.getElementById('drawerLinks');
+const home=document.getElementById('homeView'),housekeepingView=document.getElementById('housekeepingView'),inspectionView=document.getElementById('inspectionView'),importView=document.getElementById('importView'),placeholder=document.getElementById('placeholder'),title=document.getElementById('placeholderTitle'),drawer=document.getElementById('drawer'),drawerLinks=document.getElementById('drawerLinks');
 document.getElementById('today').textContent=new Intl.DateTimeFormat('en-US',{weekday:'long',month:'long',day:'numeric',year:'numeric'}).format(new Date());
 
 async function loadSession(){
@@ -48,7 +48,7 @@ function applyPermissions(roles){
 }
 function show(view){
   if(currentUser&&!allowedViews(currentUser.roles).includes(view)) return;
-  home.hidden=view!=='Home'; housekeepingView.hidden=view!=='Housekeeping'; importView.hidden=true; placeholder.hidden=(view==='Home'||view==='Housekeeping'); if(!placeholder.hidden) title.textContent=view; if(view==='Housekeeping') loadHousekeepingBoard();
+  home.hidden=view!=='Home'; housekeepingView.hidden=view!=='Housekeeping'; inspectionView.hidden=view!=='Inspections'; importView.hidden=true; placeholder.hidden=(view==='Home'||view==='Housekeeping'||view==='Inspections'); if(!placeholder.hidden) title.textContent=view; if(view==='Housekeeping') loadHousekeepingBoard(); if(view==='Inspections') loadInspectionQueue();
   document.querySelectorAll('.nav').forEach(b=>b.classList.toggle('active',b.dataset.view===view)); drawer.hidden=true;
 }
 function buildDrawer(roles){
@@ -309,3 +309,16 @@ hkMyRooms.addEventListener('click',async function(e){
     await loadHousekeepingBoard();
   }catch(err){b.disabled=false;b.textContent=old;console.error(err)}
 });
+
+async function loadInspectionQueue(){
+  const status=document.getElementById('inspectionStatus'),queue=document.getElementById('inspectionQueue'),count=document.getElementById('inspectionWaiting');
+  status.textContent='Loading inspection queue…';queue.innerHTML='';
+  try{
+    const state=await apiPost({action:'getToday',businessDate:housekeepingBusinessDate()});
+    if(!state.ok)throw new Error(state.error||'Could not load inspections');
+    const ready=(state.cleaningSessions||[]).filter(s=>s.status==='READY_FOR_INSPECTION');
+    count.textContent=ready.length;
+    status.textContent=ready.length?ready.length+' room'+(ready.length===1?' is':'s are')+' waiting for inspection.':'No rooms are waiting for inspection.';
+    queue.innerHTML=ready.map(s=>'<article class="inspection-card"><div class="room">ROOM '+s.room+'</div><div class="who">Housekeeper: '+s.housekeeper+'<br>Cleaning complete • Ready '+(s.ready_at||'')+'</div><button type="button" class="start-inspection-btn" data-room="'+s.room+'">START INSPECTION</button></article>').join('');
+  }catch(err){status.className='hk-board-status error';status.textContent='Could not load inspection queue: '+err.message}
+}
