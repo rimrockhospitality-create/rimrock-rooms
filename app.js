@@ -517,8 +517,24 @@ async function loadMaintenanceBoard(){
 document.getElementById('maintenanceQueue').addEventListener('click',async e=>{
  const p=e.target.closest('.maint-photo');if(p){window.open('https://drive.google.com/open?id='+p.dataset.photo,'_blank');return}
  const b=e.target.closest('.maint-resolve');if(!b)return;
- const old=b.textContent;b.disabled=true;b.textContent='RESOLVING…';
- try{const r=await apiPost({action:'resolveMaintenanceIssue',maintenanceId:b.dataset.id,resolvedBy:currentUser.name});if(!r.ok)throw new Error(r.reason||r.error||'Resolve failed');await loadMaintenanceBoard()}catch(err){b.disabled=false;b.textContent=old;alert('Could not resolve maintenance: '+err.message)}
+ pendingMaintenanceResolve=b.dataset.id;
+ document.getElementById('maintenanceResolveTitle').textContent='Resolve '+(b.closest('.maint-card')?.querySelector('.maint-room')?.textContent||'Maintenance');
+ document.getElementById('maintenanceResolvePhoto').value='';document.getElementById('maintenanceResolveNote').value='';document.getElementById('maintenanceResolveMessage').textContent='';
+ document.getElementById('maintenanceResolvePanel').hidden=false;
+});
+let pendingMaintenanceResolve='';
+document.getElementById('closeMaintenanceResolve').addEventListener('click',()=>{pendingMaintenanceResolve='';document.getElementById('maintenanceResolvePanel').hidden=true});
+document.getElementById('confirmMaintenanceResolve').addEventListener('click',async()=>{
+ const b=document.getElementById('confirmMaintenanceResolve'),file=document.getElementById('maintenanceResolvePhoto').files[0],note=document.getElementById('maintenanceResolveNote').value.trim(),msg=document.getElementById('maintenanceResolveMessage');
+ if(!pendingMaintenanceResolve)return;
+ b.disabled=true;b.textContent='RESOLVING…';
+ try{
+   let photoBase64='',photoMimeType='';if(file){photoBase64=await fileToDataUrl(file);photoMimeType=file.type||'image/jpeg'}
+   const r=await apiPost({action:'resolveMaintenanceIssue',maintenanceId:pendingMaintenanceResolve,resolvedBy:currentUser.name,resolutionNote:note,photoBase64:photoBase64,photoMimeType:photoMimeType},30000);
+   if(!r.ok)throw new Error(r.reason||r.error||'Resolve failed');
+   msg.textContent='✓ Maintenance resolved'+(r.completionPhotoRef?' • photo saved':'');
+   setTimeout(async()=>{pendingMaintenanceResolve='';document.getElementById('maintenanceResolvePanel').hidden=true;b.disabled=false;b.textContent='✓ MARK RESOLVED';await loadMaintenanceBoard()},800);
+ }catch(err){b.disabled=false;b.textContent='✓ MARK RESOLVED';msg.textContent='Could not resolve: '+err.message}
 });
 
 const maintenanceLogPanel=document.getElementById('maintenanceLogPanel');
