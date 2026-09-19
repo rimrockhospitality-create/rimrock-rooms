@@ -58,13 +58,13 @@ document.getElementById('backHome').addEventListener('click',()=>show('Home'));
 document.getElementById('moreBtn').addEventListener('click',()=>drawer.hidden=false);
 document.getElementById('closeDrawer').addEventListener('click',()=>drawer.hidden=true);
 loadSession().catch(err=>{home.innerHTML='<div class="placeholder"><div><h2>Unable to start Rimrock Rooms</h2><p>'+err.message+'</p></div></div>'});
-const hkPdf=document.getElementById('hkPdf'),dropzone=document.getElementById('dropzone'),fileStatus=document.getElementById('fileStatus'),previewPdf=document.getElementById('previewPdf'),previewPanel=document.getElementById('previewPanel'),previewSummary=document.getElementById('previewSummary'),assignmentPreview=document.getElementById('assignmentPreview'),previewMessage=document.getElementById('previewMessage'),validateImport=document.getElementById('validateImport'),validationPanel=document.getElementById('validationPanel'),validationChecks=document.getElementById('validationChecks'),validationSummary=document.getElementById('validationSummary'),validationState=document.getElementById('validationState'),importDaily=document.getElementById('importDaily'); let selectedPdf=null,lastParsed=null;
+const hkPdf=document.getElementById('hkPdf'),dropzone=document.getElementById('dropzone'),fileStatus=document.getElementById('fileStatus'),previewPdf=document.getElementById('previewPdf'),previewPanel=document.getElementById('previewPanel'),previewSummary=document.getElementById('previewSummary'),assignmentPreview=document.getElementById('assignmentPreview'),previewMessage=document.getElementById('previewMessage'),validateImport=document.getElementById('validateImport'),validationPanel=document.getElementById('validationPanel'),validationChecks=document.getElementById('validationChecks'),validationSummary=document.getElementById('validationSummary'),validationState=document.getElementById('validationState'),comparePanel=document.getElementById('comparePanel'),compareSummary=document.getElementById('compareSummary'),compareDetails=document.getElementById('compareDetails'),importDaily=document.getElementById('importDaily'); let selectedPdf=null,lastParsed=null;
 function acceptHousekeepingPdf(file){
   fileStatus.className='file-status';
   if(!file){fileStatus.textContent='';return}
   if(!(file.type==='application/pdf'||file.name.toLowerCase().endsWith('.pdf'))){fileStatus.textContent='Please choose a PDF file.';fileStatus.classList.add('error');return}
   if(file.size>10*1024*1024){fileStatus.textContent='That PDF is larger than the 10 MB Section 2 limit.';fileStatus.classList.add('error');return}
-  selectedPdf=file; lastParsed=null; previewPdf.disabled=false; previewPanel.hidden=true; validateImport.disabled=true; validationPanel.hidden=true; importDaily.disabled=true;
+  selectedPdf=file; lastParsed=null; previewPdf.disabled=false; previewPanel.hidden=true; validateImport.disabled=true; validationPanel.hidden=true; comparePanel.hidden=true; importDaily.disabled=true;
   fileStatus.textContent='✓ '+file.name+' selected — ready for Preview (Step 2).';
   fileStatus.classList.add('ok');
 }
@@ -148,9 +148,32 @@ validateImport.addEventListener('click',async()=>{
     validationChecks.innerHTML=checks.map(c=>'<div class="validation-check '+(c.ok?'pass':'fail')+'"><strong>'+(c.ok?'✓ ':'⚠ ')+c.label+'</strong><small>'+c.detail+'</small></div>').join('');
     validationState.textContent=passed?'VALIDATION PASSED':'REVIEW REQUIRED'; validationState.className=passed?'pass':'review';
     validationSummary.className='validation-summary '+(passed?'pass':'fail');
-    validationSummary.textContent=passed?'✓ All safety checks passed. Ready for Step 4 Import.':'Review required. Import remains disabled until every validation issue is resolved.';
+    validationSummary.textContent=passed?'✓ All safety checks passed. Ready to compare with today’s Rimrock Rooms activity.':'Review required. Sync remains disabled until every validation issue is resolved.';
+    if(passed){await compareWithToday(lastParsed)} else {comparePanel.hidden=true}
     importDaily.disabled=!passed;
   }catch(err){validationPanel.hidden=false;validationSummary.className='validation-summary fail';validationSummary.textContent='Validation could not run: '+err.message;importDaily.disabled=true}
   finally{validateImport.disabled=false;validateImport.textContent='Continue to Validate →'}
 });
-importDaily.addEventListener('click',()=>{alert('Step 4 is intentionally not built yet. Validation works, but nothing will be imported.')});
+async function loadTodayState(){
+  try{const r=await fetch('data/today.json',{cache:'no-store'}); if(!r.ok)return {assignments:[],rooms:{},cleaningSessions:[]}; return await r.json()}
+  catch(e){return {assignments:[],rooms:{},cleaningSessions:[]}}
+}
+async function compareWithToday(parsed){
+  const state=await loadTodayState(),current=new Map((state.assignments||[]).map(a=>[a.room,a.housekeeper])),incoming=new Map();
+  parsed.assignments.forEach(a=>a.rooms.forEach(room=>incoming.set(room,a.name)));
+  const started=new Map((state.cleaningSessions||[]).filter(s=>s.status==='CLEANING'||s.status==='READY_FOR_INSPECTION'||s.status==='COMPLETE').map(s=>[s.room,s]));
+  let unchanged=0,added=0,changed=0,conflicts=0; const details=[];
+  incoming.forEach((name,room)=>{
+    const old=current.get(room),session=started.get(room);
+    if(!old){added++;details.push({kind:'new',text:'Room '+room+' → '+name+' (new Choice assignment)'})}
+    else if(old===name){unchanged++}
+    else if(session){conflicts++;details.push({kind:'conflict',text:'Room '+room+': Choice now '+name+'; Rimrock Rooms has '+session.housekeeper+' '+session.status.replaceAll('_',' ').toLowerCase()+'. Review required.'})}
+    else{changed++;details.push({kind:'changed',text:'Room '+room+': '+old+' → '+name+' (safe reassignment; not started)'})}
+  });
+  current.forEach((name,room)=>{if(!incoming.has(room)){const session=started.get(room); if(session){conflicts++;details.push({kind:'conflict',text:'Room '+room+': no longer assigned in Choice, but '+session.housekeeper+' has operational activity. Review required.'})}else{changed++;details.push({kind:'changed',text:'Room '+room+': assignment removed by Choice (safe; not started)'})}}});
+  comparePanel.hidden=false;
+  compareSummary.innerHTML=[['Unchanged',unchanged],['New',added],['Changed',changed],['Conflicts',conflicts]].map(x=>'<div><small>'+x[0]+'</small><strong>'+x[1]+'</strong></div>').join('');
+  compareDetails.innerHTML=details.length?details.map(d=>'<article class="'+d.kind+'">'+d.text+'</article>').join(''):'<p>No assignment differences from today’s Rimrock Rooms state.</p>';
+  if(conflicts){validationState.textContent='REVIEW REQUIRED';validationState.className='review';validationSummary.className='validation-summary fail';validationSummary.textContent='Choice comparison found '+conflicts+' operational conflict'+(conflicts===1?'':'s')+'. Sync is blocked until reviewed.';importDaily.disabled=true}else{importDaily.disabled=false}
+}
+importDaily.addEventListener('click',()=>{alert('Choice Sync comparison is ready. The actual Step 4 write is still intentionally disabled until we test the comparison with a real changed board.')});
