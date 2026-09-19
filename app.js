@@ -337,9 +337,29 @@ function openInspectionCapture(type){
   if(type==='ROOM_HIGHLIGHT'){label.textContent='ROOM_HIGHLIGHT';title.textContent='Room Photo';maint.hidden=true;note.hidden=true;route.textContent='Positive finished-room photo. Routes to Inspection Report highlights only.'}
   panel.hidden=false;
 }
-document.querySelector('.hk-issue-btn').addEventListener('click',()=>openInspectionCapture('HK_ISSUE'));
 document.querySelector('.maintenance-inspection-btn').addEventListener('click',()=>openInspectionCapture('MAINT_ISSUE'));
 document.querySelector('.photo-room-btn').addEventListener('click',()=>openInspectionCapture('ROOM_HIGHLIGHT'));
 document.getElementById('closeInspectionCapture').addEventListener('click',()=>document.getElementById('inspectionCapture').hidden=true);
 document.getElementById('inspectionPhoto').addEventListener('change',()=>{document.getElementById('saveInspectionCapture').disabled=!(document.getElementById('inspectionPhoto').files.length&&(inspectionCaptureType!=='MAINT_ISSUE'||inspectionBlocking!==null))});
 document.getElementById('maintenanceBlocking').addEventListener('click',e=>{const b=e.target.closest('[data-blocking]');if(!b)return;inspectionBlocking=b.dataset.blocking==='true';e.currentTarget.querySelectorAll('button').forEach(x=>x.classList.toggle('selected',x===b));document.getElementById('saveInspectionCapture').disabled=!document.getElementById('inspectionPhoto').files.length});
+
+function deficiencyEvidence(q){
+  let d=q.querySelector('.deficiency-evidence');if(d)return d;
+  d=document.createElement('div');d.className='deficiency-evidence';
+  d.innerHTML='<label>📸 Housekeeping issue photo<input type="file" accept="image/*" capture="environment"></label><label>Optional note<textarea rows="2" placeholder="Add detail if helpful"></textarea></label>';
+  q.appendChild(d);return d;
+}
+document.querySelector('.inspection-question-list').addEventListener('click',e=>{
+  const b=e.target.closest('[data-answer]');if(!b)return;
+  const q=b.closest('.inspect-q'),answer=b.dataset.answer;
+  q.dataset.answer=answer;q.querySelectorAll('.yn button').forEach(x=>x.classList.remove('yes','no'));b.classList.add(answer.toLowerCase());
+  if(answer==='NO'){
+    if(q.classList.contains('no-photo')){const d=q.querySelector('.fail-detail');if(d)d.hidden=false}
+    else deficiencyEvidence(q);
+  }else{
+    const d=q.querySelector('.fail-detail');if(d)d.hidden=true;const ev=q.querySelector('.deficiency-evidence');if(ev)ev.remove();
+  }
+});
+document.getElementById('allInspectionPass').addEventListener('click',()=>{
+  document.querySelectorAll('.inspect-q').forEach(q=>{q.dataset.answer='YES';q.querySelectorAll('.yn button').forEach(x=>x.classList.toggle('yes',x.dataset.answer==='YES'));const d=q.querySelector('.fail-detail');if(d)d.hidden=true;const ev=q.querySelector('.deficiency-evidence');if(ev)ev.remove()});
+});
