@@ -17,7 +17,7 @@ const ROLE_VIEWS={
 };
 const ROLE_LABELS={HOUSEKEEPER:'Housekeeper',INSPECTOR:'Inspector',MAINTENANCE:'Maintenance','FRONT DESK':'Front Desk',MANAGER:'Manager'};
 let currentUser=null;
-const home=document.getElementById('homeView'),housekeepingView=document.getElementById('housekeepingView'),inspectionView=document.getElementById('inspectionView'),maintenanceView=document.getElementById('maintenanceView'),importView=document.getElementById('importView'),placeholder=document.getElementById('placeholder'),title=document.getElementById('placeholderTitle'),drawer=document.getElementById('drawer'),drawerLinks=document.getElementById('drawerLinks');
+const home=document.getElementById('homeView'),housekeepingView=document.getElementById('housekeepingView'),inspectionView=document.getElementById('inspectionView'),maintenanceView=document.getElementById('maintenanceView'),checklistsView=document.getElementById('checklistsView'),importView=document.getElementById('importView'),placeholder=document.getElementById('placeholder'),title=document.getElementById('placeholderTitle'),drawer=document.getElementById('drawer'),drawerLinks=document.getElementById('drawerLinks');
 document.getElementById('today').textContent=new Intl.DateTimeFormat('en-US',{weekday:'long',month:'long',day:'numeric',year:'numeric'}).format(new Date());
 
 async function loadSession(){
@@ -52,8 +52,9 @@ function show(view){
   housekeepingView.hidden=view!=='Housekeeping';
   inspectionView.hidden=view!=='Inspections';
   maintenanceView.hidden=view!=='Maintenance';
+  checklistsView.hidden=view!=='Checklists';
   importView.hidden=true;
-  placeholder.hidden=(view==='Home'||view==='Housekeeping'||view==='Inspections'||view==='Maintenance');
+  placeholder.hidden=(view==='Home'||view==='Housekeeping'||view==='Inspections'||view==='Maintenance'||view==='Checklists');
   if(!placeholder.hidden) title.textContent=view;
   if(view==='Housekeeping') loadHousekeepingBoard();
   if(view==='Inspections') loadInspectionQueue();
@@ -586,3 +587,113 @@ document.getElementById('notificationList').addEventListener('click',e=>{
  if(b.dataset.event==='PRIORITY_MAINTENANCE'){show('Maintenance');return}
  home.hidden=false;
 });
+
+const CHECKLISTS={
+ AM:[
+ ['Start AM Shift','Review overnight handoff, open follow-ups, priority maintenance and current room status.'],
+ ['Log into Choice','Personal login; confirm previous associate is logged out.'],
+ ['Review Hotel Quick Stats','Arrivals, departures, occupancy and rooms available to sell.'],
+ ['Review In-House Guests','Review In-House List and complete bucket verification.'],
+ ['Review Credit Warning Checklist','Address declined or failed cards and unresolved payment issues.'],
+ ['Review No-Shows & Fees','Verify prior-night no-shows and proper no-show fee posting.'],
+ ['Review Departures & Billing','Verify proper billing, routing and applicable fees before checkout.'],
+ ['Recognize Choice Rewards','Identify arriving Choice Rewards / VIP guests and special attention needs.'],
+ ['Prepare VIP / Recognition Bags','Prepare applicable bags for placement after successful room inspection.'],
+ ['Housekeeping Setup','Build/verify assignments, sync to Rimrock Rooms and confirm My Board.'],
+ ['Review OOO/OOS & Maintenance','Verify Choice room status against P1/P2 maintenance and room holds.'],
+ ['Check Due-Outs After Checkout Time','Verify actual departures; extend or check out as needed.'],
+ ['Review CRS Notifications','Correct failed sync items and document unresolved exceptions.'],
+ ['Prepare Today’s Arrivals','Assign rooms, review requests and prepare for early arrivals.'],
+ ['Hotel Laundry','Keep loads moving, fold/process linen, separate dirty rags and document handoff status.'],
+ ['Public Restrooms','Maintain two-hour checks, cleaning log, supplies, trash and maintenance reporting.'],
+ ['Guest Laundry & Public Areas','Walk public areas, address cleanliness and log maintenance issues.'],
+ ['Log Maintenance as Needed','Guest Reported YES/NO, immediate attention when warranted, photo optional.'],
+ ['AM → PM Handoff','Review unfinished items, unresolved P1/P2, rooms and follow-ups.'],
+ ['Review Open Follow-Ups','Resolve what can be resolved; unresolved notes carry into PM.'],
+ ['Complete AM Shift','Submit checklist, exceptions and notes; log out of Choice.']
+ ],
+ PM:[
+ ['Start PM Shift','Review AM completion, carryovers, priority maintenance and room status.'],
+ ['Log into Choice','Personal login; confirm previous associate is logged out.'],
+ ['Review Hotel Quick Stats','Occupancy, remaining arrivals/departures and rooms to sell.'],
+ ['Review Credit Warning Checklist','Address declined/failed cards; unresolved items become follow-ups.'],
+ ['Review CRS Notifications','Correct sync issues and document unresolved exceptions.'],
+ ['Review Remaining Arrivals','Finish assignments, special requests, Choice Rewards and VIP bags.'],
+ ['90%+ Occupancy — Compset Outreach','At 90%+ call official CO534 compset; below 90% mark N/A.'],
+ ['Housekeeping Closeout','Before HK leaves, account for cleaning, inspection, rework, holds and incomplete rooms.'],
+ ['Review Inspection Queue','Get remaining inspections completed when possible; carry unresolved rooms forward.'],
+ ['Review Maintenance','Review P1, P2 and Immediate Attention items and room holds.'],
+ ['Hotel Laundry','Keep washers/dryers moving, fold/process linen and record handoff status.'],
+ ['Public Restrooms','Continue two-hour checks, cleaning log, restocking and maintenance reporting.'],
+ ['Guest Laundry & Public Areas','Walk lobby/public areas, address cleanliness and log issues.'],
+ ['Log Maintenance as Needed','Guest Reported YES/NO, immediate attention when warranted, photo optional.'],
+ ['8:00 PM — Call All Remaining Arrivals','Confirm arrival, approximate time and document Audit follow-up.'],
+ ['In-House / Bucket Verification','Verify guest, room, rate and applicable billing information.'],
+ ['Prepare for Night Audit','Review arrivals, billing, guest concerns, maintenance and room discrepancies.'],
+ ['Add / Review Shift Notes','Informational, Issue or Follow-Up Needed.'],
+ ['Review PM Checklist','Completion percentage; incomplete tasks require exception note.'],
+ ['Review Open Follow-Ups','Resolve or explicitly carry remaining items into Audit.'],
+ ['Complete PM Shift','Submit checklist, notes and carryovers; log out of Choice.']
+ ],
+ AUDIT:[
+ ['Start Audit Shift','Review PM completion, carryovers, maintenance, room status and laundry handoff.'],
+ ['Log into Choice','Personal login; confirm previous associate is logged out.'],
+ ['Review Hotel Quick Stats','Occupancy, remaining arrivals, due-outs and rooms to sell.'],
+ ['Review Remaining Unarrived Guests','Use PM 8 PM call notes and attempt additional contact as appropriate.'],
+ ['Review Credit Warning Checklist','Address unsecured payment issues; carry unresolved items to AM.'],
+ ['Review CRS Notifications','Correct sync issues and document unresolved items.'],
+ ['In-House / Bucket Verification','Verify guest name, room, rate and billing/routing as appropriate.'],
+ ['Review Hotel Journal Summary','Review Hotel Journal Summary/Detail and investigate exceptions.'],
+ ['Verify Credit Card Batch','Reconcile appropriate card totals and close/settle per current procedure.'],
+ ['Final Room Status Review','Review inspection, rework, maintenance holds and dirty/incomplete rooms.'],
+ ['Review Maintenance','Review P1, P2, Immediate Attention and relevant open P3 work.'],
+ ['Hotel Laundry','Keep loads moving, fold/process linen and prepare clean linen for morning HK.'],
+ ['Public Restrooms','Continue checks, cleaning log, restocking and maintenance reporting.'],
+ ['Guest Laundry & Public Areas','Walk public areas and address cleanliness / maintenance.'],
+ ['Log Maintenance as Needed','Guest Reported YES/NO, immediate attention when warranted, photo optional.'],
+ ['PRINT In-House List','Physical print required — sorted by room number.'],
+ ['PRINT Arrivals List','Physical print required by Choice.'],
+ ['PRINT Vacant Room List','Physical print required by Choice.'],
+ ['Run Night Audit / End of Day','Complete Choice Night Audit and verify successful completion.'],
+ ['Close Rimrock Rooms Business Day','Compile operational day and carry unresolved follow-ups into AM.'],
+ ['Complete Audit Shift','Submit checklist, exceptions, notes and laundry status; log out of Choice.']
+ ],
+ MAINTENANCE:[
+ ['Start Maintenance Shift','Review carryover notes, P1/P2/P3 queue and room holds.'],
+ ['Complete Assigned PM Rooms','Complete scheduled preventive-maintenance rooms and log deficiencies.'],
+ ['Help Housekeeping Strip Rooms','Support priority room turns with linen/trash removal as needed.'],
+ ['Full Exterior Property Walk','Parking, entrances, sidewalks, dumpster, pet area, EV, landscaping, lighting and exterior.'],
+ ['Full Interior Property Walk','Lobby, halls, stairs, elevators, restrooms, laundry, fitness, HK and mechanical areas.'],
+ ['Life-Safety / Building Awareness','Visual check of fire panel, exits, elevators, mechanical areas, leaks/noises/hazards.'],
+ ['Work Maintenance Queue','P1 first, P2 second, P3 as workload permits; document completion.'],
+ ['Housekeeping / Laundry Support','Respond to HK needs and support laundry operations when necessary.'],
+ ['Maintenance Shop / Equipment','Organize tools, charge batteries, check supplies and store chemicals correctly.'],
+ ['End-of-Shift Property Check','Light second walk; verify unresolved P1/P2 and room holds.'],
+ ['Maintenance Shift Notes','Document informational items, issues and follow-ups.'],
+ ['Complete Maintenance Shift','Account for PM rooms, walks, queue, exceptions and follow-ups.']
+ ]
+};
+let activeChecklist='',taskState={},activeNoteType='';
+function openChecklistHub(){
+ document.getElementById('checklistDetail').hidden=true;document.querySelector('.checklist-layout').hidden=false;document.querySelector('.checklist-kpis').hidden=false;document.querySelector('.checklist-hero').hidden=false;
+}
+function openChecklist(name){
+ activeChecklist=name;const list=CHECKLISTS[name]||[];document.querySelector('.checklist-layout').hidden=true;document.querySelector('.checklist-kpis').hidden=true;document.querySelector('.checklist-hero').hidden=true;document.getElementById('checklistDetail').hidden=false;
+ const titles={AM:['FRONT DESK • AM','AM / 1st Shift','7 AM — 3 PM'],PM:['FRONT DESK • PM','PM / 2nd Shift','3 PM — 11 PM'],AUDIT:['FRONT DESK • NIGHT AUDIT','Night Audit','11 PM — 7 AM'],MAINTENANCE:['ENGINEERING • DAILY','Maintenance Daily','Property operations']};
+ const t=titles[name];document.getElementById('detailEyebrow').textContent=t[0];document.getElementById('detailTitle').textContent=t[1];document.getElementById('detailSubtitle').textContent=t[2]+' • '+list.length+' tasks';
+ renderChecklist();
+}
+function renderChecklist(){
+ const list=CHECKLISTS[activeChecklist]||[],state=taskState[activeChecklist]||(taskState[activeChecklist]={});
+ document.getElementById('checklistTasks').innerHTML=list.map((x,i)=>'<article class="check-task '+(state[i]?'done':'')+'"><button type="button" class="task-check" data-i="'+i+'">'+(state[i]?'✓':'')+'</button><div><h4>'+(i+1)+'. '+x[0]+'</h4><p>'+x[1]+'</p></div><button type="button" class="task-exception" data-i="'+i+'">EXCEPTION</button></article>').join('');
+ const done=Object.values(state).filter(Boolean).length,pct=list.length?Math.round(done/list.length*100):0;document.getElementById('detailPercent').textContent=pct+'%';
+}
+document.querySelectorAll('.shift-card,.maintenance-check-card').forEach(b=>b.addEventListener('click',()=>openChecklist(b.dataset.shift)));
+document.getElementById('backToChecklists').addEventListener('click',openChecklistHub);
+document.getElementById('checklistTasks').addEventListener('click',e=>{const b=e.target.closest('.task-check');if(!b)return;const s=taskState[activeChecklist]||(taskState[activeChecklist]={});s[b.dataset.i]=!s[b.dataset.i];renderChecklist()});
+function openShiftNote(){document.getElementById('shiftNotePanel').hidden=false;activeNoteType='';document.querySelectorAll('.note-types button').forEach(x=>x.classList.remove('selected'));document.getElementById('shiftNoteMessage').textContent=''}
+document.getElementById('addShiftNote').addEventListener('click',openShiftNote);document.getElementById('addChecklistNote').addEventListener('click',openShiftNote);document.getElementById('closeShiftNote').addEventListener('click',()=>document.getElementById('shiftNotePanel').hidden=true);
+document.querySelectorAll('.note-types button').forEach(b=>b.addEventListener('click',()=>{activeNoteType=b.dataset.noteType;document.querySelectorAll('.note-types button').forEach(x=>x.classList.toggle('selected',x===b))}));
+document.getElementById('saveShiftNote').addEventListener('click',()=>{if(!activeNoteType||!document.getElementById('shiftNoteIssue').value.trim()){document.getElementById('shiftNoteMessage').textContent='Choose a note type and enter the issue/information.';return}document.getElementById('shiftNoteMessage').textContent='✓ Shift note staged for save.'});
+document.getElementById('completeShift').addEventListener('click',()=>alert('Checklist engine shell is ready. Database save + carryover wiring is next.'));
+document.getElementById('checklistDate').textContent=new Date().toLocaleDateString('en-US',{weekday:'long',month:'long',day:'numeric'});
