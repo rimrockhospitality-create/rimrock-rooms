@@ -363,3 +363,30 @@ document.querySelector('.inspection-question-list').addEventListener('click',e=>
 document.getElementById('allInspectionPass').addEventListener('click',()=>{
   document.querySelectorAll('.inspect-q').forEach(q=>{q.dataset.answer='YES';q.querySelectorAll('.yn button').forEach(x=>x.classList.toggle('yes',x.dataset.answer==='YES'));const d=q.querySelector('.fail-detail');if(d)d.hidden=true;const ev=q.querySelector('.deficiency-evidence');if(ev)ev.remove()});
 });
+
+let activeInspectionRoom='',activeInspectionHousekeeper='';
+inspectionQueueEl.addEventListener('click',e=>{const b=e.target.closest('.start-inspection-btn');if(!b)return;const card=b.closest('.inspection-card');activeInspectionRoom=b.dataset.room;activeInspectionHousekeeper=(card.querySelector('.who').textContent.match(/Housekeeper:\s*([^\n]+)/)||[])[1]?.trim()||''});
+function fileToDataUrl(file){return new Promise((resolve,reject)=>{const r=new FileReader();r.onload=()=>resolve(r.result);r.onerror=reject;r.readAsDataURL(file)})}
+document.querySelector('.inspection-question-list').addEventListener('change',async e=>{
+  const input=e.target.closest('.deficiency-evidence input[type=file]');if(!input||!input.files?.length)return;
+  const q=input.closest('.inspect-q');if(q.dataset.answer!=='NO')return;
+  const note=q.querySelector('.deficiency-evidence textarea')?.value||'';
+  const file=input.files[0],dataUrl=await fileToDataUrl(file);
+  input.disabled=true;
+  try{
+    const result=await apiPost({
+      action:'saveInspectionIssue',propertyId:'CO534',businessDate:housekeepingBusinessDate(),
+      room:activeInspectionRoom,housekeeper:activeInspectionHousekeeper,inspector:currentUser.name,
+      deficiencyKey:q.dataset.key,deficiencyLabel:q.querySelector('strong').textContent.replace(/\?$/,''),
+      note:note,photoBase64:dataUrl,photoMimeType:file.type||'image/jpeg'
+    },30000);
+    if(!result.ok)throw new Error(result.reason||result.error||'Issue save failed');
+    q.dataset.issueId=result.issueId;
+    const label=input.closest('label');label.firstChild.textContent='✓ Photo saved to Rimrock Drive ';
+  }catch(err){input.disabled=false;alert('Could not save deficiency photo: '+err.message)}
+});
+document.querySelector('.inspection-question-list').addEventListener('click',e=>{
+  const cam=e.target.closest('.question-camera');if(!cam)return;
+  const q=cam.closest('.inspect-q'),no=q.querySelector('[data-answer="NO"]');if(no&&!no.classList.contains('no'))no.click();
+  setTimeout(()=>q.querySelector('.deficiency-evidence input[type=file]')?.click(),0);
+});
