@@ -299,3 +299,13 @@ document.getElementById('confirmQrStart').addEventListener('click',startQrCamera
 function parseCleaningStart(v){if(!v)return null;const p=String(v).split(/[/ :]/).map(Number);if(p.length<5)return null;return new Date(p[2],p[0]-1,p[1],p[3],p[4],p[5]||0)}
 function refreshCleaningTimers(){document.querySelectorAll('.elapsed-timer').forEach(el=>{const d=parseCleaningStart(el.dataset.start);if(!d)return;const n=Math.max(0,Math.floor((Date.now()-d.getTime())/1000));const h=Math.floor(n/3600),m=Math.floor((n%3600)/60),s=n%60;el.textContent='Elapsed '+(h?String(h).padStart(2,'0')+':':'')+String(m).padStart(2,'0')+':'+String(s).padStart(2,'0')})}
 setInterval(refreshCleaningTimers,1000);
+
+hkMyRooms.addEventListener('click',async function(e){
+  const b=e.target.closest('.ready-room-btn'); if(!b)return;
+  const room=b.dataset.room,old=b.textContent; b.disabled=true;b.textContent='UPDATING…';
+  try{
+    const r=await apiPost({action:'readyRoom',propertyId:'CO534',businessDate:housekeepingBusinessDate(),room:room,housekeeper:currentUser.name});
+    if(!r.ok)throw new Error(r.reason||r.error||'Update blocked');
+    await loadHousekeepingBoard();
+  }catch(err){b.disabled=false;b.textContent=old;console.error(err)}
+});
