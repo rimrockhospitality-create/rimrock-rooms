@@ -145,6 +145,33 @@
       <div class="inspection-summary"><small>WAITING FOR INSPECTION</small><strong id="inspectionWaiting">0</strong></div>
       <div id="inspectionStatus" class="hk-board-status">Loading inspection queue…</div>
       <div id="inspectionQueue" class="inspection-queue"></div>
+      <div id="inspectionDetail" class="inspection-detail" hidden>
+        <button id="inspectionBack" class="inspection-back" type="button">← Inspection Queue</button>
+        <div class="inspection-room-head"><div><small>ROOM INSPECTION</small><h2 id="inspectionRoomTitle">Room</h2><p id="inspectionHousekeeper"></p></div><span>QUICK CHECK</span></div>
+        <div class="quick-check-grid">
+          <label><input type="checkbox"> Stovetop clean</label>
+          <label><input type="checkbox"> Fridge clean</label>
+          <label><input type="checkbox"> Freezer — no ice buildup</label>
+          <label><input type="checkbox"> Dishwasher empty — no dishes</label>
+          <label><input type="checkbox"> Behind toilet clean</label>
+          <label><input type="checkbox"> High dusting complete</label>
+          <label><input type="checkbox"> PTAC clean / dust-free</label>
+          <label><input type="checkbox"> Floors / corners clean</label>
+          <label><input type="checkbox"> Bathroom clean / setup</label>
+          <label><input type="checkbox"> Bed / pillows / room setup</label>
+          <label><input type="checkbox"> Shades / windows clean</label>
+          <label><input type="checkbox"> Supplies / kitchen setup</label>
+        </div>
+        <div class="inspection-tools">
+          <button type="button" class="photo-room-btn">📸 TAKE ROOM PHOTO<small>Optional finished-room photo</small></button>
+          <button type="button" class="maintenance-inspection-btn">🔧 MAINTENANCE ISSUE<small>Log issue • blocking or non-blocking</small></button>
+        </div>
+        <div class="inspection-actions">
+          <button type="button" class="return-hk-btn" disabled>↩ RETURN TO HOUSEKEEPING</button>
+          <button type="button" class="pass-room-btn" disabled>✓ PASS ROOM</button>
+        </div>
+        <p class="inspection-build-note">Inspection actions are read-only in this step. Deficiency, photo and maintenance writes are connected next.</p>
+      </div>
       <footer class="import-footer"><span>Rimrock Rooms &nbsp;|&nbsp; Everhome Suites Denver Airport (CO534)</span><span>Original concept and design by Ryan Kelly &nbsp;|&nbsp; September 2026</span></footer>
     </section>
     <section id="placeholder" class="placeholder" hidden>
