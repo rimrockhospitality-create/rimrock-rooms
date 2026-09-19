@@ -6,6 +6,8 @@
  * September 2026
  */
 const API_URL='https://script.google.com/macros/s/AKfycby4lxHCqEsiURHZzUv93rDs5rv1Vkdv_yuyanbLVg3aU6PrBf4yhlpZogiGct0zSRmB7w/exec';
+const QR_TEST_ROOM='122';
+const QR_TEST_ID='CO534-RM-122';
 const ROLE_VIEWS={
   HOUSEKEEPER:['Home','Housekeeping'],
   INSPECTOR:['Home','Inspections'],
@@ -254,3 +256,17 @@ async function loadHousekeepingBoard(){
 let pendingStartRoom=null;
 hkMyRooms.addEventListener('click',e=>{const b=e.target.closest('.start-room-btn');if(!b||b.disabled)return;pendingStartRoom=b.dataset.room;qrStartRoom.textContent='Room '+pendingStartRoom;qrStartMessage.textContent='Scan the hidden QR code inside Room '+pendingStartRoom+' to begin cleaning.';qrStartPanel.hidden=false});
 document.getElementById('closeQrStart').addEventListener('click',()=>{qrStartPanel.hidden=true;pendingStartRoom=null});
+async function startQrCamera(){
+  if(!pendingStartRoom)return;
+  qrStartMessage.textContent='Camera scanning is being prepared for Room '+pendingStartRoom+'…';
+  try{
+    if(!('BarcodeDetector' in window)) throw new Error('This phone browser does not expose native QR scanning yet.');
+    const stream=await navigator.mediaDevices.getUserMedia({video:{facingMode:'environment'}});
+    const video=document.createElement('video');video.setAttribute('playsinline','');video.autoplay=true;video.srcObject=stream;
+    const box=document.querySelector('.qr-code-placeholder');box.innerHTML='';box.appendChild(video);video.style.width='100%';video.style.height='100%';video.style.objectFit='cover';video.style.borderRadius='12px';
+    const detector=new BarcodeDetector({formats:['qr_code']});
+    const scan=async()=>{if(qrStartPanel.hidden){stream.getTracks().forEach(t=>t.stop());return}try{const codes=await detector.detect(video);if(codes.length){stream.getTracks().forEach(t=>t.stop());const raw=codes[0].rawValue;if(raw!==QR_TEST_ID){qrStartMessage.textContent='Wrong room QR. Expected Room '+pendingStartRoom+'.';return}qrStartMessage.textContent='✓ Room '+pendingStartRoom+' verified. Cleaning session backend is the next connection.';document.getElementById('confirmQrStart').textContent='ROOM VERIFIED';return}}catch(e){}requestAnimationFrame(scan)};requestAnimationFrame(scan);
+  }catch(err){qrStartMessage.textContent=err.message+' Use the test QR after camera support is enabled.'}
+}
+document.getElementById('confirmQrStart').addEventListener('click',startQrCamera);
+
