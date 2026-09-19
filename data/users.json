@@ -1,1 +1,21 @@
-[{"userId":"ryan-kelly","name":"Ryan Kelly","propertyId":"CO534","roles":["MANAGER","INSPECTOR"],"active":true}]
+[
+  {
+    "userId": "ryan-kelly",
+    "name": "Ryan Kelly",
+    "propertyId": "CO534",
+    "roles": [
+      "MANAGER",
+      "INSPECTOR"
+    ],
+    "active": true
+  },
+  {
+    "userId": "detra-pleasant",
+    "name": "Detra Pleasant",
+    "propertyId": "CO534",
+    "roles": [
+      "HOUSEKEEPER"
+    ],
+    "active": true
+  }
+]
