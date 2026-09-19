@@ -525,3 +525,22 @@ const maintenanceLogPanel=document.getElementById('maintenanceLogPanel');
 document.getElementById('logMaintenanceQuick').addEventListener('click',()=>{home.hidden=true;maintenanceLogPanel.hidden=false});
 document.getElementById('closeMaintenanceLog').addEventListener('click',()=>{maintenanceLogPanel.hidden=true;home.hidden=false});
 document.getElementById('maintLocationType').addEventListener('change',e=>{const room=e.target.value==='GUEST_ROOM',area=e.target.value==='PUBLIC_AREA';document.getElementById('maintRoomWrap').hidden=!room;document.getElementById('maintAreaWrap').hidden=!area;document.getElementById('maintSpecificWrap').hidden=!area});
+
+document.getElementById('submitMaintenanceLog').addEventListener('click',async()=>{
+ const btn=document.getElementById('submitMaintenanceLog'),type=document.getElementById('maintLocationType').value,
+ room=document.getElementById('maintRoomNumber').value.trim(),area=document.getElementById('maintArea').value,
+ specific=document.getElementById('maintSpecificLocation').value.trim(),description=document.getElementById('maintDescription').value.trim(),
+ guest=document.querySelector('input[name="guestReported"]:checked')?.value||'',urgent=document.getElementById('maintUrgent').checked,
+ file=document.getElementById('maintGeneralPhoto').files[0],msg=document.getElementById('maintenanceLogMessage');
+ if(!type||!description||!guest||(type==='GUEST_ROOM'&&!room)||(type==='PUBLIC_AREA'&&!area)){msg.textContent='Complete the required fields first.';return}
+ btn.disabled=true;btn.textContent='SUBMITTING…';msg.textContent='';
+ try{
+   let photoBase64='',photoMimeType='';
+   if(file){photoBase64=await fileToDataUrl(file);photoMimeType=file.type||'image/jpeg'}
+   const r=await apiPost({action:'logMaintenance',propertyId:'CO534',businessDate:housekeepingBusinessDate(),reportedBy:currentUser.name,locationType:type,room:room,area:area,specificLocation:specific,description:description,guestReported:guest,urgent:urgent,photoBase64:photoBase64,photoMimeType:photoMimeType},30000);
+   if(!r.ok)throw new Error(r.reason||r.error||'Submit failed');
+   msg.textContent='✓ Maintenance submitted • '+(r.priority==='P1_GUEST_IMPACT'?'P1 GUEST IMPACT':'P3 ROUTINE')+(r.urgent?' • IMMEDIATE ATTENTION':'');
+   btn.textContent='SUBMITTED';
+   setTimeout(()=>{maintenanceLogPanel.querySelectorAll('input[type=text],input[inputmode],textarea').forEach(x=>x.value='');maintenanceLogPanel.querySelectorAll('input[type=radio],input[type=checkbox]').forEach(x=>x.checked=false);document.getElementById('maintLocationType').value='';document.getElementById('maintArea').value='';document.getElementById('maintGeneralPhoto').value='';document.getElementById('maintRoomWrap').hidden=true;document.getElementById('maintAreaWrap').hidden=true;document.getElementById('maintSpecificWrap').hidden=true;btn.disabled=false;btn.textContent='SUBMIT MAINTENANCE'},1000);
+ }catch(err){btn.disabled=false;btn.textContent='SUBMIT MAINTENANCE';msg.textContent='Could not submit: '+err.message}
+});
