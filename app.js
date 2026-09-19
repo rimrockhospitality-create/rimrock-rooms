@@ -322,3 +322,7 @@ async function loadInspectionQueue(){
     queue.innerHTML=ready.map(s=>'<article class="inspection-card"><div class="room">ROOM '+s.room+'</div><div class="who">Housekeeper: '+s.housekeeper+'<br>Cleaning complete • Ready '+(s.ready_at||'')+'</div><button type="button" class="start-inspection-btn" data-room="'+s.room+'">START INSPECTION</button></article>').join('');
   }catch(err){status.className='hk-board-status error';status.textContent='Could not load inspection queue: '+err.message}
 }
+
+const inspectionQueueEl=document.getElementById('inspectionQueue'),inspectionDetail=document.getElementById('inspectionDetail');
+inspectionQueueEl.addEventListener('click',e=>{const b=e.target.closest('.start-inspection-btn');if(!b)return;const card=b.closest('.inspection-card');document.getElementById('inspectionRoomTitle').textContent='Room '+b.dataset.room;document.getElementById('inspectionHousekeeper').textContent=card.querySelector('.who').textContent.split('Cleaning complete')[0].trim();inspectionQueueEl.hidden=true;document.getElementById('inspectionStatus').hidden=true;inspectionDetail.hidden=false;inspectionDetail.querySelectorAll('input[type=checkbox]').forEach(x=>x.checked=false)});
+document.getElementById('inspectionBack').addEventListener('click',()=>{inspectionDetail.hidden=true;inspectionQueueEl.hidden=false;document.getElementById('inspectionStatus').hidden=false});
