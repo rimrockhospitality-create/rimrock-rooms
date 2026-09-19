@@ -47,7 +47,7 @@
       <div class="tiles">
         <button class="tile hk" data-view="Housekeeping"><span class="icon">🧹</span><span><strong>Housekeeping</strong><small>Room assignments, progress and status</small></span><b>›</b></button>
         <button class="tile inspect" data-view="Inspections"><span class="icon">☑</span><span><strong>Inspections</strong><small>Review and complete room inspections</small></span><b>›</b></button>
-        <button class="tile maint" data-view="Maintenance"><span class="icon">🔧</span><span><strong>Maintenance</strong><small>Work orders and repairs</small></span><b>›</b></button>
+        <button class="tile maint" data-view="Maintenance"><span class="icon">🔧</span><span><strong>Maintenance</strong><small>Work orders and repairs</small></span><b>›</b></button><button id="logMaintenanceQuick" class="tile maint-log" type="button"><span class="icon">➕</span><span><strong>Log Maintenance</strong><small>Report a room or property issue</small></span><b>›</b></button>
         <button class="tile pm" data-view="Preventive Maintenance"><span class="icon">⚙</span><span><strong>Preventive Maintenance</strong><small>Guest rooms and property assets</small></span><b>›</b></button>
         <button class="tile report" data-view="Reports"><span class="icon">▥</span><span><strong>Reports</strong><small>Performance, quality and history</small></span><b>›</b></button>
         <button class="tile property-tile" data-view="Property Settings"><span class="icon">▦</span><span><strong>Property Settings</strong><small>Rooms, users and configuration</small></span><b>›</b></button>
@@ -194,6 +194,22 @@
       <div id="maintenanceStatus" class="hk-board-status">Loading maintenance…</div>
       <div id="maintenanceQueue" class="maintenance-queue"></div>
       <footer><span>Rimrock Rooms &nbsp;|&nbsp; Everhome Suites Denver Airport (CO534)</span><span>Original concept and design by Ryan Kelly &nbsp;|&nbsp; September 2026</span></footer>
+    </section>
+    <section id="maintenanceLogPanel" class="maintenance-log-panel" hidden>
+      <button id="closeMaintenanceLog" class="qr-close" type="button">×</button>
+      <small>QUICK ACTION</small><h2>Log Maintenance</h2>
+      <div class="maint-form-grid">
+        <label>Where is the issue?<select id="maintLocationType"><option value="">Choose…</option><option value="GUEST_ROOM">Guest Room</option><option value="PUBLIC_AREA">Public Area / Property</option></select></label>
+        <label id="maintRoomWrap" hidden>Room number<input id="maintRoomNumber" inputmode="numeric" placeholder="224"></label>
+        <label id="maintAreaWrap" hidden>Public area<select id="maintArea"><option value="">Choose…</option><option>Lobby</option><option>Front Desk</option><option>Public Restroom</option><option>Guest Laundry</option><option>Fitness Center</option><option>Hallway</option><option>Stairwell</option><option>Elevator</option><option>Exterior / Parking</option><option>Mechanical / AHU</option><option>Housekeeping / Laundry</option><option>Other</option></select></label>
+        <label id="maintSpecificWrap" hidden>Specific location<input id="maintSpecificLocation" placeholder="3rd floor by Room 318"></label>
+      </div>
+      <fieldset><legend>Was this reported by a guest?</legend><label><input type="radio" name="guestReported" value="YES"> Yes</label><label><input type="radio" name="guestReported" value="NO"> No</label></fieldset>
+      <label>What's wrong?<textarea id="maintDescription" rows="3" placeholder="Describe the issue"></textarea></label>
+      <label class="urgent-check"><input id="maintUrgent" type="checkbox"> ⚠ Needs immediate attention</label>
+      <label>📷 Add photo <small>(optional)</small><input id="maintGeneralPhoto" type="file" accept="image/*" capture="environment"></label>
+      <button id="submitMaintenanceLog" type="button">SUBMIT MAINTENANCE</button>
+      <p id="maintenanceLogMessage"></p>
     </section>
     <section id="placeholder" class="placeholder" hidden>
       <button id="backHome">← Home</button>
