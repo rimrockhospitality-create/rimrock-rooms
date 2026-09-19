@@ -471,3 +471,24 @@ document.addEventListener('click',async e=>{
     await loadInspectionQueue();
   }catch(err){b.disabled=false;b.textContent=old;alert('Could not update reinspection: '+err.message)}
 });
+
+document.querySelector('.pass-room-btn').addEventListener('click',async function(){
+  const b=this,old=b.textContent;
+  b.disabled=true;b.textContent='PASSING…';
+  try{
+    const result=await apiPost({action:'passInspection',propertyId:'CO534',businessDate:housekeepingBusinessDate(),room:activeInspectionRoom,inspector:currentUser.name});
+    if(!result.ok){
+      if(result.reason==='UNRESOLVED_HK_ISSUES'){
+        const names=(result.issues||[]).map(i=>i.deficiencyLabel+' ('+i.status+')').join('\n');
+        throw new Error('Housekeeping still has unresolved inspection items:\n'+names);
+      }
+      throw new Error(result.reason||result.error||'Pass blocked');
+    }
+    if(result.roomStatus==='HOLD_MAINTENANCE'){
+      alert('✓ HOUSEKEEPING PASSED\n\n⛔ ROOM  '+activeInspectionRoom+' — HOLD FOR MAINTENANCE\n\nA blocking maintenance issue must be resolved before the room becomes Ready.');
+    }else{
+      alert('✓ HOUSEKEEPING PASSED\n\nROOM '+activeInspectionRoom+' — READY');
+    }
+    inspectionDetail.hidden=true;inspectionQueueEl.hidden=false;document.getElementById('inspectionStatus').hidden=false;await loadInspectionQueue();
+  }catch(err){alert(err.message);b.disabled=false;b.textContent=old}
+});
