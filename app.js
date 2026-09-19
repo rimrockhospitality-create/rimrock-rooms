@@ -215,8 +215,8 @@ importDaily.addEventListener('click',async()=>{
 });
 
 /* Section 3 — live My Board — Ryan Kelly */
-const hkGreeting=document.getElementById('hkGreeting'),hkBoardDate=document.getElementById('hkBoardDate'),hkBoardStatus=document.getElementById('hkBoardStatus'),hkMyRooms=document.getElementById('hkMyRooms'),hkManagerGroups=document.getElementById('hkManagerGroups'),managerImportBtn=document.getElementById('managerImportBtn');
-managerImportBtn.addEventListener('click',()=>{housekeepingView.hidden=true;importView.hidden=false});
+const hkGreeting=document.getElementById('hkGreeting'),hkBoardDate=document.getElementById('hkBoardDate'),hkBoardStatus=document.getElementById('hkBoardStatus'),hkMyRooms=document.getElementById('hkMyRooms'),hkManagerGroups=document.getElementById('hkManagerGroups'),managerImportBtn=document.getElementById('managerImportBtn'),emptyChoiceSyncBtn=document.getElementById('emptyChoiceSyncBtn');
+function openChoiceSync(){housekeepingView.hidden=true;importView.hidden=false} managerImportBtn.addEventListener('click',openChoiceSync);emptyChoiceSyncBtn.addEventListener('click',openChoiceSync);
 function housekeepingBusinessDate(){return new Intl.DateTimeFormat('en-US',{timeZone:'America/Denver'}).format(new Date())}
 async function loadHousekeepingBoard(){
   if(!currentUser)return;
@@ -224,7 +224,7 @@ async function loadHousekeepingBoard(){
   hkBoardDate.textContent=new Intl.DateTimeFormat('en-US',{weekday:'long',month:'long',day:'numeric',year:'numeric',timeZone:'America/Denver'}).format(new Date());
   hkBoardStatus.className='hk-board-status';hkBoardStatus.textContent='Loading today’s assignments…';hkMyRooms.innerHTML='';
   const isManager=currentUser.roles.includes('MANAGER');
-  managerImportBtn.hidden=!isManager;hkManagerGroups.hidden=!isManager;
+  managerImportBtn.hidden=!isManager;emptyChoiceSyncBtn.hidden=true;hkManagerGroups.hidden=!isManager;
   try{
     const date=housekeepingBusinessDate(),state=await apiPost({action:'getToday',businessDate:date});
     if(!state.ok)throw new Error(state.error||'Could not load board');
@@ -237,7 +237,7 @@ async function loadHousekeepingBoard(){
     document.getElementById('hkCleaningCount').textContent=cleaning;
     document.getElementById('hkReadyCount').textContent=ready;
     document.getElementById('hkNotStartedCount').textContent=visible.length-cleaning-ready;
-    hkBoardStatus.textContent=visible.length?(isManager?'Live property housekeeping board':'Your Choice assignments are current.'):'No rooms are assigned for '+date+'.';
+    if(visible.length){hkBoardStatus.textContent=isManager?'Live property housekeeping board':'Your Choice assignments are current.'}else if(isManager){hkBoardStatus.innerHTML='<strong>Today’s housekeeping board has not been loaded.</strong><br>No active Choice assignments found for '+date+'.';emptyChoiceSyncBtn.hidden=false}else{hkBoardStatus.textContent='No rooms are assigned for '+date+'.'}
     if(isManager){
       const groups={};assignments.forEach(a=>(groups[a.housekeeper]??=[]).push(a.room));
       hkManagerGroups.innerHTML=Object.keys(groups).length?Object.entries(groups).map(([name,rooms])=>'<article><strong>'+name+'</strong><span>'+rooms.length+' room'+(rooms.length===1?'':'s')+': '+rooms.join(', ')+'</span></article>').join(''):'';
