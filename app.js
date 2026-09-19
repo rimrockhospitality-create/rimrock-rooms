@@ -252,7 +252,7 @@ async function loadHousekeepingBoard(){
       const room=String(a.room),s=sessionByRoom.get(room),rework=reworkByRoom.get(room)||[],activeRework=rework.find(i=>i.status==='REWORK_IN_PROGRESS'),status=activeRework?'REWORK_IN_PROGRESS':rework.length?'REWORK_REQUIRED':(s?.status||'NOT_STARTED');
       const label=status==='REWORK_IN_PROGRESS'?'REWORK IN PROGRESS':status==='REWORK_REQUIRED'?'REWORK REQUIRED':status==='READY_FOR_INSPECTION'?'READY FOR INSPECTION':status==='CLEANING'?'CLEANING':'NOT STARTED';
       const action=status==='REWORK_IN_PROGRESS'?'REWORK COMPLETE':status==='REWORK_REQUIRED'?'START REWORK':status==='CLEANING'?'Room in progress':status==='READY_FOR_INSPECTION'?'Awaiting inspection':'START ROOM';
-      const started=s?.started_at||'';const reworkHtml=rework.length?'<div class="hk-rework-list">'+rework.map(i=>'<div class="hk-rework-item"><strong>'+i.deficiency_label+'</strong>'+(i.note?'<span>'+i.note+'</span>':'')+'<a target="_blank" rel="noopener" href="https://drive.google.com/open?id='+i.photo_ref+'">View inspector photo</a></div>').join('')+'</div>':'';const issueId=(activeRework||rework[0])?.issue_id||'';const button=status==='REWORK_IN_PROGRESS'&&!isManager?'<button type="button" class="complete-rework-btn" data-room="'+room+'" data-issue="'+issueId+'">REWORK COMPLETE</button>':status==='REWORK_REQUIRED'&&!isManager?'<button type="button" class="rework-room-btn" data-room="'+room+'" data-issue="'+issueId+'">START REWORK</button>':status==='CLEANING'&&!isManager?'<button type="button" class="ready-room-btn" data-room="'+room+'">READY FOR INSPECTION</button>':'<button type="button" class="start-room-btn" data-room="'+room+'" '+(status==='NOT_STARTED'&&!isManager?'':'disabled')+'>'+action+'</button>';return '<article class="hk-room-card"><div class="hk-room-top"><span class="hk-room-number">ROOM '+room+'</span><span class="hk-room-pill">'+label+'</span></div><div class="hk-room-meta">Choice assignment • '+a.housekeeper+(status==='CLEANING'?'<br>Started '+started+'<br><strong class="elapsed-timer" data-start="'+started+'">Elapsed --:--</strong>':'')+'</div>'+reworkHtml+button+'</article>'
+      const started=s?.started_at||'';const reworkHtml=rework.length?'<div class="hk-rework-list">'+rework.map(i=>'<div class="hk-rework-item"><strong>'+i.deficiency_label+'</strong>'+(i.note?'<span>'+i.note+'</span>':'')+'<button type="button" class="view-rework-photo" data-photo="'+i.photo_ref+'">View inspector photo</button></div>').join('')+'</div>':'';const issueId=(activeRework||rework[0])?.issue_id||'';const button=status==='REWORK_IN_PROGRESS'&&!isManager?'<button type="button" class="complete-rework-btn" data-room="'+room+'" data-issue="'+issueId+'">REWORK COMPLETE</button>':status==='REWORK_REQUIRED'&&!isManager?'<button type="button" class="rework-room-btn" data-room="'+room+'" data-issue="'+issueId+'">START REWORK</button>':status==='CLEANING'&&!isManager?'<button type="button" class="ready-room-btn" data-room="'+room+'">READY FOR INSPECTION</button>':'<button type="button" class="start-room-btn" data-room="'+room+'" '+(status==='NOT_STARTED'&&!isManager?'':'disabled')+'>'+action+'</button>';return '<article class="hk-room-card"><div class="hk-room-top"><span class="hk-room-number">ROOM '+room+'</span><span class="hk-room-pill">'+label+'</span></div><div class="hk-room-meta">Choice assignment • '+a.housekeeper+(status==='CLEANING'?'<br>Started '+started+'<br><strong class="elapsed-timer" data-start="'+started+'">Elapsed --:--</strong>':'')+'</div>'+reworkHtml+button+'</article>'
     }).join('');
   }catch(err){hkBoardStatus.className='hk-board-status error';hkBoardStatus.textContent='Could not load housekeeping board: '+err.message}
 }
@@ -438,13 +438,23 @@ document.querySelector('.inspection-question-list').addEventListener('click',asy
   }catch(err){q.querySelectorAll('[data-resolution]').forEach(x=>x.disabled=false);b.textContent=old;alert('Could not save resolution: '+err.message)}
 });
 
-hkMyRooms.addEventListener('click',async e=>{
+document.addEventListener('click',async e=>{
   const start=e.target.closest('.rework-room-btn'),complete=e.target.closest('.complete-rework-btn');
   const b=start||complete;if(!b)return;
+  e.preventDefault();e.stopPropagation();
   b.disabled=true;const old=b.textContent;b.textContent=start?'STARTING…':'SENDING…';
   try{
     const result=await apiPost({action:start?'startRework':'completeRework',issueId:b.dataset.issue,housekeeper:currentUser.name});
     if(!result.ok)throw new Error(result.reason||result.error||'Rework update failed');
     await loadHousekeepingBoard();
   }catch(err){b.disabled=false;b.textContent=old;alert('Could not update rework: '+err.message)}
+});
+document.addEventListener('click',async e=>{
+  const b=e.target.closest('.view-rework-photo');if(!b)return;
+  e.preventDefault();
+  try{
+    const result=await apiPost({action:'getInspectionPhoto',photoRef:b.dataset.photo});
+    if(!result.ok)throw new Error(result.reason||result.error||'Photo unavailable');
+    const w=window.open();w.document.write('<meta name="viewport" content="width=device-width"><body style="margin:0;background:#111;display:grid;place-items:center;min-height:100vh"><img src="'+result.dataUrl+'" style="max-width:100%;max-height:100vh"></body>');
+  }catch(err){alert('Could not open inspector photo: '+err.message)}
 });
