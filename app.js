@@ -258,15 +258,32 @@ hkMyRooms.addEventListener('click',e=>{const b=e.target.closest('.start-room-btn
 document.getElementById('closeQrStart').addEventListener('click',()=>{qrStartPanel.hidden=true;pendingStartRoom=null});
 async function startQrCamera(){
   if(!pendingStartRoom)return;
-  qrStartMessage.textContent='Camera scanning is being prepared for Room '+pendingStartRoom+'…';
+  qrStartMessage.textContent='Opening camera for Room '+pendingStartRoom+'…';
+  let stream;
   try{
-    if(!('BarcodeDetector' in window)) throw new Error('This phone browser does not expose native QR scanning yet.');
-    const stream=await navigator.mediaDevices.getUserMedia({video:{facingMode:'environment'}});
-    const video=document.createElement('video');video.setAttribute('playsinline','');video.autoplay=true;video.srcObject=stream;
-    const box=document.querySelector('.qr-code-placeholder');box.innerHTML='';box.appendChild(video);video.style.width='100%';video.style.height='100%';video.style.objectFit='cover';video.style.borderRadius='12px';
-    const detector=new BarcodeDetector({formats:['qr_code']});
-    const scan=async()=>{if(qrStartPanel.hidden){stream.getTracks().forEach(t=>t.stop());return}try{const codes=await detector.detect(video);if(codes.length){stream.getTracks().forEach(t=>t.stop());const raw=codes[0].rawValue;if(raw!==QR_TEST_ID){qrStartMessage.textContent='Wrong room QR. Expected Room '+pendingStartRoom+'.';return}qrStartMessage.textContent='✓ Room '+pendingStartRoom+' verified. Cleaning session backend is the next connection.';document.getElementById('confirmQrStart').textContent='ROOM VERIFIED';return}}catch(e){}requestAnimationFrame(scan)};requestAnimationFrame(scan);
-  }catch(err){qrStartMessage.textContent=err.message+' Use the test QR after camera support is enabled.'}
+    stream=await navigator.mediaDevices.getUserMedia({video:{facingMode:{ideal:'environment'}},audio:false});
+    const box=document.querySelector('.qr-code-placeholder'),video=document.createElement('video'),canvas=document.createElement('canvas'),ctx=canvas.getContext('2d',{willReadFrequently:true});
+    video.setAttribute('playsinline','');video.muted=true;video.autoplay=true;video.srcObject=stream;box.innerHTML='';box.appendChild(video);video.style.width='100%';video.style.height='100%';video.style.objectFit='cover';video.style.borderRadius='12px';
+    await video.play();qrStartMessage.textContent='Point the camera at the Room '+pendingStartRoom+' QR code.';
+    const detector=('BarcodeDetector' in window)?new BarcodeDetector({formats:['qr_code']}):null;
+    const stop=()=>stream&&stream.getTracks().forEach(t=>t.stop());
+    const scan=async()=>{
+      if(qrStartPanel.hidden){stop();return}
+      let raw='';
+      try{
+        if(detector){const codes=await detector.detect(video);raw=codes[0]?.rawValue||''}
+        else if(window.jsQR&&video.readyState>=2){canvas.width=video.videoWidth;canvas.height=video.videoHeight;ctx.drawImage(video,0,0);const img=ctx.getImageData(0,0,canvas.width,canvas.height);raw=jsQR(img.data,img.width,img.height)?.data||''}
+      }catch(e){}
+      if(raw){
+        stop();
+        const expected='CO534-RM-'+pendingStartRoom;
+        if(raw!==expected){qrStartMessage.textContent='Wrong room QR. Expected Room '+pendingStartRoom+'.';box.innerHTML='▦';return}
+        qrStartMessage.textContent='✓ Room '+pendingStartRoom+' verified. Cleaning session backend is the next connection.';box.innerHTML='✓';document.getElementById('confirmQrStart').textContent='ROOM VERIFIED';document.getElementById('confirmQrStart').disabled=true;return
+      }
+      requestAnimationFrame(scan);
+    };
+    requestAnimationFrame(scan);
+  }catch(err){if(stream)stream.getTracks().forEach(t=>t.stop());qrStartMessage.textContent='Camera could not open. Check Safari/Chrome camera permission for this site and try again.'}
 }
 document.getElementById('confirmQrStart').addEventListener('click',startQrCamera);
 
