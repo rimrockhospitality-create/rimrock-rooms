@@ -193,6 +193,14 @@
       <div class="maintenance-summary"><div><small>P1 GUEST IMPACT</small><strong id="maintP1">0</strong></div><div><small>P2 ROOM BLOCKING</small><strong id="maintP2">0</strong></div><div><small>P3 ROUTINE</small><strong id="maintP3">0</strong></div></div>
       <div id="maintenanceStatus" class="hk-board-status">Loading maintenance…</div>
       <div id="maintenanceQueue" class="maintenance-queue"></div>
+      <section id="maintenanceResolvePanel" class="maintenance-resolve-panel" hidden>
+        <button id="closeMaintenanceResolve" class="qr-close" type="button">×</button>
+        <small>COMPLETE WORK ORDER</small><h2 id="maintenanceResolveTitle">Resolve Maintenance</h2>
+        <label>📷 Repair / completion photo <small>(optional)</small><input id="maintenanceResolvePhoto" type="file" accept="image/*" capture="environment"></label>
+        <label>Completion note <small>(optional)</small><textarea id="maintenanceResolveNote" rows="3" placeholder="What was repaired?"></textarea></label>
+        <button id="confirmMaintenanceResolve" type="button">✓ MARK RESOLVED</button>
+        <p id="maintenanceResolveMessage"></p>
+      </section>
       <footer><span>Rimrock Rooms &nbsp;|&nbsp; Everhome Suites Denver Airport (CO534)</span><span>Original concept and design by Ryan Kelly &nbsp;|&nbsp; September 2026</span></footer>
     </section>
     <section id="maintenanceLogPanel" class="maintenance-log-panel" hidden>
