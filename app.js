@@ -48,7 +48,16 @@ function applyPermissions(roles){
 }
 function show(view){
   if(currentUser&&!allowedViews(currentUser.roles).includes(view)) return;
-  home.hidden=view!=='Home'; housekeepingView.hidden=view!=='Housekeeping'; inspectionView.hidden=view!=='Inspections'; importView.hidden=true; placeholder.hidden=(view==='Home'||view==='Housekeeping'||view==='Inspections'); if(!placeholder.hidden) title.textContent=view; if(view==='Housekeeping') loadHousekeepingBoard(); if(view==='Inspections') loadInspectionQueue();
+  home.hidden=view!=='Home';
+  housekeepingView.hidden=view!=='Housekeeping';
+  inspectionView.hidden=view!=='Inspections';
+  maintenanceView.hidden=view!=='Maintenance';
+  importView.hidden=true;
+  placeholder.hidden=(view==='Home'||view==='Housekeeping'||view==='Inspections'||view==='Maintenance');
+  if(!placeholder.hidden) title.textContent=view;
+  if(view==='Housekeeping') loadHousekeepingBoard();
+  if(view==='Inspections') loadInspectionQueue();
+  if(view==='Maintenance') loadMaintenanceBoard();
   document.querySelectorAll('.nav').forEach(b=>b.classList.toggle('active',b.dataset.view===view)); drawer.hidden=true;
 }
 function buildDrawer(roles){
