@@ -560,3 +560,21 @@ document.getElementById('submitMaintenanceLog').addEventListener('click',async()
    setTimeout(()=>{maintenanceLogPanel.querySelectorAll('input[type=text],input[inputmode],textarea').forEach(x=>x.value='');maintenanceLogPanel.querySelectorAll('input[type=radio],input[type=checkbox]').forEach(x=>x.checked=false);document.getElementById('maintLocationType').value='';document.getElementById('maintArea').value='';document.getElementById('maintGeneralPhoto').value='';document.getElementById('maintRoomWrap').hidden=true;document.getElementById('maintAreaWrap').hidden=true;document.getElementById('maintSpecificWrap').hidden=true;btn.disabled=false;btn.textContent='SUBMIT MAINTENANCE'},1000);
  }catch(err){btn.disabled=false;btn.textContent='SUBMIT MAINTENANCE';msg.textContent='Could not submit: '+err.message}
 });
+
+function notificationAllowed(n){
+ const roles=currentUser?.roles||[];
+ if(n.audience==='MANAGER_INSPECTOR')return roles.includes('MANAGER')||roles.includes('INSPECTOR');
+ if(n.audience==='MANAGER_MAINTENANCE')return roles.includes('MANAGER')||roles.includes('MAINTENANCE');
+ return false;
+}
+async function loadNotifications(){
+ try{
+  const state=await apiPost({action:'getToday',businessDate:housekeepingBusinessDate()});
+  const items=(state.notifications||[]).filter(notificationAllowed);
+  const count=document.getElementById('notificationCount');count.textContent=items.length;count.hidden=!items.length;
+  document.getElementById('notificationList').innerHTML=items.length?items.slice().reverse().map(n=>'<div class="notification-item"><strong>'+n.message+'</strong><small>'+n.created_at+'</small></div>').join(''):'<p>No new notifications.</p>';
+ }catch(e){console.error('Notification load failed',e)}
+}
+document.getElementById('notificationBell').addEventListener('click',async()=>{await loadNotifications();home.hidden=true;housekeepingView.hidden=true;inspectionView.hidden=true;maintenanceView.hidden=true;placeholder.hidden=true;document.getElementById('notificationPanel').hidden=false});
+document.getElementById('closeNotifications').addEventListener('click',()=>{document.getElementById('notificationPanel').hidden=true;home.hidden=false});
+setTimeout(loadNotifications,1200);
