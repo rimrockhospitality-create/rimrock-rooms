@@ -319,7 +319,7 @@ async function loadInspectionQueue(){
     const ready=(state.cleaningSessions||[]).filter(s=>s.status==='READY_FOR_INSPECTION');
     count.textContent=ready.length;
     status.textContent=ready.length?ready.length+' room'+(ready.length===1?' is':'s are')+' waiting for inspection.':'No rooms are waiting for inspection.';
-    queue.innerHTML=ready.map(s=>'<article class="inspection-card"><div class="room">ROOM '+s.room+'</div><div class="who">Housekeeper: '+s.housekeeper+'<br>Cleaning complete • Ready '+(s.ready_at||'')+'</div><button type="button" class="start-inspection-btn" data-room="'+s.room+'">START INSPECTION</button></article>').join('');
+    queue.innerHTML=ready.map(s=>'<article class="inspection-card"><div class="room">ROOM '+s.room+'</div><div class="who">Housekeeper: '+s.housekeeper+'<br>Cleaning complete • Ready '+(s.ready_at||'')+'</div><button type="button" class="start-inspection-btn" data-room="'+s.room+'" data-housekeeper="'+s.housekeeper+'">START INSPECTION</button></article>').join('');
   }catch(err){status.className='hk-board-status error';status.textContent='Could not load inspection queue: '+err.message}
 }
 
@@ -365,7 +365,7 @@ document.getElementById('allInspectionPass').addEventListener('click',()=>{
 });
 
 let activeInspectionRoom='',activeInspectionHousekeeper='';
-inspectionQueueEl.addEventListener('click',e=>{const b=e.target.closest('.start-inspection-btn');if(!b)return;const card=b.closest('.inspection-card');activeInspectionRoom=b.dataset.room;activeInspectionHousekeeper=(card.querySelector('.who').textContent.match(/Housekeeper:\s*([^\n]+)/)||[])[1]?.trim()||''});
+inspectionQueueEl.addEventListener('click',e=>{const b=e.target.closest('.start-inspection-btn');if(!b)return;const card=b.closest('.inspection-card');activeInspectionRoom=b.dataset.room;activeInspectionHousekeeper=b.dataset.housekeeper||''});
 function fileToDataUrl(file){return new Promise((resolve,reject)=>{const r=new FileReader();r.onload=()=>resolve(r.result);r.onerror=reject;r.readAsDataURL(file)})}
 document.querySelector('.inspection-question-list').addEventListener('change',async e=>{
   const input=e.target.closest('.deficiency-evidence input[type=file]');if(!input||!input.files?.length)return;
