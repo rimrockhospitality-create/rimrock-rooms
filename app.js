@@ -520,3 +520,8 @@ document.getElementById('maintenanceQueue').addEventListener('click',async e=>{
  const old=b.textContent;b.disabled=true;b.textContent='RESOLVING…';
  try{const r=await apiPost({action:'resolveMaintenanceIssue',maintenanceId:b.dataset.id,resolvedBy:currentUser.name});if(!r.ok)throw new Error(r.reason||r.error||'Resolve failed');await loadMaintenanceBoard()}catch(err){b.disabled=false;b.textContent=old;alert('Could not resolve maintenance: '+err.message)}
 });
+
+const maintenanceLogPanel=document.getElementById('maintenanceLogPanel');
+document.getElementById('logMaintenanceQuick').addEventListener('click',()=>{home.hidden=true;maintenanceLogPanel.hidden=false});
+document.getElementById('closeMaintenanceLog').addEventListener('click',()=>{maintenanceLogPanel.hidden=true;home.hidden=false});
+document.getElementById('maintLocationType').addEventListener('change',e=>{const room=e.target.value==='GUEST_ROOM',area=e.target.value==='PUBLIC_AREA';document.getElementById('maintRoomWrap').hidden=!room;document.getElementById('maintAreaWrap').hidden=!area;document.getElementById('maintSpecificWrap').hidden=!area});
