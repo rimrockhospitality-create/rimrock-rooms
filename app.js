@@ -17,7 +17,7 @@ const ROLE_VIEWS={
 };
 const ROLE_LABELS={HOUSEKEEPER:'Housekeeper',INSPECTOR:'Inspector',MAINTENANCE:'Maintenance','FRONT DESK':'Front Desk',MANAGER:'Manager'};
 let currentUser=null;
-const home=document.getElementById('homeView'),housekeepingView=document.getElementById('housekeepingView'),inspectionView=document.getElementById('inspectionView'),importView=document.getElementById('importView'),placeholder=document.getElementById('placeholder'),title=document.getElementById('placeholderTitle'),drawer=document.getElementById('drawer'),drawerLinks=document.getElementById('drawerLinks');
+const home=document.getElementById('homeView'),housekeepingView=document.getElementById('housekeepingView'),inspectionView=document.getElementById('inspectionView'),maintenanceView=document.getElementById('maintenanceView'),importView=document.getElementById('importView'),placeholder=document.getElementById('placeholder'),title=document.getElementById('placeholderTitle'),drawer=document.getElementById('drawer'),drawerLinks=document.getElementById('drawerLinks');
 document.getElementById('today').textContent=new Intl.DateTimeFormat('en-US',{weekday:'long',month:'long',day:'numeric',year:'numeric'}).format(new Date());
 
 async function loadSession(){
@@ -491,4 +491,23 @@ document.querySelector('.pass-room-btn').addEventListener('click',async function
     }
     inspectionDetail.hidden=true;inspectionQueueEl.hidden=false;document.getElementById('inspectionStatus').hidden=false;await loadInspectionQueue();
   }catch(err){alert(err.message);b.disabled=false;b.textContent=old}
+});
+
+async function loadMaintenanceBoard(){
+  const status=document.getElementById('maintenanceStatus'),queue=document.getElementById('maintenanceQueue');
+  status.textContent='Loading maintenance…';queue.innerHTML='';
+  try{
+    const state=await apiPost({action:'getToday',businessDate:housekeepingBusinessDate()});
+    const items=state.maintenanceIssues||[];
+    const p2=items.filter(x=>x.status==='OPEN'&&x.priority==='P2_ROOM_BLOCKING'),p3=items.filter(x=>x.status==='OPEN'&&x.priority==='P3_ROUTINE');
+    document.getElementById('maintP2').textContent=p2.length;document.getElementById('maintP3').textContent=p3.length;
+    const ordered=[...p2,...p3];status.textContent=ordered.length?ordered.length+' open maintenance item'+(ordered.length===1?'':'s')+'.':'No open maintenance items.';
+    queue.innerHTML=ordered.map(x=>'<article class="maint-card '+(x.priority==='P2_ROOM_BLOCKING'?'p2':'p3')+'"><div class="maint-top"><div class="maint-room">ROOM '+x.room+'</div><div class="maint-priority">'+(x.priority==='P2_ROOM_BLOCKING'?'⛔ P2 — ROOM BLOCKING':'🔧 P3 — ROUTINE')+'</div></div><p>'+x.description+'</p><div class="maint-meta">Reported by '+x.reported_by+' • '+x.reported_at+'</div><div class="maint-actions"><button class="maint-photo" data-photo="'+x.photo_ref+'">VIEW PHOTO</button><button class="maint-resolve" data-id="'+x.maintenance_id+'">✓ MARK RESOLVED</button></div></article>').join('');
+  }catch(err){status.className='hk-board-status error';status.textContent='Could not load maintenance: '+err.message}
+}
+document.getElementById('maintenanceQueue').addEventListener('click',async e=>{
+ const p=e.target.closest('.maint-photo');if(p){window.open('https://drive.google.com/open?id='+p.dataset.photo,'_blank');return}
+ const b=e.target.closest('.maint-resolve');if(!b)return;
+ const old=b.textContent;b.disabled=true;b.textContent='RESOLVING…';
+ try{const r=await apiPost({action:'resolveMaintenanceIssue',maintenanceId:b.dataset.id,resolvedBy:currentUser.name});if(!r.ok)throw new Error(r.reason||r.error||'Resolve failed');await loadMaintenanceBoard()}catch(err){b.disabled=false;b.textContent=old;alert('Could not resolve maintenance: '+err.message)}
 });
