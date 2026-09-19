@@ -422,3 +422,18 @@ document.querySelector('.inspection-question-list').addEventListener('click',e=>
   b.parentElement.querySelectorAll('button').forEach(x=>x.classList.toggle('selected',x===b));
   const input=q.querySelector('.deficiency-evidence input[type=file]');if(input)input.dataset.resolution=b.dataset.resolution;
 });
+
+document.querySelector('.inspection-question-list').addEventListener('click',async e=>{
+  const b=e.target.closest('[data-resolution]');if(!b)return;
+  const q=b.closest('.inspect-q'),issueId=q.dataset.issueId;
+  if(!issueId){alert('Save the deficiency photo first.');return}
+  const resolution=b.dataset.resolution,old=b.textContent;
+  q.querySelectorAll('[data-resolution]').forEach(x=>x.disabled=true);b.textContent='SAVING…';
+  try{
+    const result=await apiPost({action:'resolveInspectionIssue',issueId:issueId,inspector:currentUser.name,resolution:resolution});
+    if(!result.ok)throw new Error(result.reason||result.error||'Resolution save failed');
+    q.dataset.resolution=result.resolution;
+    q.querySelectorAll('[data-resolution]').forEach(x=>{x.classList.toggle('selected',x===b);x.disabled=false});
+    b.textContent=result.resolution==='FIXED_BY_INSPECTOR'?'✓ FIXED BY ME':'↩ REWORK REQUIRED';
+  }catch(err){q.querySelectorAll('[data-resolution]').forEach(x=>x.disabled=false);b.textContent=old;alert('Could not save resolution: '+err.message)}
+});
