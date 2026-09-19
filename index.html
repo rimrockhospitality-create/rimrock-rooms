@@ -19,7 +19,7 @@
   <header class="topbar">
     <div class="brand"><div class="mark">⌁</div><div><strong>RIMROCK ROOMS</strong><small>PEOPLE • ROOMS • STANDARDS • RESULTS</small></div></div>
     <div class="property"><strong>Everhome Suites Denver Airport</strong><span>CO534 &nbsp;|&nbsp; 114 Rooms</span></div>
-    <button class="profile" aria-label="Open profile"><span>Ryan Kelly<small>Manager / Inspector</small></span><b>RK</b></button>
+    <button id="notificationBell" class="notification-bell" type="button" aria-label="Notifications">🔔<span id="notificationCount" hidden>0</span></button><button class="profile" aria-label="Open profile"><span>Ryan Kelly<small>Manager / Inspector</small></span><b>RK</b></button>
   </header>
 
   <aside class="sidebar" aria-label="Primary navigation">
@@ -219,6 +219,7 @@
       <button id="submitMaintenanceLog" type="button">SUBMIT MAINTENANCE</button>
       <p id="maintenanceLogMessage"></p>
     </section>
+    <section id="notificationPanel" class="notification-panel" hidden><button id="closeNotifications" class="qr-close" type="button">×</button><small>RIMROCK ROOMS</small><h2>Notifications</h2><div id="notificationList"></div></section>
     <section id="placeholder" class="placeholder" hidden>
       <button id="backHome">← Home</button>
       <div><span id="placeholderIcon">◆</span><h2 id="placeholderTitle"></h2><p>Section 1 shell is ready. Operational functionality will be added in its approved build section.</p></div>
