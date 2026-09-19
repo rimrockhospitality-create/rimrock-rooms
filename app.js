@@ -231,6 +231,8 @@ async function loadHousekeepingBoard(){
     const date=housekeepingBusinessDate(),state=await apiPost({action:'getToday',businessDate:date});
     if(!state.ok)throw new Error(state.error||'Could not load board');
     const assignments=state.assignments||[],sessions=state.cleaningSessions||[],inspectionIssues=state.inspectionIssues||[];
+    if(!('inspectionIssues' in state)){throw new Error('Rework data is not being returned by the live API. Confirm the newest Apps Script deployment is active.')}
+    console.log('Rimrock rework payload',inspectionIssues);
     const sessionByRoom=new Map(sessions.map(s=>[String(s.room),s]));
     const reworkByRoom=new Map();
     inspectionIssues.filter(i=>i.status==='REWORK_REQUIRED'&&(isManager||i.housekeeper===currentUser.name)).forEach(i=>{const k=String(i.room);if(!reworkByRoom.has(k))reworkByRoom.set(k,[]);reworkByRoom.get(k).push(i)});
