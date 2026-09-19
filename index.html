@@ -29,7 +29,7 @@
       <button class="nav" data-view="Inspections">☑ <span>Inspections</span></button>
       <button class="nav" data-view="Maintenance">🔧 <span>Maintenance</span></button>
       <button class="nav" data-view="Preventive Maintenance">⚙ <span>PM</span></button>
-      <button class="nav" data-view="Reports">▥ <span>Reports</span></button>
+      <button class="nav" data-view="Checklists">✓ <span>Checklists</span></button><button class="nav" data-view="Reports">▥ <span>Reports</span></button>
     </nav>
     <nav class="admin">
       <button class="nav" data-view="Property Settings">▦ <span>Property</span></button>
@@ -187,6 +187,43 @@
         <p class="inspection-build-note">Passing housekeeping does not override a blocking maintenance hold.</p>
       </div>
       <footer class="import-footer"><span>Rimrock Rooms &nbsp;|&nbsp; Everhome Suites Denver Airport (CO534)</span><span>Original concept and design by Ryan Kelly &nbsp;|&nbsp; September 2026</span></footer>
+    </section>
+    <section id="checklistsView" class="checklists-view" hidden>
+      <div class="checklist-hero">
+        <div><small>DAILY OPERATIONS</small><h1>Shift Command Center</h1><p>Checklists, handoffs and follow-up — one operating picture.</p></div>
+        <div class="checklist-date"><span>TODAY</span><strong id="checklistDate"></strong></div>
+      </div>
+      <div class="checklist-kpis">
+        <article><span>☀️</span><div><small>AM SHIFT</small><strong>0%</strong><em>Not started</em></div></article>
+        <article><span>🌆</span><div><small>PM SHIFT</small><strong>0%</strong><em>Not started</em></div></article>
+        <article><span>🌙</span><div><small>AUDIT</small><strong>0%</strong><em>Not started</em></div></article>
+        <article><span>🔧</span><div><small>MAINTENANCE</small><strong>0%</strong><em>Not started</em></div></article>
+      </div>
+      <div class="checklist-layout">
+        <div class="checklist-main">
+          <div class="section-title"><div><small>FRONT DESK</small><h2>Shift Checklists</h2></div><span class="live-pill">V1 • CO534</span></div>
+          <div class="shift-grid">
+            <button class="shift-card" data-shift="AM"><span class="shift-icon">☀️</span><div><small>7 AM — 3 PM</small><h3>AM Shift</h3><p>Overnight follow-up, billing, arrivals, housekeeping setup and daytime operations.</p></div><b>21 TASKS →</b></button>
+            <button class="shift-card" data-shift="PM"><span class="shift-icon">🌆</span><div><small>3 PM — 11 PM</small><h3>PM Shift</h3><p>Arrivals, room readiness, 90% compset outreach, 8 PM calls and Audit handoff.</p></div><b>21 TASKS →</b></button>
+            <button class="shift-card" data-shift="AUDIT"><span class="shift-icon">🌙</span><div><small>11 PM — 7 AM</small><h3>Night Audit</h3><p>Audit controls, printed backup reports, EOD and next-day handoff.</p></div><b>21 TASKS →</b></button>
+          </div>
+          <div class="section-title maint-title"><div><small>ENGINEERING</small><h2>Maintenance Daily</h2></div></div>
+          <button class="maintenance-check-card" data-shift="MAINTENANCE"><div><span>🔧</span><div><h3>Brad's Daily Operating Checklist</h3><p>PM rooms • Strip rooms • Interior/exterior walks • Queue • Laundry support • Shop closeout</p></div></div><b>12 TASKS →</b></button>
+        </div>
+        <aside class="handoff-rail">
+          <div class="rail-head"><small>SHIFT HANDOFF</small><h3>Open Follow-Ups</h3></div>
+          <div class="empty-followup"><span>↻</span><strong>No carryovers yet</strong><p>Unresolved follow-ups will automatically appear here for the next shift.</p></div>
+          <button id="addShiftNote" type="button">＋ ADD SHIFT NOTE</button>
+          <div class="note-key"><span>ℹ️ Informational</span><span>⚠️ Issue</span><span>🔄 Follow-Up</span></div>
+        </aside>
+      </div>
+      <div id="checklistDetail" class="checklist-detail" hidden>
+        <button id="backToChecklists" type="button">← ALL CHECKLISTS</button>
+        <div class="detail-head"><div><small id="detailEyebrow">FRONT DESK • AM</small><h2 id="detailTitle">AM Shift</h2><p id="detailSubtitle"></p></div><div class="progress-ring"><strong id="detailPercent">0%</strong><span>COMPLETE</span></div></div>
+        <div id="checklistTasks" class="checklist-tasks"></div>
+        <div class="detail-actions"><button id="addChecklistNote" type="button">＋ SHIFT NOTE</button><button id="completeShift" type="button">COMPLETE SHIFT</button></div>
+      </div>
+      <section id="shiftNotePanel" class="shift-note-panel" hidden><button id="closeShiftNote" class="qr-close" type="button">×</button><small>SHIFT COMMUNICATION</small><h2>Add Shift Note</h2><div class="note-types"><button type="button" data-note-type="INFO">ℹ️ INFORMATIONAL</button><button type="button" data-note-type="ISSUE">⚠️ ISSUE</button><button type="button" data-note-type="FOLLOWUP">🔄 FOLLOW-UP NEEDED</button></div><label>Issue / Information<textarea id="shiftNoteIssue" rows="3"></textarea></label><label>Solution / Action Taken<textarea id="shiftNoteSolution" rows="2"></textarea></label><label>Follow-Up<textarea id="shiftNoteFollowup" rows="2"></textarea></label><button id="saveShiftNote" type="button">SAVE SHIFT NOTE</button><p id="shiftNoteMessage"></p></section>
     </section>
     <section id="maintenanceView" class="maintenance-view" hidden>
       <div class="maintenance-head"><div><small>SECTION 5 • MAINTENANCE</small><h1>Maintenance</h1><p>Guest-impacting and room-blocking work first.</p></div></div>
