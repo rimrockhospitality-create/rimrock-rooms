@@ -372,6 +372,7 @@ function fileToDataUrl(file){return new Promise((resolve,reject)=>{const r=new F
 document.querySelector('.inspection-question-list').addEventListener('change',async e=>{
   const input=e.target.closest('.deficiency-evidence input[type=file]');if(!input||!input.files?.length)return;
   const q=input.closest('.inspect-q');if(q.dataset.answer!=='NO')return;
+  if(q.dataset.issueId){alert('A deficiency photo is already saved for this item. Use the existing issue or change the answer back to YES before creating a new one.');input.value='';return;}
   const note=q.querySelector('.deficiency-evidence textarea')?.value||'';
   const file=input.files[0],dataUrl=await fileToDataUrl(file);
   input.disabled=true;
