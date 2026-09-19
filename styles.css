@@ -119,3 +119,5 @@
 
 .maintenance-log-panel [hidden]{display:none!important}
 .maint-card.p1{border-left:6px solid #b42318}.maint-card.urgent{background:#fff8f6}.maint-card.p1 .maint-priority{color:#b42318}@media(max-width:760px){.maintenance-summary{grid-template-columns:1fr 1fr 1fr;gap:7px}.maintenance-summary>div{padding:11px}.maintenance-summary small{font-size:11px}.maintenance-summary strong{font-size:25px}}
+
+.maintenance-resolve-panel{position:relative;margin:18px 0;padding:20px;background:#fff;border:1px solid var(--line);border-radius:11px}.maintenance-resolve-panel>small{color:var(--blue);font-weight:900}.maintenance-resolve-panel h2{margin:5px 0 15px}.maintenance-resolve-panel label{display:block;font-weight:800;margin:12px 0}.maintenance-resolve-panel input,.maintenance-resolve-panel textarea{box-sizing:border-box;width:100%;margin-top:6px;border:1px solid var(--line);border-radius:8px;padding:10px;font-size:16px}.maintenance-resolve-panel>button:not(.qr-close){width:100%;border:0;border-radius:8px;padding:12px;background:#e5f6eb;color:#116b38;font-weight:900}
