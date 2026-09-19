@@ -278,7 +278,15 @@ async function startQrCamera(){
         stop();
         const expected='CO534-RM-'+pendingStartRoom;
         if(raw!==expected){qrStartMessage.textContent='Wrong room QR. Expected Room '+pendingStartRoom+'.';box.innerHTML='▦';return}
-        qrStartMessage.textContent='✓ Room '+pendingStartRoom+' verified. Cleaning session backend is the next connection.';box.innerHTML='✓';document.getElementById('confirmQrStart').textContent='ROOM VERIFIED';document.getElementById('confirmQrStart').disabled=true;return
+        qrStartMessage.textContent='✓ Room '+pendingStartRoom+' verified. Starting cleaning session…';box.innerHTML='✓';document.getElementById('confirmQrStart').textContent='STARTING…';document.getElementById('confirmQrStart').disabled=true;
+        try{
+          const startResult=await apiPost({action:'startRoom',propertyId:'CO534',businessDate:housekeepingBusinessDate(),room:pendingStartRoom,housekeeper:currentUser.name,qrId:raw});
+          if(!startResult.ok)throw new Error(startResult.reason||startResult.error||'Start Room blocked');
+          qrStartMessage.textContent='✓ Room '+pendingStartRoom+' started. Status: CLEANING';
+          document.getElementById('confirmQrStart').textContent='ROOM STARTED';
+          setTimeout(async()=>{qrStartPanel.hidden=true;pendingStartRoom=null;document.getElementById('confirmQrStart').disabled=false;document.getElementById('confirmQrStart').textContent='OPEN CAMERA & SCAN QR';box.innerHTML='▦';await loadHousekeepingBoard()},900);
+        }catch(err){qrStartMessage.textContent='Could not start room: '+err.message;document.getElementById('confirmQrStart').textContent='TRY AGAIN';document.getElementById('confirmQrStart').disabled=false}
+        return
       }
       requestAnimationFrame(scan);
     };
