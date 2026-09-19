@@ -403,3 +403,17 @@ document.getElementById('saveInspectionCapture').addEventListener('click',async(
     btn.textContent='SAVED';setTimeout(()=>{document.getElementById('inspectionCapture').hidden=true;btn.textContent='SAVE';btn.disabled=false},900);
   }catch(err){btn.disabled=false;btn.textContent='SAVE';document.getElementById('captureRoutingNote').textContent='Could not save: '+err.message}
 });
+
+document.getElementById('saveInspectionCapture').addEventListener('click',async()=>{
+  if(inspectionCaptureType!=='ROOM_HIGHLIGHT')return;
+  const file=document.getElementById('inspectionPhoto').files[0],btn=document.getElementById('saveInspectionCapture');
+  if(!file)return;
+  btn.disabled=true;btn.textContent='SAVING…';
+  try{
+    const dataUrl=await fileToDataUrl(file);
+    const result=await apiPost({action:'saveRoomPhoto',propertyId:'CO534',businessDate:housekeepingBusinessDate(),room:activeInspectionRoom,housekeeper:activeInspectionHousekeeper,capturedBy:currentUser.name,photoBase64:dataUrl,photoMimeType:file.type||'image/jpeg'},30000);
+    if(!result.ok)throw new Error(result.reason||result.error||'Room photo save failed');
+    document.getElementById('captureRoutingNote').textContent='✓ Room highlight saved to Inspection Reports.';
+    btn.textContent='SAVED';setTimeout(()=>{document.getElementById('inspectionCapture').hidden=true;btn.textContent='SAVE';btn.disabled=false},900);
+  }catch(err){btn.disabled=false;btn.textContent='SAVE';document.getElementById('captureRoutingNote').textContent='Could not save: '+err.message}
+});
