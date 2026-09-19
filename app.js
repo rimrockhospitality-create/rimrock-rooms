@@ -572,9 +572,17 @@ async function loadNotifications(){
   const state=await apiPost({action:'getToday',businessDate:housekeepingBusinessDate()});
   const items=(state.notifications||[]).filter(notificationAllowed);
   const count=document.getElementById('notificationCount');count.textContent=items.length;count.hidden=!items.length;
-  document.getElementById('notificationList').innerHTML=items.length?items.slice().reverse().map(n=>'<div class="notification-item"><strong>'+n.message+'</strong><small>'+n.created_at+'</small></div>').join(''):'<p>No new notifications.</p>';
+  document.getElementById('notificationList').innerHTML=items.length?items.slice().reverse().map(n=>'<button type="button" class="notification-item notification-link" data-event="'+n.event_type+'"><strong>'+n.message+'</strong><small>'+n.created_at+'</small></button>').join(''):'<p>No new notifications.</p>';
  }catch(e){console.error('Notification load failed',e)}
 }
 document.getElementById('notificationBell').addEventListener('click',async()=>{await loadNotifications();home.hidden=true;housekeepingView.hidden=true;inspectionView.hidden=true;maintenanceView.hidden=true;placeholder.hidden=true;document.getElementById('notificationPanel').hidden=false});
 document.getElementById('closeNotifications').addEventListener('click',()=>{document.getElementById('notificationPanel').hidden=true;home.hidden=false});
 setTimeout(loadNotifications,1200);
+
+document.getElementById('notificationList').addEventListener('click',e=>{
+ const b=e.target.closest('.notification-link');if(!b)return;
+ document.getElementById('notificationPanel').hidden=true;
+ if(b.dataset.event==='ROOM_READY_FOR_INSPECTION'){show('Inspections');return}
+ if(b.dataset.event==='PRIORITY_MAINTENANCE'){show('Maintenance');return}
+ home.hidden=false;
+});
