@@ -5,6 +5,7 @@
  * Everhome Suites Denver Airport (CO534)
  * September 2026
  */
+const API_URL='https://script.google.com/macros/s/AKfycby4lxHCqEsiURHZzUv93rDs5rv1Vkdv_yuyanbLVg3aU6PrBf4yhlpZogiGct0zSRmB7w/exec';
 const ROLE_VIEWS={
   HOUSEKEEPER:['Home','Housekeeping'],
   INSPECTOR:['Home','Inspections'],
@@ -154,9 +155,17 @@ validateImport.addEventListener('click',async()=>{
   }catch(err){validationPanel.hidden=false;validationSummary.className='validation-summary fail';validationSummary.textContent='Validation could not run: '+err.message;importDaily.disabled=true}
   finally{validateImport.disabled=false;validateImport.textContent='Continue to Validate →'}
 });
+async function apiPost(payload){
+  const r=await fetch(API_URL,{method:'POST',headers:{'Content-Type':'text/plain;charset=utf-8'},body:JSON.stringify(payload),redirect:'follow'});
+  if(!r.ok) throw new Error('API request failed ('+r.status+')');
+  return await r.json();
+}
 async function loadTodayState(){
-  try{const r=await fetch('data/today.json',{cache:'no-store'}); if(!r.ok)return {assignments:[],rooms:{},cleaningSessions:[]}; return await r.json()}
-  catch(e){return {assignments:[],rooms:{},cleaningSessions:[]}}
+  if(!lastParsed?.date) return {assignments:[],rooms:{},cleaningSessions:[]};
+  try{
+    const data=await apiPost({action:'getToday',businessDate:lastParsed.date});
+    return data.ok?data:{assignments:[],rooms:{},cleaningSessions:[]};
+  }catch(e){throw new Error('Could not read today’s shared Rimrock Rooms state: '+e.message)}
 }
 async function compareWithToday(parsed){
   const state=await loadTodayState(),current=new Map((state.assignments||[]).map(a=>[a.room,a.housekeeper])),incoming=new Map();
@@ -176,4 +185,26 @@ async function compareWithToday(parsed){
   compareDetails.innerHTML=details.length?details.map(d=>'<article class="'+d.kind+'">'+d.text+'</article>').join(''):'<p>No assignment differences from today’s Rimrock Rooms state.</p>';
   if(conflicts){validationState.textContent='REVIEW REQUIRED';validationState.className='review';validationSummary.className='validation-summary fail';validationSummary.textContent='Choice comparison found '+conflicts+' operational conflict'+(conflicts===1?'':'s')+'. Sync is blocked until reviewed.';importDaily.disabled=true}else{importDaily.disabled=false}
 }
-importDaily.addEventListener('click',()=>{alert('Choice Sync comparison is ready. The actual Step 4 write is still intentionally disabled until we test the comparison with a real changed board.')});
+importDaily.addEventListener('click',async()=>{
+  if(!lastParsed||importDaily.disabled)return;
+  const original=importDaily.textContent; importDaily.disabled=true; importDaily.textContent='Syncing…';
+  try{
+    const state=await loadTodayState(),current=new Map((state.assignments||[]).map(a=>[String(a.room),a.housekeeper]));
+    let unchanged=0,newCount=0,changed=0;
+    const incoming=new Map(); lastParsed.assignments.forEach(a=>a.rooms.forEach(room=>incoming.set(String(room),a.name)));
+    incoming.forEach((name,room)=>{if(!current.has(room))newCount++;else if(current.get(room)===name)unchanged++;else changed++});
+    current.forEach((name,room)=>{if(!incoming.has(room))changed++});
+    const result=await apiPost({
+      action:'syncChoice',propertyId:lastParsed.property,businessDate:lastParsed.date,
+      rooms:lastParsed.rooms,assignments:lastParsed.assignments,
+      comparison:{unchanged,new:newCount,changed,conflicts:0},
+      syncedBy:currentUser?.name||'Rimrock Rooms',sourceFilename:selectedPdf?.name||''
+    });
+    if(!result.ok){throw new Error(result.blocked?'Sync blocked by operational conflict.':(result.error||'Sync failed'))}
+    validationSummary.className='validation-summary pass';
+    validationSummary.textContent='✓ Choice Sync complete. '+result.rooms+' rooms and '+result.assignments+' active assignment'+(result.assignments===1?'':'s')+' recorded. Sync ID: '+result.syncId;
+    await compareWithToday(lastParsed);
+  }catch(err){
+    validationSummary.className='validation-summary fail';validationSummary.textContent='Sync failed: '+err.message;
+  }finally{importDaily.disabled=false;importDaily.textContent=original}
+});
