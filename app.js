@@ -155,10 +155,16 @@ validateImport.addEventListener('click',async()=>{
   }catch(err){validationPanel.hidden=false;validationSummary.className='validation-summary fail';validationSummary.textContent='Validation could not run: '+err.message;importDaily.disabled=true}
   finally{validateImport.disabled=false;validateImport.textContent='Continue to Validate →'}
 });
-async function apiPost(payload){
-  const r=await fetch(API_URL,{method:'POST',headers:{'Content-Type':'text/plain;charset=utf-8'},body:JSON.stringify(payload),redirect:'follow'});
-  if(!r.ok) throw new Error('API request failed ('+r.status+')');
-  return await r.json();
+async function apiPost(payload,timeoutMs=20000){
+  const controller=new AbortController(),timer=setTimeout(()=>controller.abort(),timeoutMs);
+  try{
+    const r=await fetch(API_URL,{method:'POST',headers:{'Content-Type':'text/plain;charset=utf-8'},body:JSON.stringify(payload),redirect:'follow',signal:controller.signal});
+    if(!r.ok) throw new Error('API request failed ('+r.status+')');
+    return await r.json();
+  }catch(err){
+    if(err.name==='AbortError') throw new Error('The shared database request timed out. The write may still have completed; refresh and Validate before retrying.');
+    throw err;
+  }finally{clearTimeout(timer)}
 }
 async function loadTodayState(){
   if(!lastParsed?.date) return {assignments:[],rooms:{},cleaningSessions:[]};
