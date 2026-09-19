@@ -150,8 +150,7 @@ validateImport.addEventListener('click',async()=>{
     validationState.textContent=passed?'VALIDATION PASSED':'REVIEW REQUIRED'; validationState.className=passed?'pass':'review';
     validationSummary.className='validation-summary '+(passed?'pass':'fail');
     validationSummary.textContent=passed?'✓ All safety checks passed. Ready to compare with today’s Rimrock Rooms activity.':'Review required. Sync remains disabled until every validation issue is resolved.';
-    if(passed){await compareWithToday(lastParsed)} else {comparePanel.hidden=true}
-    importDaily.disabled=!passed;
+    if(passed){await compareWithToday(lastParsed)} else {comparePanel.hidden=true; importDaily.disabled=true}
   }catch(err){validationPanel.hidden=false;validationSummary.className='validation-summary fail';validationSummary.textContent='Validation could not run: '+err.message;importDaily.disabled=true}
   finally{validateImport.disabled=false;validateImport.textContent='Continue to Validate →'}
 });
