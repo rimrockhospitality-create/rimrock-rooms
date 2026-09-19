@@ -89,7 +89,12 @@
               <div class="validation-head"><div><small>STEP 3</small><h2>Validate Import</h2></div><span id="validationState"></span></div>
               <div id="validationChecks" class="validation-checks"></div>
               <div id="validationSummary" class="validation-summary"></div>
-              <button id="importDaily" class="import-daily-btn" type="button" disabled>Import Daily Snapshot</button>
+              <div id="comparePanel" class="compare-panel" hidden>
+                <h3>Today's Choice Comparison</h3>
+                <div id="compareSummary" class="compare-summary"></div>
+                <div id="compareDetails" class="compare-details"></div>
+              </div>
+              <button id="importDaily" class="import-daily-btn" type="button" disabled>Sync with Choice</button>
             </div>
           </div>
         </div>
