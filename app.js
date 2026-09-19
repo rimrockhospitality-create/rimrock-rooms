@@ -320,9 +320,11 @@ async function loadInspectionQueue(){
   try{
     const state=await apiPost({action:'getToday',businessDate:housekeepingBusinessDate()});
     if(!state.ok)throw new Error(state.error||'Could not load inspections');
-    const ready=(state.cleaningSessions||[]).filter(s=>s.status==='READY_FOR_INSPECTION');
-    count.textContent=ready.length;
-    status.textContent=ready.length?ready.length+' room'+(ready.length===1?' is':'s are')+' waiting for inspection.':'No rooms are waiting for inspection.';
+    const rechecks=(state.inspectionIssues||[]).filter(i=>i.status==='REWORK_COMPLETE'),rq=document.getElementById('reinspectionQueue');
+    rq.innerHTML=rechecks.map(i=>'<article class="reinspection-card"><div class="recheck-title">ROOM '+i.room+' — REINSPECTION REQUIRED</div><div>Returned by <strong>'+i.housekeeper+'</strong></div><div class="recheck-item"><strong>'+i.deficiency_label+'</strong>'+(i.note?'<br>'+i.note:'')+'<br><button type="button" class="view-rework-photo" data-photo="'+i.photo_ref+'">View original inspector photo</button></div><div class="recheck-actions"><button type="button" class="recheck-pass" data-issue="'+i.issue_id+'">✓ REWORK PASSED</button><button type="button" class="recheck-fail" data-issue="'+i.issue_id+'">↩ STILL NEEDS WORK</button></div></article>').join('');
+    const ready=(state.cleaningSessions||[]).filter(s=>s.status==='READY_FOR_INSPECTION'&&!rechecks.some(i=>String(i.room)===String(s.room)));
+    count.textContent=ready.length+rechecks.length;
+    status.textContent=(ready.length+rechecks.length)?(ready.length+rechecks.length)+' room'+((ready.length+rechecks.length)===1?' is':'s are')+' waiting for inspection.':'No rooms are waiting for inspection.';
     queue.innerHTML=ready.map(s=>'<article class="inspection-card"><div class="room">ROOM '+s.room+'</div><div class="who">Housekeeper: '+s.housekeeper+'<br>Cleaning complete • Ready '+(s.ready_at||'')+'</div><button type="button" class="start-inspection-btn" data-room="'+s.room+'" data-housekeeper="'+s.housekeeper+'">START INSPECTION</button></article>').join('');
   }catch(err){status.className='hk-board-status error';status.textContent='Could not load inspection queue: '+err.message}
 }
@@ -457,4 +459,14 @@ document.addEventListener('click',async e=>{
     if(!result.ok)throw new Error(result.reason||result.error||'Photo unavailable');
     const w=window.open();w.document.write('<meta name="viewport" content="width=device-width"><body style="margin:0;background:#111;display:grid;place-items:center;min-height:100vh"><img src="'+result.dataUrl+'" style="max-width:100%;max-height:100vh"></body>');
   }catch(err){alert('Could not open inspector photo: '+err.message)}
+});
+
+document.addEventListener('click',async e=>{
+  const pass=e.target.closest('.recheck-pass'),fail=e.target.closest('.recheck-fail'),b=pass||fail;if(!b)return;
+  b.disabled=true;const old=b.textContent;b.textContent='SAVING…';
+  try{
+    const result=await apiPost({action:'resolveReinspection',issueId:b.dataset.issue,inspector:currentUser.name,passed:!!pass});
+    if(!result.ok)throw new Error(result.reason||result.error||'Reinspection update failed');
+    await loadInspectionQueue();
+  }catch(err){b.disabled=false;b.textContent=old;alert('Could not update reinspection: '+err.message)}
 });
