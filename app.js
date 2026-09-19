@@ -58,13 +58,13 @@ document.getElementById('backHome').addEventListener('click',()=>show('Home'));
 document.getElementById('moreBtn').addEventListener('click',()=>drawer.hidden=false);
 document.getElementById('closeDrawer').addEventListener('click',()=>drawer.hidden=true);
 loadSession().catch(err=>{home.innerHTML='<div class="placeholder"><div><h2>Unable to start Rimrock Rooms</h2><p>'+err.message+'</p></div></div>'});
-const hkPdf=document.getElementById('hkPdf'),dropzone=document.getElementById('dropzone'),fileStatus=document.getElementById('fileStatus'),previewPdf=document.getElementById('previewPdf'),previewPanel=document.getElementById('previewPanel'),previewSummary=document.getElementById('previewSummary'),assignmentPreview=document.getElementById('assignmentPreview'),previewMessage=document.getElementById('previewMessage'); let selectedPdf=null;
+const hkPdf=document.getElementById('hkPdf'),dropzone=document.getElementById('dropzone'),fileStatus=document.getElementById('fileStatus'),previewPdf=document.getElementById('previewPdf'),previewPanel=document.getElementById('previewPanel'),previewSummary=document.getElementById('previewSummary'),assignmentPreview=document.getElementById('assignmentPreview'),previewMessage=document.getElementById('previewMessage'),validateImport=document.getElementById('validateImport'),validationPanel=document.getElementById('validationPanel'),validationChecks=document.getElementById('validationChecks'),validationSummary=document.getElementById('validationSummary'),validationState=document.getElementById('validationState'),importDaily=document.getElementById('importDaily'); let selectedPdf=null,lastParsed=null;
 function acceptHousekeepingPdf(file){
   fileStatus.className='file-status';
   if(!file){fileStatus.textContent='';return}
   if(!(file.type==='application/pdf'||file.name.toLowerCase().endsWith('.pdf'))){fileStatus.textContent='Please choose a PDF file.';fileStatus.classList.add('error');return}
   if(file.size>10*1024*1024){fileStatus.textContent='That PDF is larger than the 10 MB Section 2 limit.';fileStatus.classList.add('error');return}
-  selectedPdf=file; previewPdf.disabled=false; previewPanel.hidden=true;
+  selectedPdf=file; lastParsed=null; previewPdf.disabled=false; previewPanel.hidden=true; validateImport.disabled=true; validationPanel.hidden=true; importDaily.disabled=true;
   fileStatus.textContent='✓ '+file.name+' selected — ready for Preview (Step 2).';
   fileStatus.classList.add('ok');
 }
@@ -105,8 +105,8 @@ previewPdf.addEventListener('click',async()=>{
     const pdfjs=await loadPdfJs(),bytes=new Uint8Array(await selectedPdf.arrayBuffer()),pdf=await pdfjs.getDocument({data:bytes}).promise;
     let text='';
     for(let p=1;p<=pdf.numPages;p++){const page=await pdf.getPage(p),content=await page.getTextContent();text+='\n'+content.items.map(i=>i.str).join(' ')}
-    const parsed=parseChoiceText(text);
-    previewPanel.hidden=false;
+    const parsed=parseChoiceText(text); lastParsed=parsed;
+    previewPanel.hidden=false; validateImport.disabled=false;
     previewSummary.innerHTML=[
       ['Business Date',parsed.date||'Not found'],['Property',parsed.property||'Not found'],['Unique Rooms',parsed.rooms.length],['Housekeepers',parsed.assignments.length]
     ].map(x=>'<div><small>'+x[0]+'</small><strong>'+x[1]+'</strong></div>').join('');
@@ -116,3 +116,41 @@ previewPdf.addEventListener('click',async()=>{
   }catch(err){previewPanel.hidden=false;previewMessage.className='preview-message error';previewMessage.textContent='Could not read this PDF: '+err.message}
   finally{previewPdf.disabled=false;previewPdf.textContent='Preview Report →'}
 });
+
+async function validateParsedImport(parsed){
+  const [roomsRes,usersRes,propertiesRes]=await Promise.all([fetch('data/rooms.json',{cache:'no-store'}),fetch('data/users.json',{cache:'no-store'}),fetch('data/properties.json',{cache:'no-store'})]);
+  const masterRooms=await roomsRes.json(),users=await usersRes.json(),properties=await propertiesRes.json();
+  const roomSet=new Set(masterRooms.filter(r=>r.propertyId==='CO534'&&r.active).map(r=>r.roomNumber));
+  const parsedNums=parsed.rooms.map(r=>r.room), unknownRooms=[...new Set(parsedNums.filter(r=>!roomSet.has(r)))];
+  const duplicateRows=parsedNums.filter((r,i,a)=>a.indexOf(r)!==i);
+  const assigned=parsed.assignments.flatMap(a=>a.rooms.map(room=>({room,name:a.name})));
+  const duplicateAssignments=[...new Set(assigned.filter((x,i,a)=>a.findIndex(y=>y.room===x.room)!==i).map(x=>x.room))];
+  // Choice-assigned names may precede user provisioning; validation flags them rather than silently matching.
+  const activeNames=new Set(users.filter(u=>u.active).map(u=>u.name.toLowerCase()));
+  const unknownEmployees=parsed.assignments.map(a=>a.name).filter(n=>!activeNames.has(n.toLowerCase()));
+  const propertyExists=properties.some(p=>p.active&&p.propertyId===parsed.property);
+  const dateValid=/^\d{1,2}\/\d{1,2}\/\d{4}$/.test(parsed.date);
+  return [
+    {label:'Property',ok:propertyExists,detail:propertyExists?parsed.property+' matched':'Unknown property: '+(parsed.property||'none')},
+    {label:'Business Date',ok:dateValid,detail:dateValid?parsed.date:'Missing or invalid date'},
+    {label:'Room Master',ok:unknownRooms.length===0,detail:unknownRooms.length?('Unknown rooms: '+unknownRooms.join(', ')):parsed.rooms.length+' extracted rooms matched'},
+    {label:'Duplicate Room Rows',ok:duplicateRows.length===0,detail:duplicateRows.length?('Duplicates: '+[...new Set(duplicateRows)].join(', ')):'No duplicate extracted rooms'},
+    {label:'Duplicate Assignments',ok:duplicateAssignments.length===0,detail:duplicateAssignments.length?('Assigned twice: '+duplicateAssignments.join(', ')):'No room assigned twice'},
+    {label:'Housekeepers',ok:unknownEmployees.length===0,detail:unknownEmployees.length?('Not yet in active users: '+unknownEmployees.join(', ')):parsed.assignments.length+' housekeeper'+(parsed.assignments.length===1?'':'s')+' matched'}
+  ];
+}
+validateImport.addEventListener('click',async()=>{
+  if(!lastParsed)return;
+  validateImport.disabled=true; validateImport.textContent='Validating…';
+  try{
+    const checks=await validateParsedImport(lastParsed),passed=checks.every(c=>c.ok);
+    validationPanel.hidden=false;
+    validationChecks.innerHTML=checks.map(c=>'<div class="validation-check '+(c.ok?'pass':'fail')+'"><strong>'+(c.ok?'✓ ':'⚠ ')+c.label+'</strong><small>'+c.detail+'</small></div>').join('');
+    validationState.textContent=passed?'VALIDATION PASSED':'REVIEW REQUIRED'; validationState.className=passed?'pass':'review';
+    validationSummary.className='validation-summary '+(passed?'pass':'fail');
+    validationSummary.textContent=passed?'✓ All safety checks passed. Ready for Step 4 Import.':'Review required. Import remains disabled until every validation issue is resolved.';
+    importDaily.disabled=!passed;
+  }catch(err){validationPanel.hidden=false;validationSummary.className='validation-summary fail';validationSummary.textContent='Validation could not run: '+err.message;importDaily.disabled=true}
+  finally{validateImport.disabled=false;validateImport.textContent='Continue to Validate →'}
+});
+importDaily.addEventListener('click',()=>{alert('Step 4 is intentionally not built yet. Validation works, but nothing will be imported.')});
