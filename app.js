@@ -248,7 +248,7 @@ async function loadHousekeepingBoard(){
       const room=String(a.room),s=sessionByRoom.get(room),status=s?.status||'NOT_STARTED';
       const label=status==='READY_FOR_INSPECTION'?'READY FOR INSPECTION':status==='CLEANING'?'CLEANING':'NOT STARTED';
       const action=status==='CLEANING'?'Room in progress':status==='READY_FOR_INSPECTION'?'Awaiting inspection':'START ROOM';
-      const started=s?.started_at||'';return '<article class="hk-room-card"><div class="hk-room-top"><span class="hk-room-number">ROOM '+room+'</span><span class="hk-room-pill">'+label+'</span></div><div class="hk-room-meta">Choice assignment • '+a.housekeeper+(status==='CLEANING'?'<br>Started '+started:'')+'</div><button type="button" class="start-room-btn" data-room="'+room+'" disabled>'+action+'</button></article>'
+      const started=s?.started_at||'';const button=status==='CLEANING'&&!isManager?'<button type="button" class="ready-room-btn" data-room="'+room+'">READY FOR INSPECTION</button>':'<button type="button" class="start-room-btn" data-room="'+room+'" '+(status==='NOT_STARTED'&&!isManager?'':'disabled')+'>'+action+'</button>';return '<article class="hk-room-card"><div class="hk-room-top"><span class="hk-room-number">ROOM '+room+'</span><span class="hk-room-pill">'+label+'</span></div><div class="hk-room-meta">Choice assignment • '+a.housekeeper+(status==='CLEANING'?'<br>Started '+started+'<br><strong class="elapsed-timer" data-start="'+started+'">Elapsed --:--</strong>':'')+'</div>'+button+'</article>'
     }).join('');
   }catch(err){hkBoardStatus.className='hk-board-status error';hkBoardStatus.textContent='Could not load housekeeping board: '+err.message}
 }
@@ -295,3 +295,7 @@ async function startQrCamera(){
 }
 document.getElementById('confirmQrStart').addEventListener('click',startQrCamera);
 
+
+function parseCleaningStart(v){if(!v)return null;const p=String(v).split(/[/ :]/).map(Number);if(p.length<5)return null;return new Date(p[2],p[0]-1,p[1],p[3],p[4],p[5]||0)}
+function refreshCleaningTimers(){document.querySelectorAll('.elapsed-timer').forEach(el=>{const d=parseCleaningStart(el.dataset.start);if(!d)return;const n=Math.max(0,Math.floor((Date.now()-d.getTime())/1000));const h=Math.floor(n/3600),m=Math.floor((n%3600)/60),s=n%60;el.textContent='Elapsed '+(h?String(h).padStart(2,'0')+':':'')+String(m).padStart(2,'0')+':'+String(s).padStart(2,'0')})}
+setInterval(refreshCleaningTimers,1000);
