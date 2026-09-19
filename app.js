@@ -416,20 +416,7 @@ document.getElementById('saveInspectionCapture').addEventListener('click',async(
   }catch(err){btn.disabled=false;btn.textContent='SAVE';document.getElementById('captureRoutingNote').textContent='Could not save: '+err.message}
 });
 
-document.querySelector('.inspection-question-list').addEventListener('click',async e=>{
-  const b=e.target.closest('[data-resolution]');if(!b)return;
-  const q=b.closest('.inspect-q'),issueId=q.dataset.issueId;
-  if(!issueId){alert('Save the deficiency photo first.');return}
-  const resolution=b.dataset.resolution,oldText=b.textContent;
-  b.disabled=true;b.textContent='SAVING…';
-  try{
-    const result=await apiPost({action:'resolveInspectionIssue',issueId:issueId,inspector:currentUser.name,resolution:resolution});
-    if(!result.ok)throw new Error(result.reason||result.error||'Resolution save failed');
-    q.dataset.resolution=resolution;
-    b.parentElement.querySelectorAll('button').forEach(x=>{x.classList.toggle('selected',x===b);x.disabled=true});
-    b.textContent=resolution==='FIXED_BY_INSPECTOR'?'✓ FIXED BY ME':'↩ REWORK SENT TO HK';
-  }catch(err){b.disabled=false;b.textContent=oldText;alert('Could not save resolution: '+err.message)}
-});
+
 
 document.querySelector('.inspection-question-list').addEventListener('click',async e=>{
   const b=e.target.closest('[data-resolution]');if(!b)return;
