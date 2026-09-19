@@ -85,12 +85,16 @@ function parseChoiceText(text){
   const roomRows=[...text.matchAll(/(?:^|\s)(\d{3})\s+(NK|NQQ|SNHK|SNK|NHQQ1?|NHK1)\s+(VAC|OCC)\s+(Ready|Dirty)/g)].map(m=>({room:m[1],type:m[2],status:m[3],condition:m[4]}));
   const uniqueRooms=[...new Map(roomRows.map(r=>[r.room,r])).values()];
   const assignments=[];
-  const names=[...text.matchAll(/(?:^|\n)\s*([A-Z][A-Za-z' -]+),\s*([A-Z][A-Za-z' -]+)\s+(?=Business\s*Date)/g)];
+  // Choice renders the report title immediately before a named assignment on some PDFs.
+  // Anchor the employee name to "Business Date" and strip report-title noise before normalizing Last, First.
+  const names=[...text.matchAll(/(?:Housekeeping\s+Room\s+Assignment\s+)?([A-Z][A-Za-z' -]{1,40}),\s*([A-Z][A-Za-z' -]{1,40})\s+Business\s*Date:/g)];
   for(const n of names){
     const start=n.index, next=names.find(x=>x.index>start);
     const block=text.slice(start,next?next.index:text.length);
     const assigned=[...block.matchAll(/(?:^|\s)(\d{3})\s+(?:NK|NQQ|SNHK|SNK|NHQQ1?|NHK1)\s+(?:VAC|OCC)\s+(?:Ready|Dirty)/g)].map(m=>m[1]);
-    assignments.push({name:n[2].trim()+' '+n[1].trim(),rooms:[...new Set(assigned)]});
+    const last=n[1].replace(/Housekeeping\s+Room\s+Assignment/gi,'').trim();
+    const first=n[2].trim();
+    assignments.push({name:first+' '+last,rooms:[...new Set(assigned)]});
   }
   return {property,date,rooms:uniqueRooms,assignments};
 }
