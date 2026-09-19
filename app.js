@@ -350,7 +350,7 @@ document.getElementById('maintenanceBlocking').addEventListener('click',e=>{cons
 function deficiencyEvidence(q){
   let d=q.querySelector('.deficiency-evidence');if(d)return d;
   d=document.createElement('div');d.className='deficiency-evidence';
-  d.innerHTML='<label>📸 Housekeeping issue photo<input type="file" accept="image/*" capture="environment"></label><label>Optional note<textarea rows="2" placeholder="Add detail if helpful"></textarea></label>';
+  d.innerHTML='<label>📸 Housekeeping issue photo<input type="file" accept="image/*" capture="environment"></label><label>Optional note<textarea rows="2" placeholder="Add detail if helpful"></textarea></label><div class="deficiency-resolution"><button type="button" data-resolution="FIXED_BY_INSPECTOR">✓ I FIXED IT</button><button type="button" data-resolution="REWORK_REQUIRED">↩ HK NEEDS TO FIX</button></div>';
   q.appendChild(d);return d;
 }
 document.querySelector('.inspection-question-list').addEventListener('click',e=>{
@@ -414,4 +414,11 @@ document.getElementById('saveInspectionCapture').addEventListener('click',async(
     btn.textContent='SAVED';
     setTimeout(()=>{resetInspectionCapture()},900);
   }catch(err){btn.disabled=false;btn.textContent='SAVE';document.getElementById('captureRoutingNote').textContent='Could not save: '+err.message}
+});
+
+document.querySelector('.inspection-question-list').addEventListener('click',e=>{
+  const b=e.target.closest('[data-resolution]');if(!b)return;
+  const q=b.closest('.inspect-q');q.dataset.resolution=b.dataset.resolution;
+  b.parentElement.querySelectorAll('button').forEach(x=>x.classList.toggle('selected',x===b));
+  const input=q.querySelector('.deficiency-evidence input[type=file]');if(input)input.dataset.resolution=b.dataset.resolution;
 });
