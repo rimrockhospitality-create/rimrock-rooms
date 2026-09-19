@@ -162,9 +162,19 @@
           <label><input type="checkbox"> Shades / windows clean</label>
           <label><input type="checkbox"> Supplies / kitchen setup</label>
         </div>
-        <div class="inspection-tools">
-          <button type="button" class="photo-room-btn">📸 TAKE ROOM PHOTO<small>Optional finished-room photo</small></button>
-          <button type="button" class="maintenance-inspection-btn">🔧 MAINTENANCE ISSUE<small>Log issue • blocking or non-blocking</small></button>
+        <div class="inspection-tools three">
+          <button type="button" class="hk-issue-btn">📸 HOUSEKEEPING ISSUE<small>Photo + deficiency • routes to HK reporting</small></button>
+          <button type="button" class="maintenance-inspection-btn">🔧 MAINTENANCE ISSUE<small>Photo + note • blocking or non-blocking</small></button>
+          <button type="button" class="photo-room-btn">✨ ROOM PHOTO<small>Pretty-room highlight • inspection reporting</small></button>
+        </div>
+        <div id="inspectionCapture" class="inspection-capture" hidden>
+          <button id="closeInspectionCapture" class="qr-close" type="button">×</button>
+          <small id="captureTypeLabel"></small><h3 id="captureTitle"></h3>
+          <label>Photo<input id="inspectionPhoto" type="file" accept="image/*" capture="environment"></label>
+          <label id="captureNoteWrap">Note<textarea id="inspectionNote" rows="3" placeholder="What did you find?"></textarea></label>
+          <div id="maintenanceBlocking" hidden><strong>Does this issue prevent us from selling the room?</strong><div><button type="button" data-blocking="true">YES — HOLD ROOM UNTIL FIXED</button><button type="button" data-blocking="false">NO — LOG FOR MAINTENANCE</button></div></div>
+          <button id="saveInspectionCapture" type="button" disabled>SAVE</button>
+          <p id="captureRoutingNote"></p>
         </div>
         <div class="inspection-actions">
           <button type="button" class="return-hk-btn" disabled>↩ RETURN TO HOUSEKEEPING</button>
