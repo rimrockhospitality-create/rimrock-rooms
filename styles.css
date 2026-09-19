@@ -100,3 +100,5 @@
 .inspection-detail .inspect-q .yn button.question-camera{min-width:42px!important;width:42px!important;background:#edf5fb!important;color:#0d6fc7!important;font-size:18px!important}
 .inspection-detail .inspect-q.no-photo .yn{padding-right:49px!important}
 @media(max-width:760px){.inspection-detail .inspect-q{grid-template-columns:1fr!important;gap:8px!important}.inspection-detail .inspect-q .yn{justify-content:stretch!important}.inspection-detail .inspect-q .yn button{flex:1!important}.inspection-detail .inspect-q .yn button.question-camera{flex:0 0 46px!important}.inspection-detail .inspect-q.no-photo .yn{padding-right:0!important}}
+
+.inspection-issue-summary{display:flex;justify-content:space-between;gap:16px;align-items:center;margin:14px 0 8px;padding:11px 14px;border:1px solid var(--line);border-radius:9px;background:#f7fafc}.inspection-issue-summary span{color:var(--muted);font-size:13px}@media(max-width:760px){.inspection-issue-summary{align-items:flex-start;flex-direction:column;gap:4px}}
