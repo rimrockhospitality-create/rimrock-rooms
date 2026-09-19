@@ -389,3 +389,17 @@ document.querySelector('.inspection-question-list').addEventListener('click',e=>
   const q=cam.closest('.inspect-q'),no=q.querySelector('[data-answer="NO"]');if(no&&!no.classList.contains('no'))no.click();
   setTimeout(()=>q.querySelector('.deficiency-evidence input[type=file]')?.click(),0);
 });
+
+document.getElementById('saveInspectionCapture').addEventListener('click',async()=>{
+  if(inspectionCaptureType!=='MAINT_ISSUE')return;
+  const file=document.getElementById('inspectionPhoto').files[0],note=document.getElementById('inspectionNote').value.trim(),btn=document.getElementById('saveInspectionCapture');
+  if(!file||!note||inspectionBlocking===null){document.getElementById('captureRoutingNote').textContent='Photo, note, and blocking choice are required.';return}
+  btn.disabled=true;btn.textContent='SAVING…';
+  try{
+    const dataUrl=await fileToDataUrl(file);
+    const result=await apiPost({action:'saveMaintenanceIssue',propertyId:'CO534',businessDate:housekeepingBusinessDate(),room:activeInspectionRoom,housekeeper:activeInspectionHousekeeper,inspector:currentUser.name,description:note,blocking:inspectionBlocking,photoBase64:dataUrl,photoMimeType:file.type||'image/jpeg'},30000);
+    if(!result.ok)throw new Error(result.reason||result.error||'Maintenance save failed');
+    document.getElementById('captureRoutingNote').textContent='✓ Maintenance issue saved • '+(result.blocking?'ROOM HOLD • P2':'NON-BLOCKING • P3');
+    btn.textContent='SAVED';setTimeout(()=>{document.getElementById('inspectionCapture').hidden=true;btn.textContent='SAVE';btn.disabled=false},900);
+  }catch(err){btn.disabled=false;btn.textContent='SAVE';document.getElementById('captureRoutingNote').textContent='Could not save: '+err.message}
+});
