@@ -11,9 +11,9 @@ const QR_TEST_ID='CO534-RM-122';
 const ROLE_VIEWS={
   HOUSEKEEPER:['Home','Housekeeping'],
   INSPECTOR:['Home','Inspections'],
-  MAINTENANCE:['Home','Maintenance','Preventive Maintenance'],
-  'FRONT DESK':['Home','Housekeeping','Maintenance'],
-  MANAGER:['Home','Housekeeping','Inspections','Maintenance','Preventive Maintenance','Reports','Property Settings','Users','Settings']
+  MAINTENANCE:['Home','Maintenance','Checklists','Preventive Maintenance'],
+  'FRONT DESK':['Home','Housekeeping','Maintenance','Checklists'],
+  MANAGER:['Home','Housekeeping','Inspections','Maintenance','Checklists','Preventive Maintenance','Reports','Property Settings','Users','Settings']
 };
 const ROLE_LABELS={HOUSEKEEPER:'Housekeeper',INSPECTOR:'Inspector',MAINTENANCE:'Maintenance','FRONT DESK':'Front Desk',MANAGER:'Manager'};
 let currentUser=null;
