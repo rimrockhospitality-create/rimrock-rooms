@@ -45,3 +45,19 @@ Section 1 baseline includes:
 - Performance-first static architecture
 
 Future sections must build into this shell without redesigning or bloating the Section 1 foundation.
+
+
+## Section 2 — Step 2 Acceptance — 2026-09-18
+
+**Choice PDF Preview: PASSED**
+
+Live parser acceptance test:
+- Business Date: 9/18/2026
+- Property: CO534
+- Unique Rooms: 114
+- Housekeepers: 1
+- Detra Pleasant correctly identified
+- Room 122 correctly assigned
+- Preview remains read-only; no import occurs at Step 2
+
+Approved test basis: CO534 Housekeeping Room Assignment report supplied by Ryan Kelly.
