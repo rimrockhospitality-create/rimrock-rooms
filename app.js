@@ -283,7 +283,7 @@ async function startQrCamera(){
       requestAnimationFrame(scan);
     };
     requestAnimationFrame(scan);
-  }catch(err){if(stream)stream.getTracks().forEach(t=>t.stop());qrStartMessage.textContent='Camera could not open. Check Safari/Chrome camera permission for this site and try again.'}
+  }catch(err){if(stream)stream.getTracks().forEach(t=>t.stop());qrStartMessage.textContent='Camera error: '+(err?.name||'UnknownError')+' — '+(err?.message||String(err))}
 }
 document.getElementById('confirmQrStart').addEventListener('click',startQrCamera);
 
