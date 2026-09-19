@@ -329,6 +329,9 @@ inspectionQueueEl.addEventListener('click',e=>{const b=e.target.closest('.start-
 document.getElementById('inspectionBack').addEventListener('click',()=>{inspectionDetail.hidden=true;inspectionQueueEl.hidden=false;document.getElementById('inspectionStatus').hidden=false});
 
 let inspectionCaptureType=null,inspectionBlocking=null;
+let inspectionCounts={hk:0,maint:0,blocking:0,highlight:0};
+function renderInspectionCounts(){const el=document.getElementById('inspectionIssueSummary');if(!el)return;const total=inspectionCounts.hk+inspectionCounts.maint;el.innerHTML='<strong>Issues captured: '+total+'</strong><span>📸 HK: '+inspectionCounts.hk+' &nbsp; • &nbsp; 🔧 Maintenance: '+inspectionCounts.maint+' &nbsp; • &nbsp; ⛔ Blocking: '+inspectionCounts.blocking+' &nbsp; • &nbsp; ✨ Highlights: '+inspectionCounts.highlight+'</span>'}
+function resetInspectionCapture(){inspectionCaptureType=null;inspectionBlocking=null;document.getElementById('inspectionPhoto').value='';document.getElementById('inspectionNote').value='';document.getElementById('inspectionCapture').hidden=true;const b=document.getElementById('saveInspectionCapture');b.disabled=true;b.textContent='SAVE'};
 function openInspectionCapture(type){
   inspectionCaptureType=type;inspectionBlocking=null;
   const panel=document.getElementById('inspectionCapture'),title=document.getElementById('captureTitle'),label=document.getElementById('captureTypeLabel'),maint=document.getElementById('maintenanceBlocking'),note=document.getElementById('captureNoteWrap'),route=document.getElementById('captureRoutingNote');
@@ -340,7 +343,7 @@ function openInspectionCapture(type){
 }
 document.querySelector('.maintenance-inspection-btn').addEventListener('click',()=>openInspectionCapture('MAINT_ISSUE'));
 document.querySelector('.photo-room-btn').addEventListener('click',()=>openInspectionCapture('ROOM_HIGHLIGHT'));
-document.getElementById('closeInspectionCapture').addEventListener('click',()=>document.getElementById('inspectionCapture').hidden=true);
+document.getElementById('closeInspectionCapture').addEventListener('click',resetInspectionCapture);
 document.getElementById('inspectionPhoto').addEventListener('change',()=>{document.getElementById('saveInspectionCapture').disabled=!(document.getElementById('inspectionPhoto').files.length&&(inspectionCaptureType!=='MAINT_ISSUE'||inspectionBlocking!==null))});
 document.getElementById('maintenanceBlocking').addEventListener('click',e=>{const b=e.target.closest('[data-blocking]');if(!b)return;inspectionBlocking=b.dataset.blocking==='true';e.currentTarget.querySelectorAll('button').forEach(x=>x.classList.toggle('selected',x===b));document.getElementById('saveInspectionCapture').disabled=!document.getElementById('inspectionPhoto').files.length});
 
@@ -380,7 +383,7 @@ document.querySelector('.inspection-question-list').addEventListener('change',as
       note:note,photoBase64:dataUrl,photoMimeType:file.type||'image/jpeg'
     },30000);
     if(!result.ok)throw new Error(result.reason||result.error||'Issue save failed');
-    q.dataset.issueId=result.issueId;
+    q.dataset.issueId=result.issueId;inspectionCounts.hk++;renderInspectionCounts();
     const label=input.closest('label');label.firstChild.textContent='✓ Photo saved to Rimrock Drive ';
   }catch(err){input.disabled=false;alert('Could not save deficiency photo: '+err.message)}
 });
@@ -402,13 +405,13 @@ document.getElementById('saveInspectionCapture').addEventListener('click',async(
       if(!note||inspectionBlocking===null)throw new Error('Photo, note, and blocking choice are required.');
       result=await apiPost({action:'saveMaintenanceIssue',propertyId:'CO534',businessDate:housekeepingBusinessDate(),room:activeInspectionRoom,housekeeper:activeInspectionHousekeeper,inspector:currentUser.name,description:note,blocking:inspectionBlocking,photoBase64:dataUrl,photoMimeType:file.type||'image/jpeg'},30000);
       if(!result.ok)throw new Error(result.reason||result.error||'Maintenance save failed');
-      document.getElementById('captureRoutingNote').textContent='✓ Maintenance issue saved • '+(result.blocking?'ROOM HOLD • P2':'NON-BLOCKING • P3');
+      inspectionCounts.maint++;if(result.blocking)inspectionCounts.blocking++;renderInspectionCounts();document.getElementById('captureRoutingNote').textContent='✓ Maintenance issue saved • '+(result.blocking?'ROOM HOLD • P2':'NON-BLOCKING • P3');
     }else if(inspectionCaptureType==='ROOM_HIGHLIGHT'){
       result=await apiPost({action:'saveRoomPhoto',propertyId:'CO534',businessDate:housekeepingBusinessDate(),room:activeInspectionRoom,housekeeper:activeInspectionHousekeeper,capturedBy:currentUser.name,photoBase64:dataUrl,photoMimeType:file.type||'image/jpeg'},30000);
       if(!result.ok)throw new Error(result.reason||result.error||'Room photo save failed');
-      document.getElementById('captureRoutingNote').textContent='✓ Room highlight saved to Inspection Reports.';
+      inspectionCounts.highlight++;renderInspectionCounts();document.getElementById('captureRoutingNote').textContent='✓ Room highlight saved to Inspection Reports.';
     }else{throw new Error('Unknown photo type.')}
     btn.textContent='SAVED';
-    setTimeout(()=>{document.getElementById('inspectionCapture').hidden=true;btn.textContent='SAVE';btn.disabled=false},900);
+    setTimeout(()=>{resetInspectionCapture()},900);
   }catch(err){btn.disabled=false;btn.textContent='SAVE';document.getElementById('captureRoutingNote').textContent='Could not save: '+err.message}
 });
