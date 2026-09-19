@@ -61,3 +61,19 @@ Live parser acceptance test:
 - Preview remains read-only; no import occurs at Step 2
 
 Approved test basis: CO534 Housekeeping Room Assignment report supplied by Ryan Kelly.
+
+
+## Section 2 — Step 3 Acceptance — 2026-09-18
+
+**Choice Import Validation: PASSED & LOCKED**
+
+Live validation confirmed:
+- Property CO534 matched
+- Business date valid
+- 114 extracted rooms matched the room master
+- No duplicate extracted room rows
+- No duplicate housekeeper assignments
+- Detra Pleasant matched as an active CO534 housekeeper
+- Import remained disabled when an employee was unresolved and enabled only after all checks passed
+
+Step 4 import was not executed during Step 3 acceptance.
