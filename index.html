@@ -69,6 +69,17 @@
       </div>
       <div id="hkManagerGroups" class="hk-manager-groups" hidden></div>
       <div id="hkMyRooms" class="hk-my-rooms"></div>
+      <div id="qrStartPanel" class="qr-start-panel" hidden>
+        <div class="qr-start-card">
+          <button id="closeQrStart" class="qr-close" type="button">×</button>
+          <small>ROOM VERIFICATION</small>
+          <h2 id="qrStartRoom">Room</h2>
+          <p id="qrStartMessage">Scan the room QR code to begin cleaning.</p>
+          <div class="qr-code-placeholder">▦</div>
+          <p class="qr-note">The room QR confirms the housekeeper is physically at the assigned room before the timer begins.</p>
+          <button id="confirmQrStart" class="qr-confirm" type="button" disabled>QR START — BACKEND CONNECTION NEXT</button>
+        </div>
+      </div>
       <footer class="import-footer"><span>Rimrock Rooms &nbsp;|&nbsp; Everhome Suites Denver Airport (CO534)</span><span>Original concept and design by Ryan Kelly &nbsp;|&nbsp; September 2026</span></footer>
     </section>
     <section id="importView" class="import-view" hidden>
