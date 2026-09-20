@@ -251,8 +251,8 @@ async function loadHousekeepingBoard(){
   hkGreeting.textContent='Good morning, '+currentUser.name.split(' ')[0];
   hkBoardDate.textContent=new Intl.DateTimeFormat('en-US',{weekday:'long',month:'long',day:'numeric',year:'numeric',timeZone:'America/Denver'}).format(new Date());
   hkBoardStatus.className='hk-board-status';hkBoardStatus.textContent='Loading today’s assignments…';hkMyRooms.innerHTML='';
-  const isManager=currentUser.roles.includes('MANAGER');
-  managerImportBtn.hidden=!isManager;emptyChoiceSyncBtn.hidden=true;hkManagerGroups.hidden=!isManager;
+  const canManageBoard=currentUser.roles.some(r=>['ADMIN','INSPECTOR','FRONT DESK'].includes(r));
+  managerImportBtn.hidden=!canManageBoard;emptyChoiceSyncBtn.hidden=true;hkManagerGroups.hidden=!canManageBoard;
   try{
     const date=housekeepingBusinessDate(),state=await apiPost({action:'getToday',businessDate:date});
     if(!state.ok)throw new Error(state.error||'Could not load board');
@@ -261,16 +261,16 @@ async function loadHousekeepingBoard(){
     console.log('Rimrock rework payload',inspectionIssues);
     const sessionByRoom=new Map(sessions.map(s=>[String(s.room),s]));
     const reworkByRoom=new Map();
-    inspectionIssues.filter(i=>['REWORK_REQUIRED','REWORK_IN_PROGRESS'].includes(i.status)&&(isManager||i.housekeeper===currentUser.name)).forEach(i=>{const k=String(i.room);if(!reworkByRoom.has(k))reworkByRoom.set(k,[]);reworkByRoom.get(k).push(i)});
-    const visible=isManager?assignments:assignments.filter(a=>a.housekeeper===currentUser.name);
+    inspectionIssues.filter(i=>['REWORK_REQUIRED','REWORK_IN_PROGRESS'].includes(i.status)&&(canManageBoard||i.housekeeper===currentUser.name)).forEach(i=>{const k=String(i.room);if(!reworkByRoom.has(k))reworkByRoom.set(k,[]);reworkByRoom.get(k).push(i)});
+    const visible=canManageBoard?assignments:assignments.filter(a=>a.housekeeper===currentUser.name);
     const cleaning=visible.filter(a=>sessionByRoom.get(String(a.room))?.status==='CLEANING').length;
     const ready=visible.filter(a=>sessionByRoom.get(String(a.room))?.status==='READY_FOR_INSPECTION').length;
     document.getElementById('hkAssignedCount').textContent=visible.length;
     document.getElementById('hkCleaningCount').textContent=cleaning;
     document.getElementById('hkReadyCount').textContent=ready;
     document.getElementById('hkNotStartedCount').textContent=visible.length-cleaning-ready;
-    if(visible.length){hkBoardStatus.textContent=isManager?'Live property housekeeping board':'Your Choice assignments are current.'}else if(isManager){hkBoardStatus.innerHTML='<strong>Today’s housekeeping board has not been loaded.</strong><br>No active Choice assignments found for '+date+'.';emptyChoiceSyncBtn.hidden=false}else{hkBoardStatus.textContent='No rooms are assigned for '+date+'.'}
-    if(isManager){
+    if(visible.length){hkBoardStatus.textContent=canManageBoard?'Live property housekeeping board':'Your Choice assignments are current.'}else if(canManageBoard){hkBoardStatus.innerHTML='<strong>Today’s housekeeping board has not been loaded.</strong><br>No active Choice assignments found for '+date+'.';emptyChoiceSyncBtn.hidden=false}else{hkBoardStatus.textContent='No rooms are assigned for '+date+'.'}
+    if(canManageBoard){
       const groups={};assignments.forEach(a=>(groups[a.housekeeper]??=[]).push(a.room));
       hkManagerGroups.innerHTML=Object.keys(groups).length?Object.entries(groups).map(([name,rooms])=>'<article><strong>'+name+'</strong><span>'+rooms.length+' room'+(rooms.length===1?'':'s')+': '+rooms.join(', ')+'</span></article>').join(''):'';
     }
