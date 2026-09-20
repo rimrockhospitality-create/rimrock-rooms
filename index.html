@@ -1,5 +1,5 @@
 <!--
-  RIMROCK ROOMS
+  ROOM OPERATIONS
   Product concept and operating design: Ryan Kelly
   Original project owner: Ryan Kelly
   Everhome Suites Denver Airport (CO534)
@@ -11,20 +11,20 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="theme-color" content="#073b63">
-  <title>R&R Operations | CO534</title>
-  <link rel="stylesheet" href="styles.css?v=20260919-pm1">
+  <title>RELAY Operations | CO534</title>
+  <link rel="stylesheet" href="styles.css?v=20260920-relay1">
 </head>
 <body>
 <section id="loginView" class="rr-login">
   <div class="rr-login-photo"></div>
   <div class="rr-login-shade"></div>
   <div class="rr-login-panel">
-    <div class="rr-login-brand"><span class="rr-login-mark">R&amp;R</span><div><strong>OPERATIONS</strong><small>RIMROCK ROOMS</small></div></div>
+    <div class="rr-login-brand"><span class="rr-login-mark">RELAY</span><div><strong>OPERATIONS</strong><small>ROOM OPERATIONS</small></div></div>
     <div class="rr-login-property"><small>EVERHOME SUITES</small><strong>Denver Airport</strong><span>CO534 • 114 Rooms</span></div>
     <form id="loginForm" action="javascript:void(0)">
       <label>Username<input id="loginUsername" autocomplete="username" autocapitalize="none" placeholder="Username"></label>
       <label>Password<div class="password-wrap"><input id="loginPassword" type="password" autocomplete="current-password" placeholder="Password"><button id="togglePassword" type="button" aria-label="Show password">◉</button></div></label>
-      <button id="loginSubmit" class="rr-login-submit" type="submit">SIGN IN TO R&amp;R OPERATIONS</button>
+      <button id="loginSubmit" class="rr-login-submit" type="submit">SIGN IN TO RELAY OPERATIONS</button>
       <p id="loginMessage" aria-live="polite"></p>
     </form>
     <div class="rr-login-foot"><span>PEOPLE • PROCESS • PERFORMANCE</span><small>Everhome Suites Denver Airport</small></div>
@@ -32,8 +32,8 @@
 </section>
 <div class="app" id="operationsApp" hidden>
   <header class="topbar">
-    <div class="brand rr-brand"><span class="rr-mark">R&amp;R</span><span><strong>OPERATIONS</strong><small>RIMROCK ROOMS</small></span></div>
-    <div class="rr-top-right"><button id="appRefresh" class="app-refresh" type="button" title="Refresh R&R data" onclick="window.rrRefreshCurrent&&window.rrRefreshCurrent();return false;">↻ <span>REFRESH</span></button><div class="property"><strong>Everhome Suites Denver Airport</strong><span>CO534 &nbsp;|&nbsp; 114 Rooms</span></div><button id="notificationBell" class="notification-bell" type="button" aria-label="Notifications">🔔<span id="notificationCount" hidden>0</span></button><button class="profile" aria-label="Open profile"><span>Ryan Kelly<small>Manager / Inspector</small></span><b>RK</b></button></div>
+    <div class="brand rr-brand"><span class="rr-mark">RELAY</span><span><strong>OPERATIONS</strong><small>ROOM OPERATIONS</small></span></div>
+    <div class="rr-top-right"><button id="appRefresh" class="app-refresh" type="button" title="Refresh RELAY data" onclick="window.rrRefreshCurrent&&window.rrRefreshCurrent();return false;">↻ <span>REFRESH</span></button><div class="property"><strong>Everhome Suites Denver Airport</strong><span>CO534 &nbsp;|&nbsp; 114 Rooms</span></div><button id="notificationBell" class="notification-bell" type="button" aria-label="Notifications">🔔<span id="notificationCount" hidden>0</span></button><button class="profile" aria-label="Open profile"><span>Ryan Kelly<small>Manager / Inspector</small></span><b>RK</b></button></div>
   </header>
 
   <aside class="sidebar" aria-label="Primary navigation">
@@ -56,7 +56,7 @@
   <main id="main">
     <section id="homeView" class="rr-dashboard">
   <div class="rr-hero rr-hero-live">
-    <div class="rr-hero-copy"><small>WELCOME TO</small><h1>R&amp;R OPERATIONS</h1><p>SIMPLE TOOLS. &nbsp; STRONGER TEAMS. &nbsp; EXCEPTIONAL STAYS.</p><blockquote>“Excellence is not a single act, but a daily habit.”</blockquote></div>
+    <div class="rr-hero-copy"><small>WELCOME TO</small><h1>RELAY OPERATIONS</h1><p>SIMPLE TOOLS. &nbsp; STRONGER TEAMS. &nbsp; EXCEPTIONAL STAYS.</p><blockquote>“Excellence is not a single act, but a daily habit.”</blockquote></div>
     <div class="rr-hero-badge"><span>EVERHOME SUITES</span><strong>DENVER AIRPORT</strong><small>CO534 • 114 ROOMS</small></div>
   </div>
   <div class="rr-command-strip"><div><small>SHIFT COMMAND CENTER</small><strong>Right people. Right focus. Every shift. Every day.</strong></div><button type="button" data-view="Checklists">VIEW ALL CHECKLISTS →</button></div>
@@ -115,7 +115,7 @@
           <button id="confirmQrStart" class="qr-confirm" type="button">OPEN CAMERA & SCAN QR</button>
         </div>
       </div>
-      <footer class="import-footer"><span>Rimrock Rooms &nbsp;|&nbsp; Everhome Suites Denver Airport (CO534)</span><span>Original concept and design by Ryan Kelly &nbsp;|&nbsp; September 2026</span></footer>
+      <footer class="import-footer"><span>RELAY &nbsp;|&nbsp; Everhome Suites Denver Airport (CO534)</span><span>Original concept and design by Ryan Kelly &nbsp;|&nbsp; September 2026</span></footer>
     </section>
     <section id="importView" class="import-view" hidden>
       <div class="import-head">
@@ -131,7 +131,7 @@
       <div class="import-card">
         <div>
           <h2>1. Upload Choice Housekeeping Board</h2>
-          <p>Upload the daily housekeeping PDF from Choice. Rimrock Rooms will show a preview before anything is imported.</p>
+          <p>Upload the daily housekeeping PDF from Choice. RELAY will show a preview before anything is imported.</p>
           <label class="dropzone" id="dropzone">
             <input id="hkPdf" type="file" accept="application/pdf,.pdf">
             <span class="upload-icon">☁</span>
@@ -173,7 +173,7 @@
           <p><b>4</b> Import updates the daily system snapshot.</p>
         </aside>
       </div>
-      <footer class="import-footer"><span>Rimrock Rooms &nbsp;|&nbsp; Everhome Suites Denver Airport (CO534)</span><span>Original concept and design by Ryan Kelly &nbsp;|&nbsp; September 2026</span></footer>
+      <footer class="import-footer"><span>RELAY &nbsp;|&nbsp; Everhome Suites Denver Airport (CO534)</span><span>Original concept and design by Ryan Kelly &nbsp;|&nbsp; September 2026</span></footer>
     </section>
     <section id="inspectionView" class="inspection-view" hidden>
       <div class="inspection-head"><div><small>SECTION 4 • INSPECTIONS</small><h1>Room Inspections</h1><p>Rooms ready for manager review.</p></div></div>
@@ -221,7 +221,7 @@
         </div>
         <p class="inspection-build-note">Passing housekeeping does not override a blocking maintenance hold.</p>
       </div>
-      <footer class="import-footer"><span>Rimrock Rooms &nbsp;|&nbsp; Everhome Suites Denver Airport (CO534)</span><span>Original concept and design by Ryan Kelly &nbsp;|&nbsp; September 2026</span></footer>
+      <footer class="import-footer"><span>RELAY &nbsp;|&nbsp; Everhome Suites Denver Airport (CO534)</span><span>Original concept and design by Ryan Kelly &nbsp;|&nbsp; September 2026</span></footer>
     </section>
     <section id="checklistsView" class="checklists-view" hidden>
       <div class="checklist-hero">
@@ -274,7 +274,7 @@
         <button id="confirmMaintenanceResolve" type="button">✓ MARK RESOLVED</button>
         <p id="maintenanceResolveMessage"></p>
       </section>
-      <footer><span>Rimrock Rooms &nbsp;|&nbsp; Everhome Suites Denver Airport (CO534)</span><span>Original concept and design by Ryan Kelly &nbsp;|&nbsp; September 2026</span></footer>
+      <footer><span>RELAY &nbsp;|&nbsp; Everhome Suites Denver Airport (CO534)</span><span>Original concept and design by Ryan Kelly &nbsp;|&nbsp; September 2026</span></footer>
     </section>
     <section id="hkRoomMaintenancePanel" class="maintenance-log-panel hk-room-maint-panel" hidden>
       <button id="closeHkRoomMaintenance" class="qr-close" type="button">×</button>
@@ -302,7 +302,7 @@
       <button id="submitMaintenanceLog" type="button">SUBMIT MAINTENANCE</button>
       <p id="maintenanceLogMessage"></p>
     </section>
-    <section id="notificationPanel" class="notification-panel" hidden><button id="closeNotifications" class="qr-close" type="button">×</button><small>RIMROCK ROOMS</small><h2>Notifications</h2><div id="notificationList"></div></section>
+    <section id="notificationPanel" class="notification-panel" hidden><button id="closeNotifications" class="qr-close" type="button">×</button><small>ROOM OPERATIONS</small><h2>Notifications</h2><div id="notificationList"></div></section>
     <section id="pmView" class="pm-view" hidden>
       <div class="pm-hero"><div><small>PREVENTIVE MAINTENANCE</small><h1>Room PM Command Center</h1><p>Calendar-driven room care • fix it before the guest finds it.</p></div><div class="pm-cycle"><span>ROOM CYCLE</span><strong>12 WEEKS</strong><small>114 rooms • ~10/week</small></div></div>
       <div class="pm-kpis"><article><small>DUE TODAY</small><strong>3</strong></article><article><small>NEXT 7 DAYS</small><strong>10</strong></article><article><small>OVERDUE</small><strong>2</strong></article><article><small>COMPLETED THIS CYCLE</small><strong>18</strong></article></div>
@@ -331,12 +331,12 @@
     <button id="moreBtn">☰<small>More</small></button>
   </nav>
   <div id="drawer" class="drawer" hidden>
-    <div class="drawer-head"><strong>RIMROCK ROOMS</strong><button id="closeDrawer">×</button></div>
+    <div class="drawer-head"><strong>ROOM OPERATIONS</strong><button id="closeDrawer">×</button></div>
     <div class="drawer-user"><b>RK</b><span>Ryan Kelly<small>Manager / Inspector</small></span></div>
     <div id="drawerLinks"></div>
   </div>
 </div>
 <script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.js"></script>
-<script src="app.js?v=20260919-pmroutefix1"></script>
+<script src="app.js?v=20260920-relay1"></script>
 </body>
 </html>
