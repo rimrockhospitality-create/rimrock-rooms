@@ -543,7 +543,7 @@ document.getElementById('confirmMaintenanceResolve').addEventListener('click',as
 });
 
 const maintenanceLogPanel=document.getElementById('maintenanceLogPanel');
-document.getElementById('logMaintenanceQuick').addEventListener('click',()=>{home.hidden=true;maintenanceLogPanel.hidden=false});
+const logMaintenanceQuick=document.getElementById('logMaintenanceQuick');if(logMaintenanceQuick)logMaintenanceQuick.addEventListener('click',()=>{home.hidden=true;maintenanceLogPanel.hidden=false});
 document.getElementById('closeMaintenanceLog').addEventListener('click',()=>{maintenanceLogPanel.hidden=true;home.hidden=false});
 document.getElementById('maintLocationType').addEventListener('change',e=>{const room=e.target.value==='GUEST_ROOM',area=e.target.value==='PUBLIC_AREA';document.getElementById('maintRoomWrap').hidden=!room;document.getElementById('maintAreaWrap').hidden=!area;document.getElementById('maintSpecificWrap').hidden=!area});
 
@@ -705,7 +705,7 @@ document.getElementById('checklistDate').textContent=new Date().toLocaleDateStri
 document.querySelectorAll('.rr-command-strip [data-view]').forEach(b=>b.addEventListener('click',()=>show(b.dataset.view)));
 
 document.querySelectorAll('[data-shift-open]').forEach(b=>b.addEventListener('click',()=>{show('Checklists');setTimeout(()=>openChecklist(b.dataset.shiftOpen),0)}));
-['dashLogMaintenance','rrFloatMaintenance'].forEach(id=>document.getElementById(id)?.addEventListener('click',()=>document.getElementById('logMaintenanceQuick').click()));
+['dashLogMaintenance','rrFloatMaintenance'].forEach(id=>document.getElementById(id)?.addEventListener('click',()=>{home.hidden=true;maintenanceLogPanel.hidden=false}));
 document.getElementById('dashAddShiftNote')?.addEventListener('click',()=>{show('Checklists');setTimeout(openShiftNote,0)});
 document.querySelectorAll('.rr-dashboard [data-view]').forEach(b=>b.addEventListener('click',()=>show(b.dataset.view)));
 async function refreshDashboardOps(){
