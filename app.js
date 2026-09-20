@@ -697,3 +697,5 @@ document.querySelectorAll('.note-types button').forEach(b=>b.addEventListener('c
 document.getElementById('saveShiftNote').addEventListener('click',()=>{if(!activeNoteType||!document.getElementById('shiftNoteIssue').value.trim()){document.getElementById('shiftNoteMessage').textContent='Choose a note type and enter the issue/information.';return}document.getElementById('shiftNoteMessage').textContent='✓ Shift note staged for save.'});
 document.getElementById('completeShift').addEventListener('click',()=>alert('Checklist engine shell is ready. Database save + carryover wiring is next.'));
 document.getElementById('checklistDate').textContent=new Date().toLocaleDateString('en-US',{weekday:'long',month:'long',day:'numeric'});
+
+document.querySelectorAll('.rr-command-strip [data-view]').forEach(b=>b.addEventListener('click',()=>show(b.dataset.view)));
