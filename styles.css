@@ -251,3 +251,12 @@ body{background:#041421;color:#eaf6ff}.app{background:radial-gradient(circle at 
 .checklist-hero,.pm-hero{position:relative;overflow:hidden}.checklist-hero:before,.pm-hero:before{content:"";position:absolute;inset:0;background-image:linear-gradient(90deg,rgba(3,22,38,.93),rgba(4,35,57,.68)),url('Relay%20Logo%202.png');background-size:cover;background-position:center;opacity:.42;pointer-events:none}.checklist-hero>* ,.pm-hero>*{position:relative;z-index:1}
 .rr-footer-brand:after{content:" • BETTER HANDOFFS. STRONGER STAYS.";color:#5baee0}
 @media(max-width:900px){.rr-login-photo{background-position:34% center!important}.rr-login-shade{background:rgba(2,16,28,.76)!important}.rr-hero{background-position:42% center!important}}
+
+/* RELAY V2 — explicit visible brand surfaces, layout unchanged */
+.relay-brand img{display:block;width:205px;height:58px;object-fit:contain;object-position:left center;mix-blend-mode:screen;filter:brightness(1.6) contrast(1.05)}
+.relay-login-brand{display:block!important}.relay-login-brand img{display:block;width:100%;max-width:330px;height:auto;mix-blend-mode:screen;filter:brightness(1.55) contrast(1.08)}
+.rr-login-photo{background:url('Relay%20Logo%202.png') center/cover no-repeat!important}
+.rr-hero.rr-hero-live{background:linear-gradient(90deg,rgba(2,13,24,.76),rgba(3,18,30,.42) 58%,rgba(3,18,30,.18)),url('Relay%20Logo%202.png') center/cover no-repeat!important}
+.relay-hero-copy>small{letter-spacing:.35em!important;color:#7fcaf3!important}.relay-hero-copy h1{font-size:46px!important;line-height:1.02!important;color:#fff!important}.relay-hero-copy h1:after{content:none!important}.relay-hero-copy p{font-size:11px!important;color:#65bce9!important;letter-spacing:.2em!important}.relay-hero-copy blockquote{border-color:#53b7ed!important}
+.rr-brand strong:first-child:after,.rr-login-mark:after{content:none!important}
+@media(max-width:900px){.relay-brand img{width:150px;height:46px}.relay-login-brand img{max-width:270px}.rr-login-photo{background-position:center!important}.rr-hero.rr-hero-live{background-position:center!important}}
