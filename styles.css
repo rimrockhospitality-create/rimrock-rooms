@@ -202,3 +202,19 @@ body{background:#041421;color:#eaf6ff}.app{background:radial-gradient(circle at 
  .hk-board .stat span,.hk-board .summary-stat span{color:#a8c7d9!important}
  .hk-board .stat strong,.hk-board .summary-stat strong{color:#fff!important}
 }
+
+@media(max-width:900px){
+ .housekeeping-view .hk-board-summary>div{
+   background:linear-gradient(145deg,#0b2b43,#071e31)!important;
+   border:1px solid #1b5d82!important;
+   color:#fff!important;
+ }
+ .housekeeping-view .hk-board-summary>div>small{
+   color:#a8c7d9!important;
+ }
+ .housekeeping-view .hk-board-summary>div>strong{
+   color:#ffffff!important;
+   opacity:1!important;
+   text-shadow:none!important;
+ }
+}
