@@ -147,7 +147,7 @@ async function validateParsedImport(parsed){
   const [roomsRes,propertiesRes,usersApi]=await Promise.all([
     fetch('data/rooms.json',{cache:'no-store'}),
     fetch('data/properties.json',{cache:'no-store'}),
-    apiPost({action:'listActiveUsers',propertyId:parsed.property||'CO534'})
+    apiPost({action:'adminListUsers',sessionId:localStorage.getItem('relaySessionId')})
   ]);
   const masterRooms=await roomsRes.json(),properties=await propertiesRes.json();
   if(!usersApi.ok)throw new Error(usersApi.error||usersApi.reason||'Could not read active RELAY users');
