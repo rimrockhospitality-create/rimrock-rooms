@@ -12,7 +12,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="theme-color" content="#073b63">
   <title>R&R Operations | CO534</title>
-  <link rel="stylesheet" href="styles.css?v=20260919-navfix2">
+  <link rel="stylesheet" href="styles.css?v=20260919-hkmaint1">
 </head>
 <body>
 <div class="app">
@@ -260,6 +260,16 @@
       </section>
       <footer><span>Rimrock Rooms &nbsp;|&nbsp; Everhome Suites Denver Airport (CO534)</span><span>Original concept and design by Ryan Kelly &nbsp;|&nbsp; September 2026</span></footer>
     </section>
+    <section id="hkRoomMaintenancePanel" class="maintenance-log-panel hk-room-maint-panel" hidden>
+      <button id="closeHkRoomMaintenance" class="qr-close" type="button">×</button>
+      <small>HOUSEKEEPING • ACTIVE ROOM</small><h2 id="hkRoomMaintenanceTitle">Report Maintenance</h2>
+      <div class="context-room"><span>ROOM</span><strong id="hkMaintRoom">—</strong><small>Cleaning timer continues while you report this issue.</small></div>
+      <fieldset><legend>Was this reported by a guest?</legend><label><input type="radio" name="hkGuestReported" value="YES"> Yes</label><label><input type="radio" name="hkGuestReported" value="NO"> No</label></fieldset>
+      <label>What's wrong?<textarea id="hkMaintDescription" rows="3" placeholder="Describe the issue"></textarea></label>
+      <label class="urgent-check"><input id="hkMaintUrgent" type="checkbox"> ⚠ Needs immediate attention</label>
+      <label>📷 Add photo <small>(optional)</small><input id="hkMaintPhoto" type="file" accept="image/*" capture="environment"></label>
+      <button id="submitHkRoomMaintenance" type="button">SUBMIT MAINTENANCE</button><p id="hkRoomMaintenanceMessage"></p>
+    </section>
     <section id="maintenanceLogPanel" class="maintenance-log-panel" hidden>
       <button id="closeMaintenanceLog" class="qr-close" type="button">×</button>
       <small>QUICK ACTION</small><h2>Log Maintenance</h2>
@@ -296,6 +306,6 @@
   </div>
 </div>
 <script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.js"></script>
-<script src="app.js?v=20260919-startupfix1"></script>
+<script src="app.js?v=20260919-hkmaint1"></script>
 </body>
 </html>
