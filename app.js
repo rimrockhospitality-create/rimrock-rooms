@@ -262,7 +262,7 @@ async function loadHousekeepingBoard(){
       const room=String(a.room),s=sessionByRoom.get(room),rework=reworkByRoom.get(room)||[],activeRework=rework.find(i=>i.status==='REWORK_IN_PROGRESS'),status=activeRework?'REWORK_IN_PROGRESS':rework.length?'REWORK_REQUIRED':(s?.status||'NOT_STARTED');
       const label=status==='REWORK_IN_PROGRESS'?'REWORK IN PROGRESS':status==='REWORK_REQUIRED'?'REWORK REQUIRED':status==='READY_FOR_INSPECTION'?'READY FOR INSPECTION':status==='CLEANING'?'CLEANING':'NOT STARTED';
       const action=status==='REWORK_IN_PROGRESS'?'REWORK COMPLETE':status==='REWORK_REQUIRED'?'START REWORK':status==='CLEANING'?'Room in progress':status==='READY_FOR_INSPECTION'?'Awaiting inspection':'START ROOM';
-      const started=s?.started_at||'';const reworkHtml=rework.length?'<div class="hk-rework-list">'+rework.map(i=>'<div class="hk-rework-item"><strong>'+i.deficiency_label+'</strong>'+(i.note?'<span>'+i.note+'</span>':'')+'<button type="button" class="view-rework-photo" data-photo="'+i.photo_ref+'">View inspector photo</button></div>').join('')+'</div>':'';const issueId=(activeRework||rework[0])?.issue_id||'';const button=status==='REWORK_IN_PROGRESS'&&!isManager?'<button type="button" class="complete-rework-btn" data-room="'+room+'" data-issue="'+issueId+'">REWORK COMPLETE</button>':status==='REWORK_REQUIRED'&&!isManager?'<button type="button" class="rework-room-btn" data-room="'+room+'" data-issue="'+issueId+'">START REWORK</button>':status==='CLEANING'&&!isManager?'<button type="button" class="ready-room-btn" data-room="'+room+'">READY FOR INSPECTION</button>':'<button type="button" class="start-room-btn" data-room="'+room+'" '+(status==='NOT_STARTED'&&!isManager?'':'disabled')+'>'+action+'</button>';return '<article class="hk-room-card"><div class="hk-room-top"><span class="hk-room-number">ROOM '+room+'</span><span class="hk-room-pill">'+label+'</span></div><div class="hk-room-meta">Choice assignment • '+a.housekeeper+(status==='CLEANING'?'<br>Started '+started+'<br><strong class="elapsed-timer" data-start="'+started+'">Elapsed --:--</strong>':'')+'</div>'+reworkHtml+button+'</article>'
+      const started=s?.started_at||'';const reworkHtml=rework.length?'<div class="hk-rework-list">'+rework.map(i=>'<div class="hk-rework-item"><strong>'+i.deficiency_label+'</strong>'+(i.note?'<span>'+i.note+'</span>':'')+'<button type="button" class="view-rework-photo" data-photo="'+i.photo_ref+'">View inspector photo</button></div>').join('')+'</div>':'';const issueId=(activeRework||rework[0])?.issue_id||'';const button=status==='REWORK_IN_PROGRESS'&&!isManager?'<button type="button" class="complete-rework-btn" data-room="'+room+'" data-issue="'+issueId+'">REWORK COMPLETE</button>':status==='REWORK_REQUIRED'&&!isManager?'<button type="button" class="rework-room-btn" data-room="'+room+'" data-issue="'+issueId+'">START REWORK</button>':status==='CLEANING'&&!isManager?'<div class="hk-room-actions"><button type="button" class="hk-context-maint" data-room="'+room+'">🔧 REPORT MAINTENANCE</button><button type="button" class="ready-room-btn" data-room="'+room+'">READY FOR INSPECTION</button></div>':'<button type="button" class="start-room-btn" data-room="'+room+'" '+(status==='NOT_STARTED'&&!isManager?'':'disabled')+'>'+action+'</button>';return '<article class="hk-room-card"><div class="hk-room-top"><span class="hk-room-number">ROOM '+room+'</span><span class="hk-room-pill">'+label+'</span></div><div class="hk-room-meta">Choice assignment • '+a.housekeeper+(status==='CLEANING'?'<br>Started '+started+'<br><strong class="elapsed-timer" data-start="'+started+'">Elapsed --:--</strong>':'')+'</div>'+reworkHtml+button+'</article>'
     }).join('');
   }catch(err){hkBoardStatus.className='hk-board-status error';hkBoardStatus.textContent='Could not load housekeeping board: '+err.message}
 }
@@ -733,3 +733,23 @@ document.addEventListener('click',function(e){
  e.preventDefault();e.stopPropagation();
  show(b.dataset.view);
 },true);
+
+let hkMaintenanceRoom='';
+hkMyRooms.addEventListener('click',e=>{
+ const b=e.target.closest('.hk-context-maint');if(!b)return;
+ hkMaintenanceRoom=b.dataset.room;document.getElementById('hkMaintRoom').textContent=hkMaintenanceRoom;document.getElementById('hkRoomMaintenanceTitle').textContent='Report Maintenance • Room '+hkMaintenanceRoom;
+ document.getElementById('hkMaintDescription').value='';document.getElementById('hkMaintUrgent').checked=false;document.getElementById('hkMaintPhoto').value='';document.querySelectorAll('input[name="hkGuestReported"]').forEach(x=>x.checked=false);document.getElementById('hkRoomMaintenanceMessage').textContent='';document.getElementById('hkRoomMaintenancePanel').hidden=false;
+});
+document.getElementById('closeHkRoomMaintenance').addEventListener('click',()=>{document.getElementById('hkRoomMaintenancePanel').hidden=true;hkMaintenanceRoom=''});
+document.getElementById('submitHkRoomMaintenance').addEventListener('click',async()=>{
+ const btn=document.getElementById('submitHkRoomMaintenance'),msg=document.getElementById('hkRoomMaintenanceMessage'),guest=document.querySelector('input[name="hkGuestReported"]:checked')?.value||'',desc=document.getElementById('hkMaintDescription').value.trim(),urgent=document.getElementById('hkMaintUrgent').checked,file=document.getElementById('hkMaintPhoto').files[0];
+ if(!hkMaintenanceRoom||!guest||!desc){msg.textContent='Choose Guest Reported Yes/No and describe the issue.';return}
+ btn.disabled=true;btn.textContent='SUBMITTING…';
+ try{
+  let photoBase64='',photoMimeType='';if(file){photoBase64=await fileToDataUrl(file);photoMimeType=file.type||'image/jpeg'}
+  const r=await apiPost({action:'logMaintenance',propertyId:'CO534',businessDate:housekeepingBusinessDate(),locationType:'GUEST_ROOM',room:hkMaintenanceRoom,guestReported:guest,description:desc,urgent:urgent,reportedBy:currentUser.name,photoBase64,photoMimeType},30000);
+  if(!r.ok)throw new Error(r.reason||r.error||'Submission failed');
+  msg.textContent='✓ Maintenance submitted • '+String(r.priority||'').replaceAll('_',' ');
+  setTimeout(()=>{document.getElementById('hkRoomMaintenancePanel').hidden=true;hkMaintenanceRoom='';btn.disabled=false;btn.textContent='SUBMIT MAINTENANCE'},900);
+ }catch(err){btn.disabled=false;btn.textContent='SUBMIT MAINTENANCE';msg.textContent='Could not submit: '+err.message}
+});
