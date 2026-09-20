@@ -739,11 +739,15 @@ document.addEventListener('click',function(e){
 },true);
 
 let hkMaintenanceRoom='';
-hkMyRooms.addEventListener('click',e=>{
+document.addEventListener('click',e=>{
  const b=e.target.closest('.hk-context-maint');if(!b)return;
- hkMaintenanceRoom=b.dataset.room;document.getElementById('hkMaintRoom').textContent=hkMaintenanceRoom;document.getElementById('hkRoomMaintenanceTitle').textContent='Report Maintenance • Room '+hkMaintenanceRoom;
- document.getElementById('hkMaintDescription').value='';document.getElementById('hkMaintUrgent').checked=false;document.getElementById('hkMaintPhoto').value='';document.querySelectorAll('input[name="hkGuestReported"]').forEach(x=>x.checked=false);document.getElementById('hkRoomMaintenanceMessage').textContent='';document.getElementById('hkRoomMaintenancePanel').hidden=false;
-});
+ e.preventDefault();e.stopPropagation();
+ hkMaintenanceRoom=b.dataset.room;
+ const panel=document.getElementById('hkRoomMaintenancePanel');
+ document.getElementById('hkMaintRoom').textContent=hkMaintenanceRoom;document.getElementById('hkRoomMaintenanceTitle').textContent='Report Maintenance • Room '+hkMaintenanceRoom;
+ document.getElementById('hkMaintDescription').value='';document.getElementById('hkMaintUrgent').checked=false;document.getElementById('hkMaintPhoto').value='';document.querySelectorAll('input[name="hkGuestReported"]').forEach(x=>x.checked=false);document.getElementById('hkRoomMaintenanceMessage').textContent='';
+ panel.hidden=false;panel.scrollIntoView({behavior:'smooth',block:'start'});
+},true);
 document.getElementById('closeHkRoomMaintenance').addEventListener('click',()=>{document.getElementById('hkRoomMaintenancePanel').hidden=true;hkMaintenanceRoom=''});
 document.getElementById('submitHkRoomMaintenance').addEventListener('click',async()=>{
  const btn=document.getElementById('submitHkRoomMaintenance'),msg=document.getElementById('hkRoomMaintenanceMessage'),guest=document.querySelector('input[name="hkGuestReported"]:checked')?.value||'',desc=document.getElementById('hkMaintDescription').value.trim(),urgent=document.getElementById('hkMaintUrgent').checked,file=document.getElementById('hkMaintPhoto').files[0];
