@@ -1031,7 +1031,15 @@ async function openDailyAudit_(){
  document.getElementById('dailyAuditPanel').hidden=false;
 }
 document.getElementById('dailyAuditBtn')?.addEventListener('click',openDailyAudit_);
-document.getElementById('closeDailyAudit')?.addEventListener('click',()=>document.getElementById('dailyAuditPanel').hidden=true);
+function exitDailyAudit_(){
+ const confirmed=document.getElementById('dailyAuditConfirm')?.checked;
+ if(confirmed&&!confirm('Exit Daily Audit? The business day has NOT been changed.'))return;
+ document.getElementById('dailyAuditPanel').hidden=true;
+ document.getElementById('dailyAuditConfirm').checked=false;
+ document.getElementById('executeDailyAudit').disabled=true;
+ document.getElementById('dailyAuditMessage').textContent='';
+}
+document.getElementById('closeDailyAudit')?.addEventListener('click',exitDailyAudit_);
 document.getElementById('dailyAuditConfirm')?.addEventListener('change',e=>document.getElementById('executeDailyAudit').disabled=!e.target.checked);
 document.getElementById('executeDailyAudit')?.addEventListener('click',async()=>{
  const b=document.getElementById('executeDailyAudit'),msg=document.getElementById('dailyAuditMessage');b.disabled=true;b.textContent='OPENING NEW BUSINESS DAY…';msg.textContent='';
