@@ -35,7 +35,9 @@ async function loadSession(){
 }
 function activateUser(user){
  currentUser=user;const property=loginProperties.find(p=>p.propertyId===currentUser.propertyId);
- document.getElementById('loginView').hidden=true;document.getElementById('operationsApp').hidden=false;
+ const login=document.getElementById('loginView'),app=document.getElementById('operationsApp');
+ login.hidden=true;login.style.setProperty('display','none','important');
+ app.hidden=false;app.style.display='';
  applyIdentity(currentUser,property);applyPermissions(currentUser.roles);buildDrawer(currentUser.roles);
  if(currentUser.roles.includes('HOUSEKEEPER'))show('Housekeeping');else if(currentUser.roles.includes('MAINTENANCE'))show('Maintenance');else show('Home');
 }
