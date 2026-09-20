@@ -32,8 +32,8 @@ async function loadSession(){
 }
 function activateUser(user){
  currentUser=user;const property=loginProperties.find(p=>p.propertyId===currentUser.propertyId);
- applyIdentity(currentUser,property);applyPermissions(currentUser.roles);buildDrawer(currentUser.roles);
  document.getElementById('loginView').hidden=true;document.getElementById('operationsApp').hidden=false;
+ applyIdentity(currentUser,property);applyPermissions(currentUser.roles);buildDrawer(currentUser.roles);
  if(currentUser.roles.includes('HOUSEKEEPER'))show('Housekeeping');else if(currentUser.roles.includes('MAINTENANCE'))show('Maintenance');else show('Home');
 }
 function allowedViews(roles){return [...new Set(roles.flatMap(r=>ROLE_VIEWS[r]||[]))]}
@@ -779,5 +779,7 @@ document.getElementById('loginForm').addEventListener('submit',e=>{
  e.preventDefault();const username=document.getElementById('loginUsername').value.trim().toLowerCase(),password=document.getElementById('loginPassword').value,msg=document.getElementById('loginMessage'),btn=document.getElementById('loginSubmit');
  const user=loginUsers.find(u=>u.active&&String(u.username||'').toLowerCase()===username&&String(u.password||'')===password);
  if(!user){msg.textContent='Username or password is incorrect.';return}
- msg.textContent='';btn.textContent='SIGNING IN…';activateUser(user);btn.textContent='SIGN IN TO R&R OPERATIONS';
+ msg.textContent='';btn.textContent='SIGNING IN…';
+ try{activateUser(user)}catch(err){document.getElementById('operationsApp').hidden=true;document.getElementById('loginView').hidden=false;msg.textContent='Sign-in loaded your account but the workspace failed: '+err.message;console.error(err)}
+ btn.textContent='SIGN IN TO R&R OPERATIONS';
 });
