@@ -12,7 +12,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="theme-color" content="#073b63">
   <title>RELAY Operations | CO534</title>
-  <link rel="stylesheet" href="styles.css?v=20260920-users1">
+  <link rel="stylesheet" href="styles.css?v=20260920-logout1">
 </head>
 <body>
 <section id="loginView" class="rr-login">
@@ -33,7 +33,7 @@
 <div class="app" id="operationsApp" hidden>
   <header class="topbar">
     <div class="brand rr-brand relay-brand"><img src="Relay%20Logo.png" alt="RELAY Room Operations"></div>
-    <div class="rr-top-right"><button id="appRefresh" class="app-refresh" type="button" title="Refresh RELAY data" onclick="window.rrRefreshCurrent&&window.rrRefreshCurrent();return false;">↻ <span>REFRESH</span></button><div class="property"><strong>Everhome Suites Denver Airport</strong><span>CO534 &nbsp;|&nbsp; 114 Rooms</span></div><button id="notificationBell" class="notification-bell" type="button" aria-label="Notifications">🔔<span id="notificationCount" hidden>0</span></button><button class="profile" aria-label="Open profile"><span>Ryan Kelly<small>Manager / Inspector</small></span><b>RK</b></button></div>
+    <div class="rr-top-right"><button id="appRefresh" class="app-refresh" type="button" title="Refresh RELAY data" onclick="window.rrRefreshCurrent&&window.rrRefreshCurrent();return false;">↻ <span>REFRESH</span></button><div class="property"><strong>Everhome Suites Denver Airport</strong><span>CO534 &nbsp;|&nbsp; 114 Rooms</span></div><button id="notificationBell" class="notification-bell" type="button" aria-label="Notifications">🔔<span id="notificationCount" hidden>0</span></button><button id="profileBtn" class="profile" aria-label="Open profile menu"><span>Ryan Kelly<small>Inspector</small></span><b>RK</b></button><div id="profileMenu" class="profile-menu" hidden><div class="profile-menu-head"><strong id="profileMenuName">Ryan Kelly</strong><small id="profileMenuRole">INSPECTOR</small></div><button id="logoutBtn" type="button">↪ LOG OUT</button></div></div>
   </header>
 
   <aside class="sidebar" aria-label="Primary navigation">
@@ -349,6 +349,6 @@
   </div>
 </div>
 <script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.js"></script>
-<script src="app.js?v=20260920-users1"></script>
+<script src="app.js?v=20260920-logout1"></script>
 </body>
 </html>
