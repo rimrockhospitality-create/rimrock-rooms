@@ -794,3 +794,14 @@ document.getElementById('loginForm').addEventListener('submit',e=>{
  if(user.roles.includes('HOUSEKEEPER'))show('Housekeeping');else if(user.roles.includes('MAINTENANCE'))show('Maintenance');else show('Home');
  btn.disabled=false;btn.textContent='SIGN IN TO R&R OPERATIONS';
 });
+
+document.getElementById('appRefresh')?.addEventListener('click',async()=>{
+ const b=document.getElementById('appRefresh');if(!currentUser)return;
+ b.disabled=true;b.firstChild.textContent='⟳ ';
+ try{
+  if(!housekeepingView.hidden)await loadHousekeepingBoard();
+  else if(!inspectionView.hidden)await loadInspectionQueue();
+  else if(!maintenanceView.hidden)await loadMaintenanceBoard();
+  else await refreshDashboardOps();
+ }finally{b.disabled=false;b.firstChild.textContent='↻ '}
+});
