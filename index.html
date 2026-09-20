@@ -12,7 +12,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="theme-color" content="#073b63">
   <title>RELAY Operations | CO534</title>
-  <link rel="stylesheet" href="styles.css?v=20260920-resolve1">
+  <link rel="stylesheet" href="styles.css?v=20260920-handoffdetail1">
 </head>
 <body>
 <section id="loginView" class="rr-login">
@@ -259,7 +259,7 @@
         <div class="detail-actions"><button id="addChecklistNote" type="button">＋ SHIFT NOTE</button><button id="completeShift" type="button">COMPLETE SHIFT</button></div>
       </div>
       <section id="exceptionPanel" class="shift-note-panel" hidden><button id="closeException" class="qr-close" type="button">×</button><small>CHECKLIST EXCEPTION</small><h2 id="exceptionTitle">Task Exception</h2><div class="note-types exception-types"><button type="button" data-exception-type="NA">✓ N/A</button><button type="button" data-exception-type="ISSUE">⚠ ISSUE</button><button type="button" data-exception-type="FOLLOW_UP">↻ FOLLOW-UP</button></div><label>Reason / Note<textarea id="exceptionNote" rows="3" placeholder="Why is this task an exception?"></textarea></label><button id="saveException" type="button">SAVE EXCEPTION</button><p id="exceptionMessage"></p></section>
-      <section id="resolveShiftNotePanel" class="shift-note-panel" hidden><button id="closeResolveShiftNote" class="qr-close" type="button">×</button><small>SHIFT HANDOFF</small><h2 id="resolveShiftNoteTitle">Resolve Item</h2><p id="resolveShiftNoteIssue"></p><label>Resolution / What was done?<textarea id="resolveShiftNoteText" rows="3" placeholder="Document how this was resolved."></textarea></label><input id="resolveShiftNoteId" type="hidden"><button id="confirmResolveShiftNote" type="button">✓ CONFIRM RESOLVED</button><p id="resolveShiftNoteMessage"></p></section>
+      <section id="resolveShiftNotePanel" class="shift-note-panel handoff-detail-panel" hidden><button id="closeResolveShiftNote" class="qr-close" type="button">×</button><small>SHIFT HANDOFF • ACTIVITY</small><h2 id="resolveShiftNoteTitle">Follow-Up Detail</h2><div class="handoff-original"><small>ORIGINAL ITEM</small><strong id="resolveShiftNoteIssue"></strong></div><div id="shiftNoteTimeline" class="shift-note-timeline"></div><input id="resolveShiftNoteId" type="hidden"><div class="handoff-update-box"><label>Add Update<textarea id="resolveShiftNoteUpdate" rows="3" placeholder="Example: Called at 8:00 AM. No answer; left voicemail and will try again this afternoon."></textarea></label><button id="addShiftNoteUpdate" type="button">＋ ADD UPDATE • KEEP OPEN</button></div><div class="handoff-resolve-box"><label>Final Resolution<textarea id="resolveShiftNoteText" rows="3" placeholder="What finally resolved this item?"></textarea></label><button id="confirmResolveShiftNote" type="button">✓ RESOLVE ITEM</button></div><p id="resolveShiftNoteMessage"></p></section>
       <section id="shiftNotePanel" class="shift-note-panel" hidden><button id="closeShiftNote" class="qr-close" type="button">×</button><small>SHIFT COMMUNICATION</small><h2>Add Shift Note</h2><div class="note-types"><button type="button" data-note-type="INFO">ℹ️ INFORMATIONAL</button><button type="button" data-note-type="ISSUE">⚠️ ISSUE</button><button type="button" data-note-type="FOLLOWUP">🔄 FOLLOW-UP NEEDED</button></div><label>Issue / Information<textarea id="shiftNoteIssue" rows="3"></textarea></label><label>Solution / Action Taken<textarea id="shiftNoteSolution" rows="2"></textarea></label><label>Follow-Up<textarea id="shiftNoteFollowup" rows="2"></textarea></label><button id="saveShiftNote" type="button">SAVE SHIFT NOTE</button><p id="shiftNoteMessage"></p></section>
     </section>
     <section id="maintenanceView" class="maintenance-view" hidden>
@@ -359,6 +359,6 @@
   </div>
 </div>
 <script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.js"></script>
-<script src="app.js?v=20260920-handoff3"></script>
+<script src="app.js?v=20260920-handoffdetail1"></script>
 </body>
 </html>
