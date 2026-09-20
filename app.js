@@ -728,8 +728,19 @@ document.getElementById('checklistTasks').addEventListener('click',e=>{const b=e
 function openShiftNote(){document.getElementById('shiftNotePanel').hidden=false;activeNoteType='';document.querySelectorAll('.note-types button').forEach(x=>x.classList.remove('selected'));document.getElementById('shiftNoteMessage').textContent=''}
 document.getElementById('addShiftNote').addEventListener('click',openShiftNote);document.getElementById('addChecklistNote').addEventListener('click',openShiftNote);document.getElementById('closeShiftNote').addEventListener('click',()=>document.getElementById('shiftNotePanel').hidden=true);
 document.querySelectorAll('.note-types button').forEach(b=>b.addEventListener('click',()=>{activeNoteType=b.dataset.noteType;document.querySelectorAll('.note-types button').forEach(x=>x.classList.toggle('selected',x===b))}));
-document.getElementById('saveShiftNote').addEventListener('click',()=>{if(!activeNoteType||!document.getElementById('shiftNoteIssue').value.trim()){document.getElementById('shiftNoteMessage').textContent='Choose a note type and enter the issue/information.';return}document.getElementById('shiftNoteMessage').textContent='✓ Shift note staged for save.'});
-document.getElementById('completeShift').addEventListener('click',()=>alert('Checklist engine shell is ready. Database save + carryover wiring is next.'));
+document.getElementById('saveShiftNote').addEventListener('click',async()=>{
+ const issue=document.getElementById('shiftNoteIssue').value.trim(),solution=document.getElementById('shiftNoteSolution').value.trim(),followUp=document.getElementById('shiftNoteFollowup').value.trim(),msg=document.getElementById('shiftNoteMessage');
+ if(!activeNoteType||!issue){msg.textContent='Choose a note type and enter the issue/information.';return}
+ msg.textContent='Saving…';
+ try{const r=await apiPost({action:'saveShiftNote',sessionId:localStorage.getItem('relaySessionId'),businessDate:housekeepingBusinessDate(),shift:activeChecklist||'GENERAL',noteType:activeNoteType,issueInformation:issue,solutionAction:solution,followUp});
+ if(!r.ok)throw new Error(r.reason||r.error||'Save failed');msg.textContent='✓ Shift note saved.';setTimeout(()=>{document.getElementById('shiftNotePanel').hidden=true;document.getElementById('shiftNoteIssue').value='';document.getElementById('shiftNoteSolution').value='';document.getElementById('shiftNoteFollowup').value=''},650);refreshDashboardOps()}catch(err){msg.textContent='Save failed: '+err.message}
+});
+document.getElementById('completeShift').addEventListener('click',async()=>{
+ const list=CHECKLISTS[activeChecklist]||[],state=taskState[activeChecklist]||{},done=Object.values(state).filter(Boolean).length;
+ if(done<list.length&&!confirm('This checklist is '+done+' of '+list.length+' complete. Complete the shift anyway?'))return;
+ const r=await apiPost({action:'completeChecklistShift',sessionId:localStorage.getItem('relaySessionId'),businessDate:housekeepingBusinessDate(),shift:activeChecklist,tasks:list.map((x,i)=>({taskIndex:i,taskName:x[0],status:state[i]?'COMPLETE':'INCOMPLETE'}))});
+ if(!r.ok){alert('Shift could not be saved: '+(r.reason||r.error||'Unknown error'));return}alert('✓ '+activeChecklist+' shift saved to RELAY.');openChecklistHub();
+});
 document.getElementById('checklistDate').textContent=new Date().toLocaleDateString('en-US',{weekday:'long',month:'long',day:'numeric'});
 
 document.querySelectorAll('.rr-command-strip [data-view]').forEach(b=>b.addEventListener('click',()=>show(b.dataset.view)));
