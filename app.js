@@ -57,8 +57,9 @@ function show(view){
   inspectionView.hidden=view!=='Inspections';
   maintenanceView.hidden=view!=='Maintenance';
   checklistsView.hidden=view!=='Checklists';
+  document.getElementById('pmView').hidden=view!=='PM';
   importView.hidden=true;
-  placeholder.hidden=(view==='Home'||view==='Housekeeping'||view==='Inspections'||view==='Maintenance'||view==='Checklists');
+  placeholder.hidden=(view==='Home'||view==='Housekeeping'||view==='Inspections'||view==='Maintenance'||view==='Checklists'||view==='PM');
   if(!placeholder.hidden) title.textContent=view;
   if(view==='Housekeeping') loadHousekeepingBoard();
   if(view==='Inspections') loadInspectionQueue();
@@ -908,3 +909,38 @@ document.getElementById('saveException').addEventListener('click',()=>{
  msg.textContent='✓ Exception recorded for this test session.';renderChecklist();syncChecklistProgress();
  setTimeout(()=>document.getElementById('exceptionPanel').hidden=true,650);
 });
+
+const ROOM_PM_TASKS=[
+ ['PTAC Filter','Clean/inspect filter and grille.'],
+ ['PTAC Coils','Brush/vacuum evaporator and condenser coils; inspect condensate/drain.'],
+ ['PTAC Operation','Verify heat, cool, fan and thermostat operation.'],
+ ['Bathroom Exhaust Fan','Clean grille and fan buildup; verify airflow/noise.'],
+ ['Bathroom Plumbing','Inspect toilet, supply lines, shutoffs, faucet, shower head and drains for leaks.'],
+ ['Caulk / Grout','Inspect tub/shower, vanity and backsplash; repair failed caulk/grout.'],
+ ['Paint / Patchwork','Touch up walls, corners, doors/frames and patch dings/holes.'],
+ ['Microwave Vent','Clean vent/filter and verify microwave operation.'],
+ ['Cooktop / Kitchen','Verify cooktop controls, sink, faucet, drains and cabinetry.'],
+ ['Refrigerator','Pull out; inspect behind/under unit, water connection/supply line and visible damage/leaks.'],
+ ['Dishwasher','Run/inspect operation, door seal, drain and visible connections for leaks.'],
+ ['Furniture / Hardware','Tighten furniture, cabinet hardware, headboard, closet and room fixtures.'],
+ ['Electrical / Lighting','Test lights, switches, outlets/USB and GFCI where applicable.'],
+ ['Windows / Shades','Operate shade, inspect track/hardware, window lock and condition.'],
+ ['Entry Door / Security','Check closer, latch, deadbolt, security latch, peephole, seals and room signage.'],
+ ['TV / Remote','Verify TV, remote, input and visible cabling.'],
+ ['Flooring / Baseboards','Inspect flooring, baseboards, transitions and damage.'],
+ ['Moisture / Pest / Ceiling','Check water staining, moisture, odors and pest evidence.'],
+ ['Final Room Condition','Confirm room is safe, functional and ready; create work orders for unresolved items.']
+];
+let pmRoom='',pmState={};
+function renderPmTasks(){
+ const box=document.getElementById('pmTasks'),state=pmState[pmRoom]||(pmState[pmRoom]={});
+ box.innerHTML=ROOM_PM_TASKS.map((t,i)=>'<article class="pm-task '+(state[i]?.status==='PASS'||state[i]?.status==='CORRECTED'?'done':'')+'"><button type="button" class="pm-task-check" data-pm-i="'+i+'">'+(state[i]?'✓':'')+'</button><div><h4>'+(i+1)+'. '+t[0]+'</h4><p>'+t[1]+'</p></div><select data-pm-status="'+i+'"><option value="">STATUS…</option><option value="PASS">✓ PASS</option><option value="CORRECTED">🔧 CORRECTED DURING PM</option><option value="WORK_ORDER">⚠ WORK ORDER NEEDED</option><option value="NA">N/A</option></select></article>').join('');
+ const done=Object.keys(state).length,pct=Math.round(done/ROOM_PM_TASKS.length*100);document.getElementById('pmPercent').textContent=pct+'%';
+}
+document.addEventListener('click',e=>{
+ const row=e.target.closest('.pm-room-row');if(row){pmRoom=row.dataset.pmRoom;document.getElementById('pmCalendar').hidden=true;document.getElementById('pmRoomDetail').hidden=false;document.getElementById('pmRoomTitle').textContent='Room '+pmRoom;renderPmTasks();return}
+ const back=e.target.closest('#pmBack');if(back){document.getElementById('pmRoomDetail').hidden=true;document.getElementById('pmCalendar').hidden=false;return}
+},true);
+document.getElementById('pmTasks').addEventListener('change',e=>{if(!e.target.matches('[data-pm-status]'))return;const i=e.target.dataset.pmStatus,s=pmState[pmRoom]||(pmState[pmRoom]={});if(e.target.value)s[i]={status:e.target.value};else delete s[i];renderPmTasks()});
+document.getElementById('pmAddIssue').addEventListener('click',()=>{document.getElementById('maintLocationType').value='GUEST_ROOM';document.getElementById('maintRoomNumber').value=pmRoom;document.getElementById('maintRoomWrap').hidden=false;document.getElementById('maintenanceLogPanel').hidden=false;document.getElementById('pmView').hidden=true});
+document.getElementById('pmComplete').addEventListener('click',()=>{const done=Object.keys(pmState[pmRoom]||{}).length;if(done<ROOM_PM_TASKS.length){alert('Complete or mark N/A on all '+ROOM_PM_TASKS.length+' PM items first.');return}alert('Room '+pmRoom+' PM complete for this test session. Database history wiring is next.')});
