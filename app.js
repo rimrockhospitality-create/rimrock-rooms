@@ -20,21 +20,21 @@ let currentUser=null;
 const home=document.getElementById('homeView'),housekeepingView=document.getElementById('housekeepingView'),inspectionView=document.getElementById('inspectionView'),maintenanceView=document.getElementById('maintenanceView'),checklistsView=document.getElementById('checklistsView'),importView=document.getElementById('importView'),placeholder=document.getElementById('placeholder'),title=document.getElementById('placeholderTitle'),drawer=document.getElementById('drawer'),drawerLinks=document.getElementById('drawerLinks');
 const todayEl=document.getElementById('today');if(todayEl)todayEl.textContent=new Intl.DateTimeFormat('en-US',{weekday:'long',month:'long',day:'numeric',year:'numeric'}).format(new Date());
 
+let loginUsers=[],loginProperties=[];
 async function loadSession(){
   const [usersRes,propertiesRes]=await Promise.all([fetch('data/users.json',{cache:'no-store'}),fetch('data/properties.json',{cache:'no-store'})]);
-  const users=await usersRes.json(),properties=await propertiesRes.json();
-  // Section 1 session adapter. Replace this single resolver with production authentication at deployment.
-  const requested=new URLSearchParams(location.search).get('user');
-  currentUser=users.find(u=>u.active&&(u.userId===requested))||users.find(u=>u.active);
-  if(!currentUser) throw new Error('No active user is configured.');
-  const property=properties.find(p=>p.propertyId===currentUser.propertyId);
-  applyIdentity(currentUser,property);
-  applyPermissions(currentUser.roles);
-  buildDrawer(currentUser.roles);
-  // Role-aware landing: staff enter directly into their operating workspace.
-  if(currentUser.roles.includes('HOUSEKEEPER')) show('Housekeeping');
-  else if(currentUser.roles.includes('MAINTENANCE')) show('Maintenance');
-  else show('Home');
+  loginUsers=await usersRes.json();loginProperties=await propertiesRes.json();
+  const legacy=new URLSearchParams(location.search).get('user');
+  if(legacy){
+    const user=loginUsers.find(u=>u.active&&u.userId===legacy);
+    if(user)activateUser(user);
+  }
+}
+function activateUser(user){
+ currentUser=user;const property=loginProperties.find(p=>p.propertyId===currentUser.propertyId);
+ applyIdentity(currentUser,property);applyPermissions(currentUser.roles);buildDrawer(currentUser.roles);
+ document.getElementById('loginView').hidden=true;document.getElementById('operationsApp').hidden=false;
+ if(currentUser.roles.includes('HOUSEKEEPER'))show('Housekeeping');else if(currentUser.roles.includes('MAINTENANCE'))show('Maintenance');else show('Home');
 }
 function allowedViews(roles){return [...new Set(roles.flatMap(r=>ROLE_VIEWS[r]||[]))]}
 function applyIdentity(user,property){
@@ -773,3 +773,11 @@ window.openHkMaintenanceForRoom=function(room){
  document.getElementById('hkRoomMaintenanceMessage').textContent='';
  housekeepingView.hidden=true;panel.hidden=false;panel.scrollIntoView({block:'start'});
 };
+
+document.getElementById('togglePassword').addEventListener('click',()=>{const p=document.getElementById('loginPassword');p.type=p.type==='password'?'text':'password'});
+document.getElementById('loginForm').addEventListener('submit',e=>{
+ e.preventDefault();const username=document.getElementById('loginUsername').value.trim().toLowerCase(),password=document.getElementById('loginPassword').value,msg=document.getElementById('loginMessage'),btn=document.getElementById('loginSubmit');
+ const user=loginUsers.find(u=>u.active&&String(u.username||'').toLowerCase()===username&&String(u.password||'')===password);
+ if(!user){msg.textContent='Username or password is incorrect.';return}
+ msg.textContent='';btn.textContent='SIGNING IN…';activateUser(user);btn.textContent='SIGN IN TO R&R OPERATIONS';
+});
