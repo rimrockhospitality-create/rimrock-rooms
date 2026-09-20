@@ -774,15 +774,23 @@ window.openHkMaintenanceForRoom=function(room){
  housekeepingView.hidden=true;panel.hidden=false;panel.scrollIntoView({block:'start'});
 };
 
+
 document.getElementById('togglePassword').addEventListener('click',()=>{const p=document.getElementById('loginPassword');p.type=p.type==='password'?'text':'password'});
-window.rrSignIn=function(){
- const username=document.getElementById('loginUsername').value.trim().toLowerCase(),password=document.getElementById('loginPassword').value,msg=document.getElementById('loginMessage'),btn=document.getElementById('loginSubmit');
- if(!loginUsers.length){msg.textContent='R&R is still loading users. Try again in a moment.';return false}
+document.getElementById('loginForm').addEventListener('submit',e=>{
+ e.preventDefault();
+ const username=document.getElementById('loginUsername').value.trim().toLowerCase();
+ const password=document.getElementById('loginPassword').value;
+ const msg=document.getElementById('loginMessage');
+ const btn=document.getElementById('loginSubmit');
+ if(!loginUsers.length){msg.textContent='R&R is still loading. Try again in a moment.';return}
  const user=loginUsers.find(u=>u.active&&String(u.username||'').toLowerCase()===username&&String(u.password||'')===password);
- if(!user){msg.textContent='Username or password is incorrect.';return false}
- msg.textContent='';btn.textContent='SIGNING IN…';
- try{activateUser(user)}catch(err){document.getElementById('operationsApp').hidden=true;document.getElementById('loginView').hidden=false;msg.textContent='Workspace error: '+err.message;console.error(err)}
- btn.textContent='SIGN IN TO R&R OPERATIONS';return false;
-};
-document.getElementById('loginForm').addEventListener('submit',e=>{e.preventDefault();window.rrSignIn()});
-document.getElementById('loginSubmit').addEventListener('click',e=>{e.preventDefault();window.rrSignIn()});
+ if(!user){msg.textContent='Username or password is incorrect.';return}
+ btn.disabled=true;btn.textContent='SIGNING IN…';msg.textContent='';
+ currentUser=user;
+ const property=loginProperties.find(p=>p.propertyId===user.propertyId);
+ applyIdentity(user,property);applyPermissions(user.roles);buildDrawer(user.roles);
+ const login=document.getElementById('loginView'),app=document.getElementById('operationsApp');
+ login.style.display='none';login.hidden=true;app.hidden=false;app.style.display='';
+ if(user.roles.includes('HOUSEKEEPER'))show('Housekeeping');else if(user.roles.includes('MAINTENANCE'))show('Maintenance');else show('Home');
+ btn.disabled=false;btn.textContent='SIGN IN TO R&R OPERATIONS';
+});
