@@ -862,3 +862,18 @@ document.addEventListener('click',async function(e){
   return;
  }
 },true);
+
+/* R&R refresh v3 — refresh current workspace without re-authentication */
+window.rrRefreshCurrent=async function(){
+ const b=document.getElementById('appRefresh');if(!currentUser)return;
+ if(b){b.disabled=true;b.innerHTML='⟳ <span>REFRESHING</span>'}
+ try{
+  const visible=id=>{const el=document.getElementById(id);return el&&!el.hidden&&getComputedStyle(el).display!=='none'};
+  if(visible('housekeepingView'))await loadHousekeepingBoard();
+  else if(visible('inspectionView'))await loadInspectionQueue();
+  else if(visible('maintenanceView'))await loadMaintenanceBoard();
+  else if(visible('checklistsView')){openChecklistHub();await refreshDashboardOps()}
+  else {await refreshDashboardOps();show('Home')}
+ }catch(err){console.error('R&R refresh failed',err);alert('Refresh failed: '+err.message)}
+ finally{if(b){b.disabled=false;b.innerHTML='↻ <span>REFRESH</span>'}}
+};
