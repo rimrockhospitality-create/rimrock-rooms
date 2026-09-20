@@ -1098,7 +1098,7 @@ async function openShiftNoteDetail_(id){
  document.getElementById('shiftNoteTimeline').innerHTML='<div class="timeline-loading">Loading activity…</div>';document.getElementById('resolveShiftNotePanel').hidden=false;
  try{const r=await apiPost({action:'getShiftNoteDetail',sessionId:localStorage.getItem('relaySessionId'),noteId:id});if(!r.ok)throw new Error(r.reason||r.error||'Unable to load activity');const updates=r.updates||[];document.getElementById('shiftNoteTimeline').innerHTML=updates.length?updates.map(u=>'<article><small>'+String(u.enteredAt||u.entered_at||'')+' • '+String(u.enteredBy||u.entered_by||'')+'</small><p>'+String(u.updateText||u.update_text||'')+'</p></article>').join(''):'<div class="timeline-empty">No updates yet.</div>'}catch(err){document.getElementById('shiftNoteTimeline').innerHTML='<div class="timeline-empty">'+err.message+'</div>'}
 }
-document.getElementById('openShiftNotes')?.addEventListener('click',e=>{const card=e.target.closest('[data-open-note]');if(card)openShiftNoteDetail_(card.dataset.openNote)});
+document.addEventListener('click',e=>{const card=e.target.closest('[data-open-note]');if(!card)return;e.preventDefault();e.stopPropagation();openShiftNoteDetail_(card.dataset.openNote)});
 document.getElementById('closeResolveShiftNote')?.addEventListener('click',()=>document.getElementById('resolveShiftNotePanel').hidden=true);
 document.getElementById('addShiftNoteUpdate')?.addEventListener('click',async()=>{
  const id=document.getElementById('resolveShiftNoteId').value,text=document.getElementById('resolveShiftNoteUpdate').value.trim(),msg=document.getElementById('resolveShiftNoteMessage');if(!text){msg.textContent='Enter an update first.';return}msg.textContent='Saving update…';
