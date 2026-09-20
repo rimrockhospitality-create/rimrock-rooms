@@ -679,7 +679,7 @@ const CHECKLISTS={
 };
 let activeChecklist='',taskState={},activeNoteType='';
 function openChecklistHub(){
- document.getElementById('checklistDetail').hidden=true;document.querySelector('.checklist-layout').hidden=false;document.querySelector('.checklist-kpis').hidden=false;document.querySelector('.checklist-hero').hidden=false;
+ document.getElementById('checklistDetail').hidden=true;document.querySelector('.checklist-layout').hidden=false;document.querySelector('.checklist-kpis').hidden=false;document.querySelector('.checklist-hero').hidden=false;syncChecklistProgress();
 }
 function openChecklist(name){
  activeChecklist=name;const list=CHECKLISTS[name]||[];document.querySelector('.checklist-layout').hidden=true;document.querySelector('.checklist-kpis').hidden=true;document.querySelector('.checklist-hero').hidden=true;document.getElementById('checklistDetail').hidden=false;
@@ -690,7 +690,16 @@ function openChecklist(name){
 function renderChecklist(){
  const list=CHECKLISTS[activeChecklist]||[],state=taskState[activeChecklist]||(taskState[activeChecklist]={});
  document.getElementById('checklistTasks').innerHTML=list.map((x,i)=>'<article class="check-task '+(state[i]?'done':'')+'"><button type="button" class="task-check" data-i="'+i+'">'+(state[i]?'✓':'')+'</button><div><h4>'+(i+1)+'. '+x[0]+'</h4><p>'+x[1]+'</p></div><button type="button" class="task-exception" data-i="'+i+'">EXCEPTION</button></article>').join('');
- const done=Object.values(state).filter(Boolean).length,pct=list.length?Math.round(done/list.length*100):0;document.getElementById('detailPercent').textContent=pct+'%';
+ const done=Object.values(state).filter(Boolean).length,pct=list.length?Math.round(done/list.length*100):0;document.getElementById('detailPercent').textContent=pct+'%';syncChecklistProgress();
+}
+function syncChecklistProgress(){
+ const order=['AM','PM','AUDIT','MAINTENANCE'];
+ const kpis=[...document.querySelectorAll('.checklist-kpis article')];
+ order.forEach((name,i)=>{
+  const list=CHECKLISTS[name]||[],state=taskState[name]||{},done=Object.values(state).filter(Boolean).length,pct=list.length?Math.round(done/list.length*100):0;
+  const k=kpis[i];if(k){k.querySelector('strong').textContent=pct+'%';k.querySelector('em').textContent=done?(done+' of '+list.length+' complete'):'Not started'}
+  document.querySelectorAll('.rr-shift-card[data-shift-open="'+name+'"]').forEach(card=>{card.querySelector('.rr-dial strong').textContent=pct+'%';card.querySelector('.rr-dial em').textContent=done?(done+' / '+list.length+' COMPLETE'):'NOT STARTED'});
+ });
 }
 document.querySelectorAll('.shift-card,.maintenance-check-card').forEach(b=>b.addEventListener('click',()=>openChecklist(b.dataset.shift)));
 document.getElementById('backToChecklists').addEventListener('click',openChecklistHub);
