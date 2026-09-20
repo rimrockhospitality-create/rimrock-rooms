@@ -100,3 +100,19 @@ Required backend actions:
 8. adminDeactivateUser(sessionToken, userId) -> ADMIN only; preserves historical attribution.
 
 Legacy ?user= authentication is disabled. GitHub users.json is temporary development data only and must be removed from the production authentication path once backend auth is live.
+
+
+## Choice Advantage → RELAY Housekeeping Board SOP
+
+Front Desk / Night Audit workflow after the RELAY business day is opened:
+
+1. In Choice Advantage, open **Housekeeping Center**.
+2. Select the **Assign Housekeepers** tab.
+3. Select the rooms to assign, then drag the selected rooms to the appropriate housekeeper.
+4. On the right side under **Actions**, open **Reports**.
+5. Select **Housekeeping Room Assignment**.
+6. Save/download the report as a PDF.
+7. In RELAY, open **Housekeeping → Choice Sync** and upload the PDF.
+8. Review the RELAY preview and validation before syncing the board.
+
+The employee name in RELAY must match the housekeeper name emitted by the Choice Housekeeping Room Assignment report.
