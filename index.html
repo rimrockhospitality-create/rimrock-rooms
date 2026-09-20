@@ -12,7 +12,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="theme-color" content="#073b63">
   <title>RELAY Operations | CO534</title>
-  <link rel="stylesheet" href="styles.css?v=20260920-relaypolish2">
+  <link rel="stylesheet" href="styles.css?v=20260920-users1">
 </head>
 <body>
 <section id="loginView" class="rr-login">
@@ -318,6 +318,18 @@
       </div>
       <div id="pmRoomDetail" class="pm-room-detail" hidden><button id="pmBack" type="button">← PM CALENDAR</button><div class="pm-detail-head"><div><small>GUEST ROOM PM</small><h2 id="pmRoomTitle">Room 208</h2><p>Complete, correct, document and return ready.</p></div><div class="progress-ring"><strong id="pmPercent">0%</strong><span>COMPLETE</span></div></div><div id="pmTasks" class="pm-tasks"></div><div class="detail-actions"><button id="pmAddIssue" type="button">🔧 REPORT ISSUE</button><button id="pmComplete" type="button">COMPLETE ROOM PM</button></div></div>
     </section>
+    <section id="usersView" class="users-view" hidden>
+      <div class="users-hero"><div><small>ADMINISTRATION</small><h1>Users</h1><p>People, access and permissions for RELAY.</p></div><button id="addUserBtn" type="button">+ ADD USER</button></div>
+      <div class="users-kpis"><article><small>ACTIVE USERS</small><strong id="activeUserCount">—</strong></article><article><small>INSPECTORS</small><strong id="inspectorUserCount">—</strong></article><article><small>HOUSEKEEPERS</small><strong id="housekeeperUserCount">—</strong></article><article><small>MAINTENANCE</small><strong id="maintenanceUserCount">—</strong></article></div>
+      <div class="users-toolbar"><input id="userSearch" placeholder="Search users…"><select id="userRoleFilter"><option value="">ALL ROLES</option><option>ADMIN</option><option>INSPECTOR</option><option>FRONT DESK</option><option>HOUSEKEEPER</option><option>MAINTENANCE</option></select></div>
+      <div id="usersList" class="users-list"><div class="users-loading">Loading users…</div></div>
+      <div id="userPanel" class="user-panel" hidden><button id="closeUserPanel" class="qr-close" type="button">×</button><small>RELAY USER</small><h2 id="userPanelTitle">Add User</h2>
+        <label>Name<input id="userName" autocomplete="off"></label><label>Username<input id="userUsername" autocomplete="off"></label>
+        <label>Role<select id="userRole"><option>INSPECTOR</option><option>FRONT DESK</option><option>HOUSEKEEPER</option><option>MAINTENANCE</option><option>ADMIN</option></select></label>
+        <label id="userPasswordWrap">Temporary Password<input id="userPassword" type="password" autocomplete="new-password"></label>
+        <input id="editingUserId" type="hidden"><button id="saveUserBtn" type="button">SAVE USER</button><button id="resetPasswordBtn" type="button" hidden>RESET PASSWORD</button><button id="deactivateUserBtn" class="danger-btn" type="button" hidden>DEACTIVATE USER</button><p id="userPanelMessage"></p>
+      </div>
+    </section>
     <section id="placeholder" class="placeholder" hidden>
       <button id="backHome">← Home</button>
       <div><span id="placeholderIcon">◆</span><h2 id="placeholderTitle"></h2><p>Section 1 shell is ready. Operational functionality will be added in its approved build section.</p></div>
@@ -337,6 +349,6 @@
   </div>
 </div>
 <script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.js"></script>
-<script src="app.js?v=20260920-secureauth2"></script>
+<script src="app.js?v=20260920-users1"></script>
 </body>
 </html>
