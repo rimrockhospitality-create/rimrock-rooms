@@ -260,3 +260,18 @@ body{background:#041421;color:#eaf6ff}.app{background:radial-gradient(circle at 
 .relay-hero-copy>small{letter-spacing:.35em!important;color:#7fcaf3!important}.relay-hero-copy h1{font-size:46px!important;line-height:1.02!important;color:#fff!important}.relay-hero-copy h1:after{content:none!important}.relay-hero-copy p{font-size:11px!important;color:#65bce9!important;letter-spacing:.2em!important}.relay-hero-copy blockquote{border-color:#53b7ed!important}
 .rr-brand strong:first-child:after,.rr-login-mark:after{content:none!important}
 @media(max-width:900px){.relay-brand img{width:150px;height:46px}.relay-login-brand img{max-width:270px}.rr-login-photo{background-position:center!important}.rr-hero.rr-hero-live{background-position:center!important}}
+
+/* RELAY POLISH 1 — brand -> breathe -> operate. No layout/workflow changes. */
+.app,.rr-shell{background:#031727!important;background-image:none!important}
+.topbar{background:linear-gradient(110deg,#031321,#051d30)!important}
+.relay-brand{overflow:hidden;width:178px;height:58px}
+.relay-brand img{width:210px!important;height:82px!important;object-fit:cover!important;object-position:center!important;mix-blend-mode:screen!important;filter:brightness(1.75) contrast(1.1)!important;transform:scale(1.16)}
+.rr-hero.rr-hero-live{background:linear-gradient(90deg,rgba(2,13,24,.91) 0%,rgba(3,18,30,.78) 48%,rgba(3,18,30,.57) 100%),url('Relay%20Logo%202.png') center 18%/cover no-repeat!important}
+.rr-hero-copy{max-width:650px!important}.relay-hero-copy h1{font-size:42px!important;line-height:1.08!important;margin:14px 0 12px!important}.relay-hero-copy>small{font-size:11px!important}.relay-hero-copy p{margin-top:12px!important}.relay-hero-copy blockquote{margin-top:28px!important;background:rgba(2,20,34,.58)!important}
+.rr-command-strip,.rr-home-grid{position:relative;background:#031727!important}
+.rr-command-strip{margin-top:0!important;padding-top:24px!important}
+.rr-dashboard:after{content:"";position:absolute;left:0;right:0;top:330px;height:1px;background:rgba(54,169,232,.32);pointer-events:none}
+.relay-login-brand{overflow:hidden;background:transparent!important;height:105px}
+.relay-login-brand img{width:100%!important;max-width:none!important;height:150px!important;object-fit:cover!important;object-position:center!important;mix-blend-mode:screen!important;filter:brightness(1.65) contrast(1.12)!important;transform:scale(1.12)}
+.rr-login-panel{padding-top:28px!important}
+@media(max-width:900px){.relay-brand{width:138px;height:48px}.relay-brand img{width:168px!important;height:70px!important}.rr-hero.rr-hero-live{background-position:47% 18%!important}.relay-hero-copy h1{font-size:36px!important}.relay-login-brand{height:90px}.relay-login-brand img{height:130px!important}}
