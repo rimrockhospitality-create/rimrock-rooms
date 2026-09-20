@@ -12,10 +12,25 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="theme-color" content="#073b63">
   <title>R&R Operations | CO534</title>
-  <link rel="stylesheet" href="styles.css?v=20260919-hkmaint1">
+  <link rel="stylesheet" href="styles.css?v=20260919-login1">
 </head>
 <body>
-<div class="app">
+<section id="loginView" class="rr-login">
+  <div class="rr-login-photo"></div>
+  <div class="rr-login-shade"></div>
+  <div class="rr-login-panel">
+    <div class="rr-login-brand"><span class="rr-login-mark">R&amp;R</span><div><strong>OPERATIONS</strong><small>RIMROCK ROOMS</small></div></div>
+    <div class="rr-login-property"><small>EVERHOME SUITES</small><strong>Denver Airport</strong><span>CO534 • 114 Rooms</span></div>
+    <form id="loginForm">
+      <label>Username<input id="loginUsername" autocomplete="username" autocapitalize="none" placeholder="Username"></label>
+      <label>Password<div class="password-wrap"><input id="loginPassword" type="password" autocomplete="current-password" placeholder="Password"><button id="togglePassword" type="button" aria-label="Show password">◉</button></div></label>
+      <button id="loginSubmit" type="submit">SIGN IN TO R&amp;R OPERATIONS</button>
+      <p id="loginMessage" aria-live="polite"></p>
+    </form>
+    <div class="rr-login-foot"><span>PEOPLE • PROCESS • PERFORMANCE</span><small>Everhome Suites Denver Airport</small></div>
+  </div>
+</section>
+<div class="app" id="operationsApp" hidden>
   <header class="topbar">
     <div class="brand rr-brand"><span class="rr-mark">R&amp;R</span><span><strong>OPERATIONS</strong><small>RIMROCK ROOMS</small></span></div>
     <div class="rr-top-right"><div class="property"><strong>Everhome Suites Denver Airport</strong><span>CO534 &nbsp;|&nbsp; 114 Rooms</span></div><button id="notificationBell" class="notification-bell" type="button" aria-label="Notifications">🔔<span id="notificationCount" hidden>0</span></button><button class="profile" aria-label="Open profile"><span>Ryan Kelly<small>Manager / Inspector</small></span><b>RK</b></button></div>
@@ -306,6 +321,6 @@
   </div>
 </div>
 <script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.js"></script>
-<script src="app.js?v=20260919-startupfix2"></script>
+<script src="app.js?v=20260919-login1"></script>
 </body>
 </html>
