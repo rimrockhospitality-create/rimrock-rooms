@@ -785,3 +785,4 @@ window.rrSignIn=function(){
  btn.textContent='SIGN IN TO R&R OPERATIONS';return false;
 };
 document.getElementById('loginForm').addEventListener('submit',e=>{e.preventDefault();window.rrSignIn()});
+document.getElementById('loginSubmit').addEventListener('click',e=>{e.preventDefault();window.rrSignIn()});
