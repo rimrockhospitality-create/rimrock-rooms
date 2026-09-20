@@ -12,7 +12,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="theme-color" content="#073b63">
   <title>R&R Operations | CO534</title>
-  <link rel="stylesheet" href="styles.css?v=20260919-login1">
+  <link rel="stylesheet" href="styles.css?v=20260919-loginfix3">
 </head>
 <body>
 <section id="loginView" class="rr-login">
@@ -21,10 +21,10 @@
   <div class="rr-login-panel">
     <div class="rr-login-brand"><span class="rr-login-mark">R&amp;R</span><div><strong>OPERATIONS</strong><small>RIMROCK ROOMS</small></div></div>
     <div class="rr-login-property"><small>EVERHOME SUITES</small><strong>Denver Airport</strong><span>CO534 • 114 Rooms</span></div>
-    <form id="loginForm">
+    <form id="loginForm" action="javascript:void(0)">
       <label>Username<input id="loginUsername" autocomplete="username" autocapitalize="none" placeholder="Username"></label>
       <label>Password<div class="password-wrap"><input id="loginPassword" type="password" autocomplete="current-password" placeholder="Password"><button id="togglePassword" type="button" aria-label="Show password">◉</button></div></label>
-      <button id="loginSubmit" type="button" onclick="return window.rrSignIn ? window.rrSignIn() : false;">SIGN IN TO R&amp;R OPERATIONS</button>
+      <a id="loginSubmit" class="rr-login-submit" href="?login=1">SIGN IN TO R&amp;R OPERATIONS</a>
       <p id="loginMessage" aria-live="polite"></p>
     </form>
     <div class="rr-login-foot"><span>PEOPLE • PROCESS • PERFORMANCE</span><small>Everhome Suites Denver Airport</small></div>
@@ -321,6 +321,6 @@
   </div>
 </div>
 <script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.js"></script>
-<script src="app.js?v=20260919-loginfix2"></script>
+<script src="app.js?v=20260919-loginfix3"></script>
 </body>
 </html>
