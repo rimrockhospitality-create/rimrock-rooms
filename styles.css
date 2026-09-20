@@ -155,3 +155,5 @@ body{background:#041421;color:#eaf6ff}.app{background:radial-gradient(circle at 
  linear-gradient(180deg,rgba(4,45,36,.52),rgba(3,16,29,.99)),
  url('murel%20hotel.jpeg') center 48%/cover no-repeat}
 .rr-hero-copy{max-width:820px}.rr-hero-copy blockquote{background:rgba(1,12,22,.66)}
+
+.rr-top-right{margin-left:auto;display:flex;align-items:center;gap:16px}.rr-top-right .property{position:static!important}.rr-top-right .profile{position:static!important;display:flex!important;align-items:center;gap:10px;background:transparent!important;border:0!important;color:#fff!important}.rr-top-right .profile span{text-align:right;line-height:1.15}.rr-top-right .profile small{display:block;color:#8ca9ba;font-size:10px;margin-top:3px}.rr-top-right .profile b{width:42px;height:42px;border-radius:50%;display:grid;place-items:center;background:#f7fbff;color:#0a3552;font-size:15px}.sidebar .profile,.sidebar>.profile{display:none!important}
