@@ -63,12 +63,14 @@ function show(view){
   maintenanceView.hidden=view!=='Maintenance';
   checklistsView.hidden=view!=='Checklists';
   document.getElementById('pmView').hidden=!(view==='PM'||view==='Preventive Maintenance');
+  document.getElementById('usersView').hidden=view!=='Users';
   importView.hidden=true;
-  placeholder.hidden=(view==='Home'||view==='Housekeeping'||view==='Inspections'||view==='Maintenance'||view==='Checklists'||view==='PM'||view==='Preventive Maintenance');
+  placeholder.hidden=(view==='Home'||view==='Housekeeping'||view==='Inspections'||view==='Maintenance'||view==='Checklists'||view==='PM'||view==='Preventive Maintenance'||view==='Users');
   if(!placeholder.hidden) title.textContent=view;
   if(view==='Housekeeping') loadHousekeepingBoard();
   if(view==='Inspections') loadInspectionQueue();
   if(view==='Maintenance') loadMaintenanceBoard();
+  if(view==='Users') loadUsersAdmin();
   document.querySelectorAll('.nav').forEach(b=>b.classList.toggle('active',b.dataset.view===view)); drawer.hidden=true;
 }
 function buildDrawer(roles){
@@ -947,3 +949,47 @@ document.addEventListener('click',e=>{
 document.getElementById('pmTasks').addEventListener('change',e=>{if(!e.target.matches('[data-pm-status]'))return;const i=e.target.dataset.pmStatus,s=pmState[pmRoom]||(pmState[pmRoom]={});if(e.target.value)s[i]={status:e.target.value};else delete s[i];renderPmTasks()});
 document.getElementById('pmAddIssue').addEventListener('click',()=>{document.getElementById('maintLocationType').value='GUEST_ROOM';document.getElementById('maintRoomNumber').value=pmRoom;document.getElementById('maintRoomWrap').hidden=false;document.getElementById('maintenanceLogPanel').hidden=false;document.getElementById('pmView').hidden=true});
 document.getElementById('pmComplete').addEventListener('click',()=>{const done=Object.keys(pmState[pmRoom]||{}).length;if(done<ROOM_PM_TASKS.length){alert('Complete or mark N/A on all '+ROOM_PM_TASKS.length+' PM items first.');return}alert('Room '+pmRoom+' PM complete for this test session. Database history wiring is next.')});
+
+let relayAdminUsers=[];
+async function loadUsersAdmin(){
+ const box=document.getElementById('usersList');box.innerHTML='<div class="users-loading">Loading users…</div>';
+ try{
+  const sessionId=localStorage.getItem('relaySessionId'),r=await apiPost({action:'adminListUsers',sessionId});
+  if(!r.ok)throw new Error(r.reason||'Unable to load users');
+  relayAdminUsers=r.users||[];renderUsersAdmin();
+ }catch(err){box.innerHTML='<div class="users-loading">Unable to load users: '+err.message+'</div>'}
+}
+function renderUsersAdmin(){
+ const q=(document.getElementById('userSearch').value||'').toLowerCase(),role=document.getElementById('userRoleFilter').value;
+ const rows=relayAdminUsers.filter(u=>(!q||(u.name+' '+u.username).toLowerCase().includes(q))&&(!role||u.role===role));
+ const active=relayAdminUsers.filter(u=>u.active);
+ document.getElementById('activeUserCount').textContent=active.length;
+ document.getElementById('inspectorUserCount').textContent=active.filter(u=>u.role==='INSPECTOR').length;
+ document.getElementById('housekeeperUserCount').textContent=active.filter(u=>u.role==='HOUSEKEEPER').length;
+ document.getElementById('maintenanceUserCount').textContent=active.filter(u=>u.role==='MAINTENANCE').length;
+ document.getElementById('usersList').innerHTML=rows.length?rows.map(u=>'<article class="user-card"><div class="user-avatar">'+u.name.split(/\s+/).map(x=>x[0]).slice(0,2).join('')+'</div><div><strong>'+u.name+'</strong><small>@'+u.username+'</small></div><div class="user-role">'+u.role+'</div><div class="user-property">'+u.propertyId+'</div><div><span class="user-status '+(u.active?'active':'')+'">'+(u.active?'● ACTIVE':'○ INACTIVE')+'</span> <button type="button" data-edit-user="'+u.userId+'">EDIT</button></div></article>').join(''):'<div class="users-loading">No users match this view.</div>';
+}
+function openUserPanel_(user){
+ document.getElementById('userPanel').hidden=false;document.getElementById('editingUserId').value=user?.userId||'';
+ document.getElementById('userPanelTitle').textContent=user?'Edit User':'Add User';document.getElementById('userName').value=user?.name||'';document.getElementById('userUsername').value=user?.username||'';document.getElementById('userUsername').disabled=!!user;document.getElementById('userRole').value=user?.role||'INSPECTOR';document.getElementById('userPassword').value='';
+ document.getElementById('userPasswordWrap').hidden=!!user;document.getElementById('resetPasswordBtn').hidden=!user;document.getElementById('deactivateUserBtn').hidden=!user||!user.active;document.getElementById('userPanelMessage').textContent='';
+}
+document.getElementById('addUserBtn').addEventListener('click',()=>openUserPanel_(null));
+document.getElementById('closeUserPanel').addEventListener('click',()=>document.getElementById('userPanel').hidden=true);
+document.getElementById('userSearch').addEventListener('input',renderUsersAdmin);document.getElementById('userRoleFilter').addEventListener('change',renderUsersAdmin);
+document.getElementById('usersList').addEventListener('click',e=>{const b=e.target.closest('[data-edit-user]');if(b)openUserPanel_(relayAdminUsers.find(u=>u.userId===b.dataset.editUser))});
+document.getElementById('saveUserBtn').addEventListener('click',async()=>{
+ const id=document.getElementById('editingUserId').value,msg=document.getElementById('userPanelMessage'),sessionId=localStorage.getItem('relaySessionId');
+ const payload=id?{action:'adminUpdateUser',sessionId,userId:id,name:document.getElementById('userName').value,role:document.getElementById('userRole').value}:{action:'adminCreateUser',sessionId,name:document.getElementById('userName').value,username:document.getElementById('userUsername').value,role:document.getElementById('userRole').value,password:document.getElementById('userPassword').value,propertyId:'CO534'};
+ msg.textContent='Saving…';try{const r=await apiPost(payload);if(!r.ok)throw new Error(r.reason||'Save failed');msg.textContent='✓ User saved';await loadUsersAdmin();setTimeout(()=>document.getElementById('userPanel').hidden=true,500)}catch(err){msg.textContent='Save failed: '+err.message}
+});
+document.getElementById('resetPasswordBtn').addEventListener('click',async()=>{
+ const password=prompt('Enter a new temporary password for this user:');if(!password)return;
+ const r=await apiPost({action:'adminResetPassword',sessionId:localStorage.getItem('relaySessionId'),userId:document.getElementById('editingUserId').value,password});
+ document.getElementById('userPanelMessage').textContent=r.ok?'✓ Password reset':'Reset failed: '+(r.reason||'Unknown error');
+});
+document.getElementById('deactivateUserBtn').addEventListener('click',async()=>{
+ if(!confirm('Deactivate this RELAY user? Their historical records will remain.'))return;
+ const r=await apiPost({action:'adminDeactivateUser',sessionId:localStorage.getItem('relaySessionId'),userId:document.getElementById('editingUserId').value});
+ document.getElementById('userPanelMessage').textContent=r.ok?'✓ User deactivated':'Deactivate failed: '+(r.reason||'Unknown error');if(r.ok)await loadUsersAdmin();
+});
