@@ -20,11 +20,18 @@ let currentUser=null;
 const home=document.getElementById('homeView'),housekeepingView=document.getElementById('housekeepingView'),inspectionView=document.getElementById('inspectionView'),maintenanceView=document.getElementById('maintenanceView'),checklistsView=document.getElementById('checklistsView'),importView=document.getElementById('importView'),placeholder=document.getElementById('placeholder'),title=document.getElementById('placeholderTitle'),drawer=document.getElementById('drawer'),drawerLinks=document.getElementById('drawerLinks');
 const todayEl=document.getElementById('today');if(todayEl)todayEl.textContent=new Intl.DateTimeFormat('en-US',{weekday:'long',month:'long',day:'numeric',year:'numeric'}).format(new Date());
 
-let loginUsers=[],loginProperties=[];
+let loginProperties=[];
+function normalizeAuthUser_(user){return {...user,roles:[String(user.role||'').toUpperCase()]};}
 async function loadSession(){
-  const [usersRes,propertiesRes]=await Promise.all([fetch('data/users.json',{cache:'no-store'}),fetch('data/properties.json',{cache:'no-store'})]);
-  loginUsers=await usersRes.json();loginProperties=await propertiesRes.json();
-  // Legacy ?user= bypass intentionally disabled for RELAY Authentication V1.
+  const propertiesRes=await fetch('data/properties.json',{cache:'no-store'});
+  loginProperties=await propertiesRes.json();
+  const sessionId=localStorage.getItem('relaySessionId');
+  if(!sessionId)return;
+  try{
+    const r=await apiPost({action:'authSession',sessionId});
+    if(r.ok&&r.user){activateUser(normalizeAuthUser_(r.user));return}
+  }catch(err){console.error('Session restore failed',err)}
+  localStorage.removeItem('relaySessionId');
 }
 function activateUser(user){
  currentUser=user;const property=loginProperties.find(p=>p.propertyId===currentUser.propertyId);
@@ -782,23 +789,21 @@ window.openHkMaintenanceForRoom=function(room){
 
 
 document.getElementById('togglePassword').addEventListener('click',()=>{const p=document.getElementById('loginPassword');p.type=p.type==='password'?'text':'password'});
-document.getElementById('loginForm').addEventListener('submit',e=>{
+document.getElementById('loginForm').addEventListener('submit',async e=>{
  e.preventDefault();
  const username=document.getElementById('loginUsername').value.trim().toLowerCase();
  const password=document.getElementById('loginPassword').value;
- const msg=document.getElementById('loginMessage');
- const btn=document.getElementById('loginSubmit');
- if(!loginUsers.length){msg.textContent='RELAY is still loading. Try again in a moment.';return}
- const user=loginUsers.find(u=>u.active&&String(u.username||'').toLowerCase()===username&&String(u.password||'')===password);
- if(!user){msg.textContent='Username or password is incorrect.';return}
+ const msg=document.getElementById('loginMessage'),btn=document.getElementById('loginSubmit');
+ if(!username||!password){msg.textContent='Enter your username and password.';return}
  btn.disabled=true;btn.textContent='SIGNING IN…';msg.textContent='';
- currentUser=user;
- const property=loginProperties.find(p=>p.propertyId===user.propertyId);
- applyIdentity(user,property);applyPermissions(user.roles);buildDrawer(user.roles);
- const login=document.getElementById('loginView'),app=document.getElementById('operationsApp');
- login.style.display='none';login.hidden=true;app.hidden=false;app.style.display='';
- if(user.roles.includes('HOUSEKEEPER'))show('Housekeeping');else if(user.roles.includes('MAINTENANCE'))show('Maintenance');else show('Home');
- btn.disabled=false;btn.textContent='SIGN IN TO RELAY OPERATIONS';
+ try{
+  const r=await apiPost({action:'authLogin',username,password});
+  if(!r.ok||!r.user){msg.textContent=r.reason==='ACCOUNT_INACTIVE'?'This RELAY account is inactive.':'Username or password is incorrect.';return}
+  localStorage.setItem('relaySessionId',r.sessionId);
+  activateUser(normalizeAuthUser_(r.user));
+  document.getElementById('loginPassword').value='';
+ }catch(err){msg.textContent='RELAY could not reach authentication. Try again.';console.error(err)}
+ finally{btn.disabled=false;btn.textContent='SIGN IN TO RELAY OPERATIONS'}
 });
 
 document.getElementById('appRefresh')?.addEventListener('click',async()=>{
