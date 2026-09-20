@@ -275,3 +275,28 @@ body{background:#041421;color:#eaf6ff}.app{background:radial-gradient(circle at 
 .relay-login-brand img{width:100%!important;max-width:none!important;height:150px!important;object-fit:cover!important;object-position:center!important;mix-blend-mode:screen!important;filter:brightness(1.65) contrast(1.12)!important;transform:scale(1.12)}
 .rr-login-panel{padding-top:28px!important}
 @media(max-width:900px){.relay-brand{width:138px;height:48px}.relay-brand img{width:168px!important;height:70px!important}.rr-hero.rr-hero-live{background-position:47% 18%!important}.relay-hero-copy h1{font-size:36px!important}.relay-login-brand{height:90px}.relay-login-brand img{height:130px!important}}
+
+/* RELAY POLISH 2 — integrated mark + cinematic split login */
+.relay-brand{width:190px!important;height:62px!important;background:#031321!important;position:relative}
+.relay-brand img{display:none!important}
+.relay-brand:before{content:"RELAY";font-size:29px;font-weight:900;letter-spacing:.04em;color:#f7fbff;line-height:1}
+.relay-brand:after{content:"ROOM OPERATIONS";position:absolute;left:2px;bottom:9px;font-size:8px;font-weight:800;letter-spacing:.31em;color:#67bde9}
+.rr-login{display:grid!important;grid-template-columns:minmax(0,1.55fr) minmax(430px,.75fr)!important;place-items:stretch!important;background:#031321!important}
+.rr-login-photo{position:relative!important;grid-column:1!important;grid-row:1!important;inset:auto!important;height:100vh!important;background:url('Relay%20Logo%202.png') center/cover no-repeat!important;filter:none!important}
+.rr-login-photo:after{content:"";position:absolute;inset:0;background:linear-gradient(90deg,rgba(2,13,23,.10),rgba(2,15,26,.06) 65%,rgba(3,19,33,.35))}
+.rr-login-shade{display:none!important}
+.rr-login-panel{grid-column:2!important;grid-row:1!important;position:relative!important;z-index:2!important;width:auto!important;max-width:none!important;height:100vh!important;margin:0!important;border:0!important;border-left:1px solid rgba(79,178,237,.28)!important;border-radius:0!important;padding:clamp(46px,7vh,88px) clamp(42px,5vw,78px)!important;background:linear-gradient(145deg,#041b2d,#031321)!important;box-shadow:-30px 0 70px rgba(0,0,0,.28)!important;display:flex!important;flex-direction:column!important;justify-content:center!important}
+.relay-login-brand{height:auto!important;overflow:visible!important;margin-bottom:22px!important}
+.relay-login-brand img{display:none!important}
+.relay-login-brand:before{content:"RELAY";display:block;font-size:58px;font-weight:900;letter-spacing:.03em;color:#f7fbff;line-height:.95}
+.relay-login-brand:after{content:"ROOM OPERATIONS";display:block;margin-top:9px;font-size:12px;font-weight:800;letter-spacing:.38em;color:#67bde9}
+.rr-login-panel:before{order:-1;margin-bottom:26px!important;color:#77c5ef!important}
+.rr-login-property{border-top:1px solid rgba(79,178,237,.18);padding-top:26px!important}
+.rr-login-foot{margin-top:24px!important}
+@media(max-width:900px){
+ .relay-brand{width:142px!important;height:50px!important}.relay-brand:before{font-size:23px}.relay-brand:after{font-size:6px;bottom:6px}
+ .rr-login{display:block!important;min-height:100vh!important;overflow:auto!important;background:#031321!important}
+ .rr-login-photo{position:relative!important;width:100%!important;height:42vh!important;min-height:290px!important;background-position:center!important}
+ .rr-login-panel{position:relative!important;width:100%!important;height:auto!important;min-height:58vh!important;padding:34px 26px 50px!important;border-left:0!important;border-top:1px solid rgba(79,178,237,.28)!important;box-shadow:0 -24px 60px rgba(0,0,0,.28)!important}
+ .relay-login-brand:before{font-size:44px}.relay-login-brand:after{font-size:9px}
+}
