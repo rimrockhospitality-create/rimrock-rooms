@@ -929,14 +929,15 @@ document.addEventListener('click',e=>{
  document.getElementById('exceptionPanel').hidden=false;document.getElementById('exceptionPanel').scrollIntoView({block:'start'});
 },true);
 document.querySelectorAll('[data-exception-type]').forEach(b=>b.addEventListener('click',()=>{activeExceptionType=b.dataset.exceptionType;document.querySelectorAll('[data-exception-type]').forEach(x=>x.classList.toggle('selected',x===b))}));
-document.getElementById('closeException').addEventListener('click',()=>document.getElementById('exceptionPanel').hidden=true);
+function closeException_(){activeExceptionIndex=null;activeExceptionType='';document.getElementById('exceptionNote').value='';document.getElementById('exceptionMessage').textContent='';document.querySelectorAll('[data-exception-type]').forEach(x=>x.classList.remove('selected'));document.getElementById('exceptionPanel').hidden=true}
+document.getElementById('closeException').addEventListener('click',closeException_);
 document.getElementById('saveException').addEventListener('click',()=>{
  const note=document.getElementById('exceptionNote').value.trim(),msg=document.getElementById('exceptionMessage');
  if(activeExceptionIndex===null||!activeExceptionType||!note){msg.textContent='Choose N/A, Issue, or Follow-Up and enter a note.';return}
  const key=activeChecklist+':'+activeExceptionIndex;exceptionState[key]={type:activeExceptionType,note};
  if(activeExceptionType==='NA'){const state=taskState[activeChecklist]||(taskState[activeChecklist]={});state[activeExceptionIndex]=true}
- msg.textContent='✓ Exception recorded for this test session.';renderChecklist();syncChecklistProgress();
- setTimeout(()=>document.getElementById('exceptionPanel').hidden=true,650);
+ msg.textContent='✓ Exception recorded.';renderChecklist();syncChecklistProgress();
+ setTimeout(closeException_,650);
 });
 
 const ROOM_PM_TASKS=[
