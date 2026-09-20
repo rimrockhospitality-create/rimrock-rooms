@@ -715,3 +715,13 @@ async function refreshDashboardOps(){
  }catch(e){console.warn('Dashboard KPI refresh failed',e)}
 }
 setTimeout(refreshDashboardOps,1500);
+
+/* R&R v4 navigation guard: delegated handler survives dashboard rebuilds */
+document.addEventListener('click',e=>{
+ const b=e.target.closest('[data-view]');
+ if(!b)return;
+ const v=b.dataset.view;
+ if(!v)return;
+ e.preventDefault();
+ show(v);
+});
