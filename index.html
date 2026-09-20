@@ -258,6 +258,7 @@
         <div id="checklistTasks" class="checklist-tasks"></div>
         <div class="detail-actions"><button id="addChecklistNote" type="button">＋ SHIFT NOTE</button><button id="completeShift" type="button">COMPLETE SHIFT</button></div>
       </div>
+      <section id="exceptionPanel" class="shift-note-panel" hidden><button id="closeException" class="qr-close" type="button">×</button><small>CHECKLIST EXCEPTION</small><h2 id="exceptionTitle">Task Exception</h2><div class="note-types exception-types"><button type="button" data-exception-type="NA">✓ N/A</button><button type="button" data-exception-type="ISSUE">⚠ ISSUE</button><button type="button" data-exception-type="FOLLOW_UP">↻ FOLLOW-UP</button></div><label>Reason / Note<textarea id="exceptionNote" rows="3" placeholder="Why is this task an exception?"></textarea></label><button id="saveException" type="button">SAVE EXCEPTION</button><p id="exceptionMessage"></p></section>
       <section id="shiftNotePanel" class="shift-note-panel" hidden><button id="closeShiftNote" class="qr-close" type="button">×</button><small>SHIFT COMMUNICATION</small><h2>Add Shift Note</h2><div class="note-types"><button type="button" data-note-type="INFO">ℹ️ INFORMATIONAL</button><button type="button" data-note-type="ISSUE">⚠️ ISSUE</button><button type="button" data-note-type="FOLLOWUP">🔄 FOLLOW-UP NEEDED</button></div><label>Issue / Information<textarea id="shiftNoteIssue" rows="3"></textarea></label><label>Solution / Action Taken<textarea id="shiftNoteSolution" rows="2"></textarea></label><label>Follow-Up<textarea id="shiftNoteFollowup" rows="2"></textarea></label><button id="saveShiftNote" type="button">SAVE SHIFT NOTE</button><p id="shiftNoteMessage"></p></section>
     </section>
     <section id="maintenanceView" class="maintenance-view" hidden>
@@ -321,6 +322,6 @@
   </div>
 </div>
 <script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.js"></script>
-<script src="app.js?v=20260919-progressmirror1"></script>
+<script src="app.js?v=20260919-exception1"></script>
 </body>
 </html>
