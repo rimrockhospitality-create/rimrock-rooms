@@ -45,6 +45,7 @@ function allowedViews(roles){return [...new Set(roles.flatMap(r=>ROLE_VIEWS[r]||
 function applyIdentity(user,property){
   const roleText=user.roles.map(r=>ROLE_LABELS[r]||r).join(' / ');
   document.querySelectorAll('.profile span,.drawer-user span').forEach(el=>el.innerHTML=user.name+'<small>'+roleText+'</small>');
+  const pmn=document.getElementById('profileMenuName'),pmr=document.getElementById('profileMenuRole');if(pmn)pmn.textContent=user.name;if(pmr)pmr.textContent=roleText;
   document.querySelectorAll('.profile b,.drawer-user b').forEach(el=>el.textContent=user.name.split(/\s+/).map(x=>x[0]).slice(0,2).join('').toUpperCase());
   const propertyEl=document.querySelector('.property');
   if(propertyEl&&property) propertyEl.innerHTML='<strong>'+property.name+'</strong><span>'+property.propertyId+' &nbsp;|&nbsp; '+property.roomCount+' Rooms</span>';
@@ -992,4 +993,18 @@ document.getElementById('deactivateUserBtn').addEventListener('click',async()=>{
  if(!confirm('Deactivate this RELAY user? Their historical records will remain.'))return;
  const r=await apiPost({action:'adminDeactivateUser',sessionId:localStorage.getItem('relaySessionId'),userId:document.getElementById('editingUserId').value});
  document.getElementById('userPanelMessage').textContent=r.ok?'✓ User deactivated':'Deactivate failed: '+(r.reason||'Unknown error');if(r.ok)await loadUsersAdmin();
+});
+
+const profileBtn=document.getElementById('profileBtn'),profileMenu=document.getElementById('profileMenu');
+profileBtn?.addEventListener('click',e=>{e.stopPropagation();profileMenu.hidden=!profileMenu.hidden});
+document.addEventListener('click',e=>{if(profileMenu&&!profileMenu.hidden&&!profileMenu.contains(e.target)&&e.target!==profileBtn)profileMenu.hidden=true});
+document.getElementById('logoutBtn')?.addEventListener('click',async()=>{
+ const btn=document.getElementById('logoutBtn'),sessionId=localStorage.getItem('relaySessionId');
+ btn.disabled=true;btn.textContent='LOGGING OUT…';
+ try{if(sessionId)await apiPost({action:'authLogout',sessionId},10000)}catch(err){console.warn('Backend logout failed; clearing local session.',err)}
+ localStorage.removeItem('relaySessionId');currentUser=null;
+ document.getElementById('operationsApp').hidden=true;document.getElementById('operationsApp').style.display='none';
+ const login=document.getElementById('loginView');login.hidden=false;login.style.removeProperty('display');
+ document.getElementById('loginUsername').value='';document.getElementById('loginPassword').value='';document.getElementById('loginMessage').textContent='';
+ profileMenu.hidden=true;btn.disabled=false;btn.textContent='↪ LOG OUT';
 });
