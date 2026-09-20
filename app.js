@@ -805,3 +805,32 @@ document.getElementById('appRefresh')?.addEventListener('click',async()=>{
   else await refreshDashboardOps();
  }finally{b.disabled=false;b.firstChild.textContent='↻ '}
 });
+
+/* R&R interaction router: one capture-level path for dynamic operational controls */
+document.addEventListener('click',function(e){
+ const shift=e.target.closest('.shift-card,.maintenance-check-card,[data-shift-open]');
+ if(shift){
+  e.preventDefault();e.stopImmediatePropagation();
+  const name=shift.dataset.shift||shift.dataset.shiftOpen;
+  if(name){show('Checklists');openChecklist(name)}
+  return;
+ }
+ const task=e.target.closest('.task-check');
+ if(task){
+  e.preventDefault();e.stopImmediatePropagation();
+  const state=taskState[activeChecklist]||(taskState[activeChecklist]={});
+  state[task.dataset.i]=!state[task.dataset.i];renderChecklist();return;
+ }
+ const resolve=e.target.closest('.maint-resolve');
+ if(resolve){
+  e.preventDefault();e.stopImmediatePropagation();
+  pendingMaintenanceResolve=resolve.dataset.id;
+  const card=resolve.closest('.maint-card');
+  document.getElementById('maintenanceResolveTitle').textContent='Resolve '+(card?.querySelector('.maint-room')?.textContent||'Maintenance');
+  document.getElementById('maintenanceResolvePhoto').value='';document.getElementById('maintenanceResolveNote').value='';document.getElementById('maintenanceResolveMessage').textContent='';
+  document.getElementById('maintenanceResolvePanel').hidden=false;
+  document.getElementById('maintenanceResolvePanel').scrollIntoView({block:'start'});return;
+ }
+ const photo=e.target.closest('.maint-photo');
+ if(photo){e.preventDefault();e.stopImmediatePropagation();window.open('https://drive.google.com/open?id='+photo.dataset.photo,'_blank');return}
+},true);
