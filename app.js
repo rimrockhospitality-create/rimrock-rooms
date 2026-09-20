@@ -1101,8 +1101,11 @@ async function openShiftNoteDetail_(id){
 document.addEventListener('click',e=>{const card=e.target.closest('[data-open-note]');if(!card)return;e.preventDefault();e.stopPropagation();openShiftNoteDetail_(card.dataset.openNote)});
 document.getElementById('closeResolveShiftNote')?.addEventListener('click',()=>document.getElementById('resolveShiftNotePanel').hidden=true);
 document.getElementById('addShiftNoteUpdate')?.addEventListener('click',async()=>{
- const id=document.getElementById('resolveShiftNoteId').value,text=document.getElementById('resolveShiftNoteUpdate').value.trim(),msg=document.getElementById('resolveShiftNoteMessage');if(!text){msg.textContent='Enter an update first.';return}msg.textContent='Saving update…';
- try{const r=await apiPost({action:'addShiftNoteUpdate',sessionId:localStorage.getItem('relaySessionId'),noteId:id,businessDate:housekeepingBusinessDate(),shift:activeChecklist||'GENERAL',updateText:text});if(!r.ok)throw new Error(r.reason||r.error||'Update failed');msg.textContent='✓ Update added — item remains open.';document.getElementById('resolveShiftNoteUpdate').value='';await openShiftNoteDetail_(id);await loadOpenShiftNotes_()}catch(err){msg.textContent='Update failed: '+err.message}
+ const b=document.getElementById('addShiftNoteUpdate'),id=document.getElementById('resolveShiftNoteId').value,text=document.getElementById('resolveShiftNoteUpdate').value.trim(),msg=document.getElementById('resolveShiftNoteMessage');if(!text){msg.textContent='Enter an update first.';return}
+ if(b.disabled)return;b.disabled=true;b.textContent='SAVING UPDATE…';msg.textContent='';
+ try{const r=await apiPost({action:'addShiftNoteUpdate',sessionId:localStorage.getItem('relaySessionId'),noteId:id,businessDate:housekeepingBusinessDate(),shift:activeChecklist||'GENERAL',updateText:text});if(!r.ok)throw new Error(r.reason||r.error||'Update failed');msg.textContent='✓ Update added — item remains open.';document.getElementById('resolveShiftNoteUpdate').value='';await loadOpenShiftNotes_();setTimeout(()=>{document.getElementById('resolveShiftNotePanel').hidden=true},450)}
+ catch(err){msg.textContent='Update failed: '+err.message;b.disabled=false;b.textContent='＋ ADD UPDATE • KEEP OPEN';return}
+ finally{setTimeout(()=>{b.disabled=false;b.textContent='＋ ADD UPDATE • KEEP OPEN'},700)}
 });
 document.getElementById('confirmResolveShiftNote')?.addEventListener('click',async()=>{
  const id=document.getElementById('resolveShiftNoteId').value,note=document.getElementById('resolveShiftNoteText').value.trim(),msg=document.getElementById('resolveShiftNoteMessage');if(!note){msg.textContent='Enter the final resolution before closing this item.';return}msg.textContent='Resolving…';
