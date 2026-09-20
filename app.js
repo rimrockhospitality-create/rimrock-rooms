@@ -57,9 +57,9 @@ function show(view){
   inspectionView.hidden=view!=='Inspections';
   maintenanceView.hidden=view!=='Maintenance';
   checklistsView.hidden=view!=='Checklists';
-  document.getElementById('pmView').hidden=view!=='PM';
+  document.getElementById('pmView').hidden=!(view==='PM'||view==='Preventive Maintenance');
   importView.hidden=true;
-  placeholder.hidden=(view==='Home'||view==='Housekeeping'||view==='Inspections'||view==='Maintenance'||view==='Checklists'||view==='PM');
+  placeholder.hidden=(view==='Home'||view==='Housekeeping'||view==='Inspections'||view==='Maintenance'||view==='Checklists'||view==='PM'||view==='Preventive Maintenance');
   if(!placeholder.hidden) title.textContent=view;
   if(view==='Housekeeping') loadHousekeepingBoard();
   if(view==='Inspections') loadInspectionQueue();
