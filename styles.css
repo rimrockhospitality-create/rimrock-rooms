@@ -316,3 +316,23 @@ body{background:#041421;color:#eaf6ff}.app{background:radial-gradient(circle at 
 
 /* DAILY AUDIT V1.1 — honor hidden state; never auto-display on refresh */
 .daily-audit-panel[hidden]{display:none!important}
+
+/* RELAY TYPOGRAPHY V1 — consistent readable type across every workspace */
+:root{--relay-text:#f3f9fc;--relay-muted:#9bb6c8;--relay-ink:#102f49;--relay-ink-soft:#58748b}
+html,body,button,input,select,textarea{font-family:Inter,ui-sans-serif,-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif!important}
+body{color:var(--relay-text)}
+h1,h2,h3,h4,h5,h6,strong,b{font-weight:750}
+.housekeeping-view,.inspection-view,.maintenance-view,.checklists-view,.import-view,.pm-view,.users-view{color:var(--relay-text)!important}
+.import-view .import-card,.import-view .preview-panel,.import-view .validation-panel,.import-view .compare-panel,.import-view .preview-card,.import-view .validation-check,
+.inspection-view .inspection-card,.maintenance-view .maintenance-card,.maintenance-view .maintenance-kpi,
+.hk-board-summary>div{color:var(--relay-ink)!important}
+.import-view .import-card h1,.import-view .import-card h2,.import-view .import-card h3,.import-view .import-card h4,
+.import-view .preview-panel h1,.import-view .preview-panel h2,.import-view .preview-panel h3,
+.import-view .validation-panel h1,.import-view .validation-panel h2,.import-view .validation-panel h3,
+.inspection-card h2,.inspection-card h3,.maintenance-card h2,.maintenance-card h3,.maintenance-kpi strong,.hk-board-summary strong{color:#0b2d48!important}
+.import-view .import-card p,.import-view .preview-panel p,.import-view .preview-panel small,.import-view .validation-panel p,.import-view .validation-panel small,
+.inspection-card p,.inspection-card small,.maintenance-card p,.maintenance-card small,.hk-board-summary small{color:var(--relay-ink-soft)!important}
+.import-view .preview-summary strong,.import-view .assignment-preview strong,.import-view .assignment-preview b{color:#123e60!important}
+.import-view .preview-summary span,.import-view .assignment-preview span{color:#476c86!important}
+.import-view .step-label,.import-view .eyebrow{color:#1479c9!important}
+input::placeholder,textarea::placeholder{color:#7d98aa!important;opacity:1}
