@@ -336,3 +336,6 @@ h1,h2,h3,h4,h5,h6,strong,b{font-weight:750}
 .import-view .preview-summary span,.import-view .assignment-preview span{color:#476c86!important}
 .import-view .step-label,.import-view .eyebrow{color:#1479c9!important}
 input::placeholder,textarea::placeholder{color:#7d98aa!important;opacity:1}
+
+/* CHOICE SYNC EXIT */
+.import-head-actions{display:flex;gap:10px;align-items:center}.import-exit-btn{background:#0a2c44;color:#dff5ff;border:1px solid #327ca3;border-radius:8px;padding:10px 15px;font-weight:900}.import-exit-btn:hover{background:#123d59}@media(max-width:700px){.import-head-actions{width:100%;margin-top:12px}.import-exit-btn{flex:1}}
