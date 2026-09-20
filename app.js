@@ -72,6 +72,7 @@ function show(view){
   if(view==='Inspections') loadInspectionQueue();
   if(view==='Maintenance') loadMaintenanceBoard();
   if(view==='Users') loadUsersAdmin();
+  if(view==='Checklists'){openChecklistHub();loadOpenShiftNotes_();}
   document.querySelectorAll('.nav').forEach(b=>b.classList.toggle('active',b.dataset.view===view)); drawer.hidden=true;
 }
 function buildDrawer(roles){
@@ -767,23 +768,12 @@ async function refreshDashboardOps(){
 }
 setTimeout(refreshDashboardOps,1500);
 
-/* RELAY v4 navigation guard: delegated handler survives dashboard rebuilds */
-document.addEventListener('click',e=>{
- const b=e.target.closest('[data-view]');
- if(!b)return;
- const v=b.dataset.view;
- if(!v)return;
- e.preventDefault();
- show(v);
-});
-
-/* RELAY navigation v2: capture-phase router prevents stale handlers from swallowing clicks */
+/* RELAY navigation — single delegated router */
 document.addEventListener('click',function(e){
  const b=e.target.closest('[data-view]');
  if(!b||!b.dataset.view)return;
- e.preventDefault();e.stopPropagation();
- show(b.dataset.view);
-},true);
+ e.preventDefault();show(b.dataset.view);
+});
 
 let hkMaintenanceRoom='';
 document.addEventListener('click',e=>{
