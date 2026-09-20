@@ -12,7 +12,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="theme-color" content="#073b63">
   <title>R&R Operations | CO534</title>
-  <link rel="stylesheet" href="styles.css?v=20260919-mobilehk3">
+  <link rel="stylesheet" href="styles.css?v=20260919-pm1">
 </head>
 <body>
 <section id="loginView" class="rr-login">
@@ -303,6 +303,21 @@
       <p id="maintenanceLogMessage"></p>
     </section>
     <section id="notificationPanel" class="notification-panel" hidden><button id="closeNotifications" class="qr-close" type="button">×</button><small>RIMROCK ROOMS</small><h2>Notifications</h2><div id="notificationList"></div></section>
+    <section id="pmView" class="pm-view" hidden>
+      <div class="pm-hero"><div><small>PREVENTIVE MAINTENANCE</small><h1>Room PM Command Center</h1><p>Calendar-driven room care • fix it before the guest finds it.</p></div><div class="pm-cycle"><span>ROOM CYCLE</span><strong>12 WEEKS</strong><small>114 rooms • ~10/week</small></div></div>
+      <div class="pm-kpis"><article><small>DUE TODAY</small><strong>3</strong></article><article><small>NEXT 7 DAYS</small><strong>10</strong></article><article><small>OVERDUE</small><strong>2</strong></article><article><small>COMPLETED THIS CYCLE</small><strong>18</strong></article></div>
+      <div class="pm-tabs"><button class="active" data-pm-tab="calendar">CALENDAR</button><button data-pm-tab="due">DUE ROOMS</button><button data-pm-tab="property">PROPERTY PM</button><button data-pm-tab="history">HISTORY</button></div>
+      <div id="pmCalendar" class="pm-panel">
+        <div class="pm-month-head"><button type="button">‹</button><div><small>SEPTEMBER</small><h2>2026 Room PM Calendar</h2></div><button type="button">›</button></div>
+        <div class="pm-weekdays"><span>SUN</span><span>MON</span><span>TUE</span><span>WED</span><span>THU</span><span>FRI</span><span>SAT</span></div>
+        <div class="pm-calendar-grid">
+          <button><b>13</b></button><button><b>14</b><em>✓ 201</em></button><button><b>15</b><em>✓ 202</em><em>✓ 203</em></button><button><b>16</b><em>✓ 204</em></button><button><b>17</b><em>✓ 205</em></button><button><b>18</b><em>✓ 206</em></button><button class="today"><b>19</b><em class="due">208</em><em class="due">209</em><em class="overdue">210</em></button>
+          <button><b>20</b><em class="due">211</em></button><button><b>21</b><em class="due">212</em><em class="due">213</em></button><button><b>22</b><em>215</em></button><button><b>23</b><em>216</em></button><button><b>24</b><em>217</em></button><button><b>25</b><em>218</em></button><button><b>26</b><em>219</em></button>
+        </div>
+        <div class="pm-due-list"><div class="section-title"><div><small>TODAY'S WORK</small><h2>Rooms Due</h2></div></div><button class="pm-room-row" data-pm-room="208"><span><strong>ROOM 208</strong><small>Scheduled today • Vacant opportunity</small></span><b>START PM →</b></button><button class="pm-room-row" data-pm-room="209"><span><strong>ROOM 209</strong><small>Scheduled today</small></span><b>START PM →</b></button><button class="pm-room-row overdue" data-pm-room="210"><span><strong>ROOM 210</strong><small>OVERDUE • 2 days</small></span><b>START PM →</b></button></div>
+      </div>
+      <div id="pmRoomDetail" class="pm-room-detail" hidden><button id="pmBack" type="button">← PM CALENDAR</button><div class="pm-detail-head"><div><small>GUEST ROOM PM</small><h2 id="pmRoomTitle">Room 208</h2><p>Complete, correct, document and return ready.</p></div><div class="progress-ring"><strong id="pmPercent">0%</strong><span>COMPLETE</span></div></div><div id="pmTasks" class="pm-tasks"></div><div class="detail-actions"><button id="pmAddIssue" type="button">🔧 REPORT ISSUE</button><button id="pmComplete" type="button">COMPLETE ROOM PM</button></div></div>
+    </section>
     <section id="placeholder" class="placeholder" hidden>
       <button id="backHome">← Home</button>
       <div><span id="placeholderIcon">◆</span><h2 id="placeholderTitle"></h2><p>Section 1 shell is ready. Operational functionality will be added in its approved build section.</p></div>
@@ -322,6 +337,6 @@
   </div>
 </div>
 <script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.js"></script>
-<script src="app.js?v=20260919-exception1"></script>
+<script src="app.js?v=20260919-pm1"></script>
 </body>
 </html>
