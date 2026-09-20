@@ -725,3 +725,11 @@ document.addEventListener('click',e=>{
  e.preventDefault();
  show(v);
 });
+
+/* R&R navigation v2: capture-phase router prevents stale handlers from swallowing clicks */
+document.addEventListener('click',function(e){
+ const b=e.target.closest('[data-view]');
+ if(!b||!b.dataset.view)return;
+ e.preventDefault();e.stopPropagation();
+ show(b.dataset.view);
+},true);
