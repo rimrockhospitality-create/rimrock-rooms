@@ -12,24 +12,24 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="theme-color" content="#073b63">
   <title>Rimrock Rooms</title>
-  <link rel="stylesheet" href="styles.css?v=20260919-1801">
+  <link rel="stylesheet" href="styles.css?v=20260919-rr1">
 </head>
 <body>
 <div class="app">
   <header class="topbar">
-    <div class="brand"><div class="mark">⌁</div><div><strong>RIMROCK ROOMS</strong><small>PEOPLE • ROOMS • STANDARDS • RESULTS</small></div></div>
-    <div class="property"><strong>Everhome Suites Denver Airport</strong><span>CO534 &nbsp;|&nbsp; 114 Rooms</span></div>
+    <div class="brand rr-brand"><span class="rr-mark">R&amp;R</span><span><strong>OPERATIONS</strong><small>RIMROCK ROOMS</small></span></div><div class="property"><strong>Everhome Suites Denver Airport</strong><span>CO534 &nbsp;|&nbsp; 114 Rooms</span></div>
     <button id="notificationBell" class="notification-bell" type="button" aria-label="Notifications">🔔<span id="notificationCount" hidden>0</span></button><button class="profile" aria-label="Open profile"><span>Ryan Kelly<small>Manager / Inspector</small></span><b>RK</b></button>
   </header>
 
   <aside class="sidebar" aria-label="Primary navigation">
     <nav>
-      <button class="nav active" data-view="Home">⌂ <span>Home</span></button>
-      <button class="nav" data-view="Housekeeping">♟ <span>Housekeeping</span></button>
-      <button class="nav" data-view="Inspections">☑ <span>Inspections</span></button>
+      <button class="nav active" data-view="Home">⌂ <span>Dashboard</span></button>
+      <button class="nav" data-view="Checklists">☑ <span>Checklists</span></button>
+      <button class="nav" data-view="Housekeeping">✦ <span>Housekeeping</span></button>
+      <button class="nav" data-view="Inspections">✓ <span>Inspections</span></button>
       <button class="nav" data-view="Maintenance">🔧 <span>Maintenance</span></button>
       <button class="nav" data-view="Preventive Maintenance">⚙ <span>PM</span></button>
-      <button class="nav" data-view="Checklists">✓ <span>Checklists</span></button><button class="nav" data-view="Reports">▥ <span>Reports</span></button>
+      <button class="nav" data-view="Reports">▥ <span>Reports</span></button>
     </nav>
     <nav class="admin">
       <button class="nav" data-view="Property Settings">▦ <span>Property</span></button>
@@ -39,7 +39,12 @@
   </aside>
 
   <main id="main">
-    <section id="homeView">
+    <section id="homeView" class="rr-dashboard">
+      <div class="rr-hero">
+        <div class="rr-hero-copy"><small>WELCOME TO</small><h1>R&amp;R OPERATIONS</h1><p>SIMPLE TOOLS. &nbsp; STRONGER TEAMS. &nbsp; EXCEPTIONAL STAYS.</p><blockquote>“Excellence is not a single act, but a daily habit.”</blockquote></div>
+        <div class="rr-hero-badge"><span>EVERHOME SUITES</span><strong>DENVER AIRPORT</strong><small>CO534 • 114 ROOMS</small></div>
+      </div>
+      <div class="rr-command-strip"><div><small>SHIFT COMMAND CENTER</small><strong>Right people. Right focus. Every shift. Every day.</strong></div><button type="button" data-view="Checklists">OPEN CHECKLISTS →</button></div>
       <div class="welcome">
         <div><h1>Good afternoon, Ryan</h1><p>Everhome Suites Denver Airport &nbsp;(CO534)</p><small>Same standard. A better way.</small></div>
         <div class="today"><strong id="today"></strong><em>“Clean rooms. Happy guests. Stronger tomorrow.”</em></div>
@@ -276,6 +281,6 @@
   </div>
 </div>
 <script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.js"></script>
-<script src="app.js?v=20260919-1801"></script>
+<script src="app.js?v=20260919-rr1"></script>
 </body>
 </html>
