@@ -7,7 +7,9 @@
       "MANAGER",
       "INSPECTOR"
     ],
-    "active": true
+    "active": true,
+    "username": "ryan",
+    "password": "RROps2026!"
   },
   {
     "userId": "detra-pleasant",
@@ -16,6 +18,8 @@
     "roles": [
       "HOUSEKEEPER"
     ],
-    "active": true
+    "active": true,
+    "username": "detra",
+    "password": "Detra2026!"
   }
 ]
