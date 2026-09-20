@@ -734,7 +734,7 @@ document.getElementById('saveShiftNote').addEventListener('click',async()=>{
  if(!activeNoteType||!issue){msg.textContent='Choose a note type and enter the issue/information.';return}
  msg.textContent='Saving…';
  try{const r=await apiPost({action:'saveShiftNote',sessionId:localStorage.getItem('relaySessionId'),businessDate:housekeepingBusinessDate(),shift:activeChecklist||'GENERAL',noteType:activeNoteType,issueInformation:issue,solutionAction:solution,followUp});
- if(!r.ok)throw new Error(r.reason||r.error||'Save failed');msg.textContent='✓ Shift note saved.';setTimeout(()=>{document.getElementById('shiftNotePanel').hidden=true;document.getElementById('shiftNoteIssue').value='';document.getElementById('shiftNoteSolution').value='';document.getElementById('shiftNoteFollowup').value=''},650);refreshDashboardOps()}catch(err){msg.textContent='Save failed: '+err.message}
+ if(!r.ok)throw new Error(r.reason||r.error||'Save failed');msg.textContent='✓ Shift note saved.';setTimeout(async()=>{document.getElementById('shiftNotePanel').hidden=true;document.getElementById('shiftNoteIssue').value='';document.getElementById('shiftNoteSolution').value='';document.getElementById('shiftNoteFollowup').value='';activeNoteType='';document.querySelectorAll('.note-types button').forEach(x=>x.classList.remove('selected'));await loadOpenShiftNotes_();refreshDashboardOps()},450)}catch(err){msg.textContent='Save failed: '+err.message}
 });
 document.getElementById('completeShift').addEventListener('click',async()=>{
  const list=CHECKLISTS[activeChecklist]||[],state=taskState[activeChecklist]||{},done=Object.values(state).filter(Boolean).length;
