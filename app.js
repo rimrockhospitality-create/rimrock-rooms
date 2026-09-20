@@ -20,7 +20,7 @@ let currentUser=null;
 const home=document.getElementById('homeView'),housekeepingView=document.getElementById('housekeepingView'),inspectionView=document.getElementById('inspectionView'),maintenanceView=document.getElementById('maintenanceView'),checklistsView=document.getElementById('checklistsView'),importView=document.getElementById('importView'),placeholder=document.getElementById('placeholder'),title=document.getElementById('placeholderTitle'),drawer=document.getElementById('drawer'),drawerLinks=document.getElementById('drawerLinks');
 const todayEl=document.getElementById('today');if(todayEl)todayEl.textContent=new Intl.DateTimeFormat('en-US',{weekday:'long',month:'long',day:'numeric',year:'numeric'}).format(new Date());
 
-let loginProperties=[];
+let loginProperties=[],relayBusinessDate='';
 function normalizeAuthUser_(user){return {...user,roles:[String(user.role||'').toUpperCase()]};}
 async function loadSession(){
   const propertiesRes=await fetch('data/properties.json',{cache:'no-store'});
@@ -38,7 +38,7 @@ function activateUser(user){
  const login=document.getElementById('loginView'),app=document.getElementById('operationsApp');
  login.hidden=true;login.style.setProperty('display','none','important');
  app.hidden=false;app.style.display='';
- applyIdentity(currentUser,property);applyPermissions(currentUser.roles);buildDrawer(currentUser.roles);updateChoiceSyncAccess_();
+ applyIdentity(currentUser,property);applyPermissions(currentUser.roles);buildDrawer(currentUser.roles);updateChoiceSyncAccess_();loadRelayBusinessDay_();updateDailyAuditAccess_();
  if(currentUser.roles.includes('HOUSEKEEPER'))show('Housekeeping');else if(currentUser.roles.includes('MAINTENANCE'))show('Maintenance');else show('Home');
 }
 function allowedViews(roles){return [...new Set(roles.flatMap(r=>ROLE_VIEWS[r]||[]))]}
@@ -245,7 +245,8 @@ function canSyncChoice_(){return !!currentUser&&currentUser.roles.some(r=>['ADMI
 function updateChoiceSyncAccess_(){const allowed=canSyncChoice_();managerImportBtn.hidden=!allowed;if(!allowed)emptyChoiceSyncBtn.hidden=true}
 function openChoiceSync(){if(!canSyncChoice_())return;housekeepingView.hidden=true;importView.hidden=false}
 managerImportBtn.addEventListener('click',openChoiceSync);emptyChoiceSyncBtn.addEventListener('click',openChoiceSync);
-function housekeepingBusinessDate(){return new Intl.DateTimeFormat('en-US',{timeZone:'America/Denver'}).format(new Date())}
+function housekeepingBusinessDate(){return relayBusinessDate||new Intl.DateTimeFormat('en-US',{timeZone:'America/Denver'}).format(new Date())}
+async function loadRelayBusinessDay_(){try{const r=await apiPost({action:'getBusinessDay',sessionId:localStorage.getItem('relaySessionId')});if(r.ok&&r.businessDate){relayBusinessDate=r.businessDate;document.querySelectorAll('[data-business-date]').forEach(x=>x.textContent=r.businessDate);return r.businessDate}}catch(e){console.warn('Business day load failed',e)}return housekeepingBusinessDate()}
 async function loadHousekeepingBoard(){
   if(!currentUser)return;
   hkGreeting.textContent='Good morning, '+currentUser.name.split(' ')[0];
@@ -1011,4 +1012,26 @@ document.getElementById('logoutBtn')?.addEventListener('click',async()=>{
  const login=document.getElementById('loginView');login.hidden=false;login.style.removeProperty('display');
  document.getElementById('loginUsername').value='';document.getElementById('loginPassword').value='';document.getElementById('loginMessage').textContent='';
  profileMenu.hidden=true;btn.disabled=false;btn.textContent='↪ LOG OUT';
+});
+
+function canDailyAudit_(){return !!currentUser&&currentUser.roles.some(r=>['ADMIN','FRONT DESK'].includes(r))}
+function updateDailyAuditAccess_(){const b=document.getElementById('dailyAuditBtn');if(b)b.hidden=!canDailyAudit_()}
+async function openDailyAudit_(){
+ if(!canDailyAudit_())return;await loadRelayBusinessDay_();
+ document.getElementById('dailyAuditCurrentDate').textContent=housekeepingBusinessDate();
+ document.getElementById('dailyAuditConfirm').checked=false;document.getElementById('executeDailyAudit').disabled=true;document.getElementById('dailyAuditMessage').textContent='';
+ document.getElementById('dailyAuditPanel').hidden=false;
+}
+document.getElementById('dailyAuditBtn')?.addEventListener('click',openDailyAudit_);
+document.getElementById('closeDailyAudit')?.addEventListener('click',()=>document.getElementById('dailyAuditPanel').hidden=true);
+document.getElementById('dailyAuditConfirm')?.addEventListener('change',e=>document.getElementById('executeDailyAudit').disabled=!e.target.checked);
+document.getElementById('executeDailyAudit')?.addEventListener('click',async()=>{
+ const b=document.getElementById('executeDailyAudit'),msg=document.getElementById('dailyAuditMessage');b.disabled=true;b.textContent='OPENING NEW BUSINESS DAY…';msg.textContent='';
+ try{
+  const r=await apiPost({action:'dailyAudit',sessionId:localStorage.getItem('relaySessionId'),expectedBusinessDate:housekeepingBusinessDate()});
+  if(!r.ok)throw new Error(r.reason==='BUSINESS_DAY_CHANGED'?'Another user already changed the business day. Current day: '+r.businessDate:(r.reason||'Daily Audit failed'));
+  relayBusinessDate=r.businessDate;taskState={};msg.textContent='✓ '+r.message;
+  setTimeout(async()=>{document.getElementById('dailyAuditPanel').hidden=true;await refreshDashboardOps();if(!housekeepingView.hidden)await loadHousekeepingBoard()},1200);
+ }catch(err){msg.textContent='Daily Audit failed: '+err.message;b.disabled=false}
+ finally{b.textContent='START NEW BUSINESS DAY →'}
 });
