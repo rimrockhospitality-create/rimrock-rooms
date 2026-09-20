@@ -886,3 +886,25 @@ window.rrRefreshCurrent=async function(){
  }catch(err){console.error('R&R refresh failed',err);alert('Refresh failed: '+err.message)}
  finally{if(b){b.disabled=false;b.innerHTML='↻ <span>REFRESH</span>'}}
 };
+
+let activeExceptionIndex=null,activeExceptionType='',exceptionState={};
+document.addEventListener('click',e=>{
+ const b=e.target.closest('.task-exception');if(!b)return;
+ e.preventDefault();e.stopImmediatePropagation();
+ activeExceptionIndex=Number(b.dataset.i);activeExceptionType='';
+ const task=(CHECKLISTS[activeChecklist]||[])[activeExceptionIndex];
+ document.getElementById('exceptionTitle').textContent=(task?task[0]:'Task')+' • Exception';
+ document.getElementById('exceptionNote').value='';document.getElementById('exceptionMessage').textContent='';
+ document.querySelectorAll('[data-exception-type]').forEach(x=>x.classList.remove('selected'));
+ document.getElementById('exceptionPanel').hidden=false;document.getElementById('exceptionPanel').scrollIntoView({block:'start'});
+},true);
+document.querySelectorAll('[data-exception-type]').forEach(b=>b.addEventListener('click',()=>{activeExceptionType=b.dataset.exceptionType;document.querySelectorAll('[data-exception-type]').forEach(x=>x.classList.toggle('selected',x===b))}));
+document.getElementById('closeException').addEventListener('click',()=>document.getElementById('exceptionPanel').hidden=true);
+document.getElementById('saveException').addEventListener('click',()=>{
+ const note=document.getElementById('exceptionNote').value.trim(),msg=document.getElementById('exceptionMessage');
+ if(activeExceptionIndex===null||!activeExceptionType||!note){msg.textContent='Choose N/A, Issue, or Follow-Up and enter a note.';return}
+ const key=activeChecklist+':'+activeExceptionIndex;exceptionState[key]={type:activeExceptionType,note};
+ if(activeExceptionType==='NA'){const state=taskState[activeChecklist]||(taskState[activeChecklist]={});state[activeExceptionIndex]=true}
+ msg.textContent='✓ Exception recorded for this test session.';renderChecklist();syncChecklistProgress();
+ setTimeout(()=>document.getElementById('exceptionPanel').hidden=true,650);
+});
