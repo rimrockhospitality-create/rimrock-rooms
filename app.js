@@ -995,7 +995,8 @@ document.getElementById('resetPasswordBtn').addEventListener('click',async()=>{
 document.getElementById('deactivateUserBtn').addEventListener('click',async()=>{
  if(!confirm('Deactivate this RELAY user? Their historical records will remain.'))return;
  const r=await apiPost({action:'adminDeactivateUser',sessionId:localStorage.getItem('relaySessionId'),userId:document.getElementById('editingUserId').value});
- document.getElementById('userPanelMessage').textContent=r.ok?'✓ User deactivated':'Deactivate failed: '+(r.reason||'Unknown error');if(r.ok)await loadUsersAdmin();
+ document.getElementById('userPanelMessage').textContent=r.ok?'✓ User deactivated':'Deactivate failed: '+(r.reason||'Unknown error');
+ if(r.ok){await loadUsersAdmin();setTimeout(()=>{document.getElementById('userPanel').hidden=true},450)}
 });
 
 const profileBtn=document.getElementById('profileBtn'),profileMenu=document.getElementById('profileMenu');
