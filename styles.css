@@ -193,3 +193,12 @@ body{background:#041421;color:#eaf6ff}.app{background:radial-gradient(circle at 
  .mobile-nav button.active{color:#24adf2!important}
  .app-refresh{padding:7px 9px}.app-refresh span{display:none}
 }
+
+@media(max-width:900px){
+ .hk-kpis article,.hk-kpi,.hk-summary-card{background:linear-gradient(145deg,#0b2b43,#071e31)!important;border-color:#1b5d82!important}
+ .hk-kpis article small,.hk-kpi small,.hk-summary-card small{color:#a8c7d9!important}
+ .hk-kpis article strong,.hk-kpi strong,.hk-summary-card strong{color:#ffffff!important}
+ .hk-board .stat,.hk-board .summary-stat{background:linear-gradient(145deg,#0b2b43,#071e31)!important;color:#fff!important;border-color:#1b5d82!important}
+ .hk-board .stat span,.hk-board .summary-stat span{color:#a8c7d9!important}
+ .hk-board .stat strong,.hk-board .summary-stat strong{color:#fff!important}
+}
