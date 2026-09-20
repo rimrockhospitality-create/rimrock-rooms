@@ -337,7 +337,7 @@
   </main>
 
   <div id="dailyAuditPanel" class="daily-audit-panel" hidden>
-    <div class="daily-audit-card"><button id="closeDailyAudit" class="qr-close" type="button">×</button><small>NIGHT AUDIT • BUSINESS DAY</small><h2>Start New Business Day?</h2>
+    <div class="daily-audit-card"><button id="closeDailyAudit" class="qr-close" type="button" title="Exit Daily Audit" aria-label="Exit Daily Audit">×</button><small>NIGHT AUDIT • BUSINESS DAY</small><h2>Start New Business Day?</h2>
       <div class="daily-audit-warning"><strong>⚠ THIS CLOSES THE CURRENT RELAY BUSINESS DAY.</strong><p>Only run Daily Audit after Choice Night Audit / End of Day has completed successfully.</p></div>
       <div class="daily-audit-current"><span>CURRENT BUSINESS DAY</span><strong id="dailyAuditCurrentDate">—</strong></div>
       <p>RELAY will close today's operating workspace and open the next business day. Historical activity is preserved. Open maintenance carries forward. The new housekeeping board will start empty until Front Desk uploads the new Choice board.</p>
@@ -358,6 +358,6 @@
   </div>
 </div>
 <script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.js"></script>
-<script src="app.js?v=20260920-importexit1"></script>
+<script src="app.js?v=20260920-auditexit1"></script>
 </body>
 </html>
