@@ -699,3 +699,19 @@ document.getElementById('completeShift').addEventListener('click',()=>alert('Che
 document.getElementById('checklistDate').textContent=new Date().toLocaleDateString('en-US',{weekday:'long',month:'long',day:'numeric'});
 
 document.querySelectorAll('.rr-command-strip [data-view]').forEach(b=>b.addEventListener('click',()=>show(b.dataset.view)));
+
+document.querySelectorAll('[data-shift-open]').forEach(b=>b.addEventListener('click',()=>{show('Checklists');setTimeout(()=>openChecklist(b.dataset.shiftOpen),0)}));
+['dashLogMaintenance','rrFloatMaintenance'].forEach(id=>document.getElementById(id)?.addEventListener('click',()=>document.getElementById('logMaintenanceQuick').click()));
+document.getElementById('dashAddShiftNote')?.addEventListener('click',()=>{show('Checklists');setTimeout(openShiftNote,0)});
+document.querySelectorAll('.rr-dashboard [data-view]').forEach(b=>b.addEventListener('click',()=>show(b.dataset.view)));
+async function refreshDashboardOps(){
+ try{
+  const state=await apiPost({action:'getToday',businessDate:housekeepingBusinessDate()});
+  const ready=(state.cleaningSessions||[]).filter(x=>x.status==='READY_FOR_INSPECTION').length;
+  const open=(state.maintenanceIssues||[]).filter(x=>x.status==='OPEN').length;
+  const notes=(state.notifications||[]).filter(notificationAllowed).length;
+  const a=document.getElementById('dashInspectionCount'),m=document.getElementById('dashMaintenanceCount'),n=document.getElementById('dashNotificationCount');
+  if(a)a.textContent=ready;if(m)m.textContent=open;if(n)n.textContent=notes;
+ }catch(e){console.warn('Dashboard KPI refresh failed',e)}
+}
+setTimeout(refreshDashboardOps,1500);
