@@ -1060,3 +1060,13 @@ document.getElementById('exitChoiceSync')?.addEventListener('click',()=>{
  if(fileStatus){fileStatus.textContent='';fileStatus.className='file-status'}
  importView.hidden=true;housekeepingView.hidden=false;loadHousekeepingBoard();
 });
+
+async function relayLogout_(){
+ const sessionId=localStorage.getItem('relaySessionId');
+ try{if(sessionId)await apiPost({action:'authLogout',sessionId},10000)}catch(err){console.warn('Backend logout failed; clearing local session.',err)}
+ localStorage.removeItem('relaySessionId');currentUser=null;
+ const app=document.getElementById('operationsApp'),login=document.getElementById('loginView');
+ app.hidden=true;app.style.display='none';login.hidden=false;login.style.removeProperty('display');
+ document.getElementById('loginUsername').value='';document.getElementById('loginPassword').value='';document.getElementById('loginMessage').textContent='';
+}
+document.getElementById('topLogoutBtn')?.addEventListener('click',relayLogout_);
