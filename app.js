@@ -1,5 +1,5 @@
 /*
- * Rimrock Rooms
+ * RELAY
  * Product concept and operating design: Ryan Kelly
  * Original project owner: Ryan Kelly
  * Everhome Suites Denver Airport (CO534)
@@ -75,7 +75,7 @@ document.querySelectorAll('.tile[data-view]').forEach(b=>{ b.hidden=false; });
 document.getElementById('backHome').addEventListener('click',()=>show('Home'));
 document.getElementById('moreBtn').addEventListener('click',()=>drawer.hidden=false);
 document.getElementById('closeDrawer').addEventListener('click',()=>drawer.hidden=true);
-loadSession().catch(err=>{home.innerHTML='<div class="placeholder"><div><h2>Unable to start Rimrock Rooms</h2><p>'+err.message+'</p></div></div>'});
+loadSession().catch(err=>{home.innerHTML='<div class="placeholder"><div><h2>Unable to start RELAY</h2><p>'+err.message+'</p></div></div>'});
 const hkPdf=document.getElementById('hkPdf'),dropzone=document.getElementById('dropzone'),fileStatus=document.getElementById('fileStatus'),previewPdf=document.getElementById('previewPdf'),previewPanel=document.getElementById('previewPanel'),previewSummary=document.getElementById('previewSummary'),assignmentPreview=document.getElementById('assignmentPreview'),previewMessage=document.getElementById('previewMessage'),validateImport=document.getElementById('validateImport'),validationPanel=document.getElementById('validationPanel'),validationChecks=document.getElementById('validationChecks'),validationSummary=document.getElementById('validationSummary'),validationState=document.getElementById('validationState'),comparePanel=document.getElementById('comparePanel'),compareSummary=document.getElementById('compareSummary'),compareDetails=document.getElementById('compareDetails'),importDaily=document.getElementById('importDaily'); let selectedPdf=null,lastParsed=null;
 function acceptHousekeepingPdf(file){
   fileStatus.className='file-status';
@@ -166,7 +166,7 @@ validateImport.addEventListener('click',async()=>{
     validationChecks.innerHTML=checks.map(c=>'<div class="validation-check '+(c.ok?'pass':'fail')+'"><strong>'+(c.ok?'✓ ':'⚠ ')+c.label+'</strong><small>'+c.detail+'</small></div>').join('');
     validationState.textContent=passed?'VALIDATION PASSED':'REVIEW REQUIRED'; validationState.className=passed?'pass':'review';
     validationSummary.className='validation-summary '+(passed?'pass':'fail');
-    validationSummary.textContent=passed?'✓ All safety checks passed. Ready to compare with today’s Rimrock Rooms activity.':'Review required. Sync remains disabled until every validation issue is resolved.';
+    validationSummary.textContent=passed?'✓ All safety checks passed. Ready to compare with today’s RELAY activity.':'Review required. Sync remains disabled until every validation issue is resolved.';
     if(passed){await compareWithToday(lastParsed)} else {comparePanel.hidden=true; importDaily.disabled=true}
   }catch(err){validationPanel.hidden=false;validationSummary.className='validation-summary fail';validationSummary.textContent='Validation could not run: '+err.message;importDaily.disabled=true}
   finally{validateImport.disabled=false;validateImport.textContent='Continue to Validate →'}
@@ -187,7 +187,7 @@ async function loadTodayState(){
   try{
     const data=await apiPost({action:'getToday',businessDate:lastParsed.date});
     return data.ok?data:{assignments:[],rooms:{},cleaningSessions:[]};
-  }catch(e){throw new Error('Could not read today’s shared Rimrock Rooms state: '+e.message)}
+  }catch(e){throw new Error('Could not read today’s shared RELAY state: '+e.message)}
 }
 async function compareWithToday(parsed){
   const state=await loadTodayState(),current=new Map((state.assignments||[]).map(a=>[a.room,a.housekeeper])),incoming=new Map();
@@ -198,13 +198,13 @@ async function compareWithToday(parsed){
     const old=current.get(room),session=started.get(room);
     if(!old){added++;details.push({kind:'new',text:'Room '+room+' → '+name+' (new Choice assignment)'})}
     else if(old===name){unchanged++}
-    else if(session){conflicts++;details.push({kind:'conflict',text:'Room '+room+': Choice now '+name+'; Rimrock Rooms has '+session.housekeeper+' '+session.status.replaceAll('_',' ').toLowerCase()+'. Review required.'})}
+    else if(session){conflicts++;details.push({kind:'conflict',text:'Room '+room+': Choice now '+name+'; RELAY has '+session.housekeeper+' '+session.status.replaceAll('_',' ').toLowerCase()+'. Review required.'})}
     else{changed++;details.push({kind:'changed',text:'Room '+room+': '+old+' → '+name+' (safe reassignment; not started)'})}
   });
   current.forEach((name,room)=>{if(!incoming.has(room)){const session=started.get(room); if(session){conflicts++;details.push({kind:'conflict',text:'Room '+room+': no longer assigned in Choice, but '+session.housekeeper+' has operational activity. Review required.'})}else{changed++;details.push({kind:'changed',text:'Room '+room+': assignment removed by Choice (safe; not started)'})}}});
   comparePanel.hidden=false;
   compareSummary.innerHTML=[['Unchanged',unchanged],['New',added],['Changed',changed],['Conflicts',conflicts]].map(x=>'<div><small>'+x[0]+'</small><strong>'+x[1]+'</strong></div>').join('');
-  compareDetails.innerHTML=details.length?details.map(d=>'<article class="'+d.kind+'">'+d.text+'</article>').join(''):'<p>No assignment differences from today’s Rimrock Rooms state.</p>';
+  compareDetails.innerHTML=details.length?details.map(d=>'<article class="'+d.kind+'">'+d.text+'</article>').join(''):'<p>No assignment differences from today’s RELAY state.</p>';
   if(conflicts){validationState.textContent='REVIEW REQUIRED';validationState.className='review';validationSummary.className='validation-summary fail';validationSummary.textContent='Choice comparison found '+conflicts+' operational conflict'+(conflicts===1?'':'s')+'. Sync is blocked until reviewed.';importDaily.disabled=true}else{importDaily.disabled=false}
 }
 importDaily.addEventListener('click',async()=>{
@@ -220,7 +220,7 @@ importDaily.addEventListener('click',async()=>{
       action:'syncChoice',propertyId:lastParsed.property,businessDate:lastParsed.date,
       rooms:lastParsed.rooms,assignments:lastParsed.assignments,
       comparison:{unchanged,new:newCount,changed,conflicts:0},
-      syncedBy:currentUser?.name||'Rimrock Rooms',sourceFilename:selectedPdf?.name||''
+      syncedBy:currentUser?.name||'RELAY',sourceFilename:selectedPdf?.name||''
     });
     if(!result.ok){throw new Error(result.blocked?'Sync blocked by operational conflict.':(result.error||'Sync failed'))}
     validationSummary.className='validation-summary pass';
@@ -604,7 +604,7 @@ const CHECKLISTS={
  ['Review Departures & Billing','Verify proper billing, routing and applicable fees before checkout.'],
  ['Recognize Choice Rewards','Identify arriving Choice Rewards / VIP guests and special attention needs.'],
  ['Prepare VIP / Recognition Bags','Prepare applicable bags for placement after successful room inspection.'],
- ['Housekeeping Setup','Build/verify assignments, sync to Rimrock Rooms and confirm My Board.'],
+ ['Housekeeping Setup','Build/verify assignments, sync to RELAY and confirm My Board.'],
  ['Review OOO/OOS & Maintenance','Verify Choice room status against P1/P2 maintenance and room holds.'],
  ['Check Due-Outs After Checkout Time','Verify actual departures; extend or check out as needed.'],
  ['Review CRS Notifications','Correct failed sync items and document unresolved exceptions.'],
@@ -660,7 +660,7 @@ const CHECKLISTS={
  ['PRINT Arrivals List','Physical print required by Choice.'],
  ['PRINT Vacant Room List','Physical print required by Choice.'],
  ['Run Night Audit / End of Day','Complete Choice Night Audit and verify successful completion.'],
- ['Close Rimrock Rooms Business Day','Compile operational day and carry unresolved follow-ups into AM.'],
+ ['Close RELAY Business Day','Compile operational day and carry unresolved follow-ups into AM.'],
  ['Complete Audit Shift','Submit checklist, exceptions, notes and laundry status; log out of Choice.']
  ],
  MAINTENANCE:[
@@ -730,7 +730,7 @@ async function refreshDashboardOps(){
 }
 setTimeout(refreshDashboardOps,1500);
 
-/* R&R v4 navigation guard: delegated handler survives dashboard rebuilds */
+/* RELAY v4 navigation guard: delegated handler survives dashboard rebuilds */
 document.addEventListener('click',e=>{
  const b=e.target.closest('[data-view]');
  if(!b)return;
@@ -740,7 +740,7 @@ document.addEventListener('click',e=>{
  show(v);
 });
 
-/* R&R navigation v2: capture-phase router prevents stale handlers from swallowing clicks */
+/* RELAY navigation v2: capture-phase router prevents stale handlers from swallowing clicks */
 document.addEventListener('click',function(e){
  const b=e.target.closest('[data-view]');
  if(!b||!b.dataset.view)return;
@@ -792,7 +792,7 @@ document.getElementById('loginForm').addEventListener('submit',e=>{
  const password=document.getElementById('loginPassword').value;
  const msg=document.getElementById('loginMessage');
  const btn=document.getElementById('loginSubmit');
- if(!loginUsers.length){msg.textContent='R&R is still loading. Try again in a moment.';return}
+ if(!loginUsers.length){msg.textContent='RELAY is still loading. Try again in a moment.';return}
  const user=loginUsers.find(u=>u.active&&String(u.username||'').toLowerCase()===username&&String(u.password||'')===password);
  if(!user){msg.textContent='Username or password is incorrect.';return}
  btn.disabled=true;btn.textContent='SIGNING IN…';msg.textContent='';
@@ -802,7 +802,7 @@ document.getElementById('loginForm').addEventListener('submit',e=>{
  const login=document.getElementById('loginView'),app=document.getElementById('operationsApp');
  login.style.display='none';login.hidden=true;app.hidden=false;app.style.display='';
  if(user.roles.includes('HOUSEKEEPER'))show('Housekeeping');else if(user.roles.includes('MAINTENANCE'))show('Maintenance');else show('Home');
- btn.disabled=false;btn.textContent='SIGN IN TO R&R OPERATIONS';
+ btn.disabled=false;btn.textContent='SIGN IN TO RELAY OPERATIONS';
 });
 
 document.getElementById('appRefresh')?.addEventListener('click',async()=>{
@@ -816,7 +816,7 @@ document.getElementById('appRefresh')?.addEventListener('click',async()=>{
  }finally{b.disabled=false;b.firstChild.textContent='↻ '}
 });
 
-/* R&R interaction router: one capture-level path for dynamic operational controls */
+/* RELAY interaction router: one capture-level path for dynamic operational controls */
 document.addEventListener('click',function(e){
  const shift=e.target.closest('.shift-card,.maintenance-check-card,[data-shift-open]');
  if(shift){
@@ -845,7 +845,7 @@ document.addEventListener('click',function(e){
  if(photo){e.preventDefault();e.stopImmediatePropagation();window.open('https://drive.google.com/open?id='+photo.dataset.photo,'_blank');return}
 },true);
 
-/* R&R critical controls v2 */
+/* RELAY critical controls v2 */
 document.addEventListener('click',async function(e){
  const refresh=e.target.closest('#appRefresh');
  if(refresh){
@@ -858,7 +858,7 @@ document.addEventListener('click',async function(e){
    else if(!maintenanceView.hidden)await loadMaintenanceBoard();
    else if(!checklistsView.hidden){renderChecklist();await refreshDashboardOps()}
    else await refreshDashboardOps();
-  }catch(err){console.error('R&R refresh failed',err)}
+  }catch(err){console.error('RELAY refresh failed',err)}
   finally{refresh.disabled=false;refresh.innerHTML='↻ <span>REFRESH</span>'}
   return;
  }
@@ -873,7 +873,7 @@ document.addEventListener('click',async function(e){
  }
 },true);
 
-/* R&R refresh v3 — refresh current workspace without re-authentication */
+/* RELAY refresh v3 — refresh current workspace without re-authentication */
 window.rrRefreshCurrent=async function(){
  const b=document.getElementById('appRefresh');if(!currentUser)return;
  if(b){b.disabled=true;b.innerHTML='⟳ <span>REFRESHING</span>'}
@@ -884,7 +884,7 @@ window.rrRefreshCurrent=async function(){
   else if(visible('maintenanceView'))await loadMaintenanceBoard();
   else if(visible('checklistsView')){openChecklistHub();await refreshDashboardOps()}
   else {await refreshDashboardOps();show('Home')}
- }catch(err){console.error('R&R refresh failed',err);alert('Refresh failed: '+err.message)}
+ }catch(err){console.error('RELAY refresh failed',err);alert('Refresh failed: '+err.message)}
  finally{if(b){b.disabled=false;b.innerHTML='↻ <span>REFRESH</span>'}}
 };
 
