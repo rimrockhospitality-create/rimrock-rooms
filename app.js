@@ -144,25 +144,33 @@ previewPdf.addEventListener('click',async()=>{
 });
 
 async function validateParsedImport(parsed){
-  const [roomsRes,usersRes,propertiesRes]=await Promise.all([fetch('data/rooms.json',{cache:'no-store'}),fetch('data/users.json',{cache:'no-store'}),fetch('data/properties.json',{cache:'no-store'})]);
-  const masterRooms=await roomsRes.json(),users=await usersRes.json(),properties=await propertiesRes.json();
-  const roomSet=new Set(masterRooms.filter(r=>r.propertyId==='CO534'&&r.active).map(r=>r.roomNumber));
-  const parsedNums=parsed.rooms.map(r=>r.room), unknownRooms=[...new Set(parsedNums.filter(r=>!roomSet.has(r)))];
+  const [roomsRes,propertiesRes,usersApi]=await Promise.all([
+    fetch('data/rooms.json',{cache:'no-store'}),
+    fetch('data/properties.json',{cache:'no-store'}),
+    apiPost({action:'listActiveUsers',propertyId:parsed.property||'CO534'})
+  ]);
+  const masterRooms=await roomsRes.json(),properties=await propertiesRes.json();
+  if(!usersApi.ok)throw new Error(usersApi.error||usersApi.reason||'Could not read active RELAY users');
+  const users=usersApi.users||[];
+  const roomSet=new Set(masterRooms.filter(r=>r.propertyId==='CO534'&&r.active).map(r=>String(r.roomNumber)));
+  const parsedNums=parsed.rooms.map(r=>String(r.room)),unknownRooms=[...new Set(parsedNums.filter(r=>!roomSet.has(r)))];
   const duplicateRows=parsedNums.filter((r,i,a)=>a.indexOf(r)!==i);
-  const assigned=parsed.assignments.flatMap(a=>a.rooms.map(room=>({room,name:a.name})));
+  const assigned=parsed.assignments.flatMap(a=>a.rooms.map(room=>({room:String(room),name:a.name})));
   const duplicateAssignments=[...new Set(assigned.filter((x,i,a)=>a.findIndex(y=>y.room===x.room)!==i).map(x=>x.room))];
-  // Choice-assigned names may precede user provisioning; validation flags them rather than silently matching.
-  const activeNames=new Set(users.filter(u=>u.active).map(u=>u.name.toLowerCase()));
-  const unknownEmployees=parsed.assignments.map(a=>a.name).filter(n=>!activeNames.has(n.toLowerCase()));
+  const activeNames=new Set(users.filter(u=>u.active&&u.role==='HOUSEKEEPER').map(u=>String(u.name).toLowerCase()));
+  const unknownEmployees=parsed.assignments.map(a=>a.name).filter(n=>!activeNames.has(String(n).toLowerCase()));
   const propertyExists=properties.some(p=>p.active&&p.propertyId===parsed.property);
   const dateValid=/^\d{1,2}\/\d{1,2}\/\d{4}$/.test(parsed.date);
+  await loadRelayBusinessDay_();
+  const parsedDate=dateValid?new Date(parsed.date+' 12:00:00'):null,businessDate=relayBusinessDate?new Date(relayBusinessDate+' 12:00:00'):null;
+  const businessDateMatch=!!(parsedDate&&businessDate&&parsedDate.toDateString()===businessDate.toDateString());
   return [
     {label:'Property',ok:propertyExists,detail:propertyExists?parsed.property+' matched':'Unknown property: '+(parsed.property||'none')},
-    {label:'Business Date',ok:dateValid,detail:dateValid?parsed.date:'Missing or invalid date'},
+    {label:'Business Date',ok:dateValid&&businessDateMatch,detail:!dateValid?'Missing or invalid report date':businessDateMatch?(parsed.date+' matches current RELAY business day'):'Choice report '+parsed.date+' does not match RELAY business day '+relayBusinessDate},
     {label:'Room Master',ok:unknownRooms.length===0,detail:unknownRooms.length?('Unknown rooms: '+unknownRooms.join(', ')):parsed.rooms.length+' extracted rooms matched'},
     {label:'Duplicate Room Rows',ok:duplicateRows.length===0,detail:duplicateRows.length?('Duplicates: '+[...new Set(duplicateRows)].join(', ')):'No duplicate extracted rooms'},
     {label:'Duplicate Assignments',ok:duplicateAssignments.length===0,detail:duplicateAssignments.length?('Assigned twice: '+duplicateAssignments.join(', ')):'No room assigned twice'},
-    {label:'Housekeepers',ok:unknownEmployees.length===0,detail:unknownEmployees.length?('Not yet in active users: '+unknownEmployees.join(', ')):parsed.assignments.length+' housekeeper'+(parsed.assignments.length===1?'':'s')+' matched'}
+    {label:'Housekeepers',ok:unknownEmployees.length===0,detail:unknownEmployees.length?('No active HOUSEKEEPER account matches Choice: '+unknownEmployees.join(', ')):parsed.assignments.length+' housekeeper'+(parsed.assignments.length===1?'':'s')+' matched'}
   ];
 }
 validateImport.addEventListener('click',async()=>{
