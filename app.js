@@ -834,3 +834,31 @@ document.addEventListener('click',function(e){
  const photo=e.target.closest('.maint-photo');
  if(photo){e.preventDefault();e.stopImmediatePropagation();window.open('https://drive.google.com/open?id='+photo.dataset.photo,'_blank');return}
 },true);
+
+/* R&R critical controls v2 */
+document.addEventListener('click',async function(e){
+ const refresh=e.target.closest('#appRefresh');
+ if(refresh){
+  e.preventDefault();e.stopImmediatePropagation();
+  if(!currentUser)return;
+  refresh.disabled=true;refresh.innerHTML='⟳ <span>REFRESHING</span>';
+  try{
+   if(!housekeepingView.hidden)await loadHousekeepingBoard();
+   else if(!inspectionView.hidden)await loadInspectionQueue();
+   else if(!maintenanceView.hidden)await loadMaintenanceBoard();
+   else if(!checklistsView.hidden){renderChecklist();await refreshDashboardOps()}
+   else await refreshDashboardOps();
+  }catch(err){console.error('R&R refresh failed',err)}
+  finally{refresh.disabled=false;refresh.innerHTML='↻ <span>REFRESH</span>'}
+  return;
+ }
+ const note=e.target.closest('#dashAddShiftNote,#addShiftNote,#addChecklistNote');
+ if(note){
+  e.preventDefault();e.stopImmediatePropagation();
+  show('Checklists');
+  openShiftNote();
+  const panel=document.getElementById('shiftNotePanel');
+  panel.hidden=false;panel.scrollIntoView({block:'start'});
+  return;
+ }
+},true);
