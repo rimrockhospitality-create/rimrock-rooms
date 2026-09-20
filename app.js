@@ -38,7 +38,7 @@ function activateUser(user){
  const login=document.getElementById('loginView'),app=document.getElementById('operationsApp');
  login.hidden=true;login.style.setProperty('display','none','important');
  app.hidden=false;app.style.display='';
- applyIdentity(currentUser,property);applyPermissions(currentUser.roles);buildDrawer(currentUser.roles);
+ applyIdentity(currentUser,property);applyPermissions(currentUser.roles);buildDrawer(currentUser.roles);updateChoiceSyncAccess_();
  if(currentUser.roles.includes('HOUSEKEEPER'))show('Housekeeping');else if(currentUser.roles.includes('MAINTENANCE'))show('Maintenance');else show('Home');
 }
 function allowedViews(roles){return [...new Set(roles.flatMap(r=>ROLE_VIEWS[r]||[]))]}
@@ -241,7 +241,10 @@ importDaily.addEventListener('click',async()=>{
 
 /* Section 3 — live My Board — Ryan Kelly */
 const hkGreeting=document.getElementById('hkGreeting'),hkBoardDate=document.getElementById('hkBoardDate'),hkBoardStatus=document.getElementById('hkBoardStatus'),hkMyRooms=document.getElementById('hkMyRooms'),hkManagerGroups=document.getElementById('hkManagerGroups'),managerImportBtn=document.getElementById('managerImportBtn'),emptyChoiceSyncBtn=document.getElementById('emptyChoiceSyncBtn'),qrStartPanel=document.getElementById('qrStartPanel'),qrStartRoom=document.getElementById('qrStartRoom'),qrStartMessage=document.getElementById('qrStartMessage');
-function openChoiceSync(){housekeepingView.hidden=true;importView.hidden=false} managerImportBtn.addEventListener('click',openChoiceSync);emptyChoiceSyncBtn.addEventListener('click',openChoiceSync);
+function canSyncChoice_(){return !!currentUser&&currentUser.roles.some(r=>['ADMIN','INSPECTOR','FRONT DESK'].includes(r))}
+function updateChoiceSyncAccess_(){const allowed=canSyncChoice_();managerImportBtn.hidden=!allowed;if(!allowed)emptyChoiceSyncBtn.hidden=true}
+function openChoiceSync(){if(!canSyncChoice_())return;housekeepingView.hidden=true;importView.hidden=false}
+managerImportBtn.addEventListener('click',openChoiceSync);emptyChoiceSyncBtn.addEventListener('click',openChoiceSync);
 function housekeepingBusinessDate(){return new Intl.DateTimeFormat('en-US',{timeZone:'America/Denver'}).format(new Date())}
 async function loadHousekeepingBoard(){
   if(!currentUser)return;
