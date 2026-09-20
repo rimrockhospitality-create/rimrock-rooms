@@ -31,6 +31,10 @@ async function loadSession(){
   applyIdentity(currentUser,property);
   applyPermissions(currentUser.roles);
   buildDrawer(currentUser.roles);
+  // Role-aware landing: staff enter directly into their operating workspace.
+  if(currentUser.roles.includes('HOUSEKEEPER')) show('Housekeeping');
+  else if(currentUser.roles.includes('MAINTENANCE')) show('Maintenance');
+  else show('Home');
 }
 function allowedViews(roles){return [...new Set(roles.flatMap(r=>ROLE_VIEWS[r]||[]))]}
 function applyIdentity(user,property){
