@@ -12,7 +12,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="theme-color" content="#073b63">
   <title>RELAY Operations | CO534</title>
-  <link rel="stylesheet" href="styles.css?v=20260920-logout2">
+  <link rel="stylesheet" href="styles.css?v=20260920-dailyaudit1">
 </head>
 <body>
 <section id="loginView" class="rr-login">
@@ -84,7 +84,7 @@
       <div class="rr-alert-row danger"><b>3</b><span><strong>Open Follow-Ups</strong><small>From previous shift</small></span><i>›</i></div>
       <div class="rr-alert-row warn"><b>1</b><span><strong>Awaiting Resolution</strong><small>Assigned to you</small></span><i>›</i></div>
       <div class="rr-alert-row info"><b id="dashNotificationCount">0</b><span><strong>Informational Notes</strong><small>Latest updates</small></span><i>›</i></div>
-      <div class="rr-quick"><small>QUICK ACTIONS</small><button id="dashAddShiftNote">＋ Add Shift Note</button><button id="dashLogMaintenance">🔧 Report Maintenance</button><button data-view="Housekeeping">🛏 View Room Status</button><button data-view="Reports">▥ Reports</button></div>
+      <div class="rr-quick"><small>QUICK ACTIONS</small><button id="dailyAuditBtn" class="daily-audit-btn" type="button">🌙 DAILY AUDIT</button><button id="dashAddShiftNote">＋ Add Shift Note</button><button id="dashLogMaintenance">🔧 Report Maintenance</button><button data-view="Housekeeping">🛏 View Room Status</button><button data-view="Reports">▥ Reports</button></div>
     </aside>
   </div>
   <button id="rrFloatMaintenance" class="rr-float" title="Report maintenance">🔧<span>REPORT ISSUE</span></button>
@@ -336,6 +336,15 @@
     </section>
   </main>
 
+  <div id="dailyAuditPanel" class="daily-audit-panel" hidden>
+    <div class="daily-audit-card"><button id="closeDailyAudit" class="qr-close" type="button">×</button><small>NIGHT AUDIT • BUSINESS DAY</small><h2>Start New Business Day?</h2>
+      <div class="daily-audit-warning"><strong>⚠ THIS CLOSES THE CURRENT RELAY BUSINESS DAY.</strong><p>Only run Daily Audit after Choice Night Audit / End of Day has completed successfully.</p></div>
+      <div class="daily-audit-current"><span>CURRENT BUSINESS DAY</span><strong id="dailyAuditCurrentDate">—</strong></div>
+      <p>RELAY will close today's operating workspace and open the next business day. Historical activity is preserved. Open maintenance carries forward. The new housekeeping board will start empty until Front Desk uploads the new Choice board.</p>
+      <label class="audit-confirm"><input id="dailyAuditConfirm" type="checkbox"> I confirm Choice Night Audit / End of Day is complete and I am ready to open the next business day.</label>
+      <button id="executeDailyAudit" type="button" disabled>START NEW BUSINESS DAY →</button><p id="dailyAuditMessage"></p>
+    </div>
+  </div>
   <nav class="mobile-nav" aria-label="Mobile navigation">
     <button class="mobile-active" data-view="Home">⌂<small>Home</small></button>
     <button data-view="Search">⌕<small>Search</small></button>
@@ -349,6 +358,6 @@
   </div>
 </div>
 <script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.js"></script>
-<script src="app.js?v=20260920-users2"></script>
+<script src="app.js?v=20260920-dailyaudit1"></script>
 </body>
 </html>
