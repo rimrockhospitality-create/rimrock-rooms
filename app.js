@@ -1043,3 +1043,12 @@ document.getElementById('executeDailyAudit')?.addEventListener('click',async()=>
  }catch(err){msg.textContent='Daily Audit failed: '+err.message;b.disabled=false}
  finally{b.textContent='START NEW BUSINESS DAY →'}
 });
+
+document.getElementById('exitChoiceSync')?.addEventListener('click',()=>{
+ const hasWork=!!selectedPdf||!!lastParsed;
+ if(hasWork&&!confirm('Exit Choice Sync? This will discard the current upload/preview. Nothing will be imported.'))return;
+ selectedPdf=null;lastParsed=null;if(hkPdf)hkPdf.value='';
+ previewPanel.hidden=true;validationPanel.hidden=true;comparePanel.hidden=true;importDaily.disabled=true;validateImport.disabled=true;
+ if(fileStatus){fileStatus.textContent='';fileStatus.className='file-status'}
+ importView.hidden=true;housekeepingView.hidden=false;loadHousekeepingBoard();
+});
