@@ -1085,22 +1085,26 @@ async function loadOpenShiftNotes_(){
   const r=await apiPost({action:'getShiftOperations',sessionId:localStorage.getItem('relaySessionId'),businessDate:housekeepingBusinessDate(),shift:activeChecklist||''});
   if(!r.ok)throw new Error(r.reason||r.error||'Unable to load handoff');
   const notes=(r.openNotes||r.shiftNotes||r.notes||[]).filter(n=>['ISSUE','FOLLOWUP','FOLLOW_UP'].includes(String(n.noteType||n.note_type||'').toUpperCase())&&String(n.status||'OPEN').toUpperCase()==='OPEN');
+  window.relayOpenNotes_=notes;
   if(!notes.length){box.innerHTML='<div class="empty-followup"><span>↻</span><strong>No open issues or follow-ups</strong><p>Open items will remain here across shifts and business days until resolved.</p></div>';return}
-  box.innerHTML=notes.map(n=>{const type=String(n.noteType||n.note_type||'').toUpperCase(),follow=type.includes('FOLLOW'),label=follow?'FOLLOW-UP NEEDED':'ISSUE',id=n.noteId||n.note_id,issue=n.issueInformation||n.issue_information||'',who=n.enteredBy||n.entered_by||'',date=n.businessDate||n.business_date||'';return '<article class="handoff-note '+(follow?'followup':'issue')+'"><small>'+label+' • '+date+'</small><strong>'+issue+'</strong><span>Entered by '+who+'</span><button type="button" data-resolve-note="'+id+'" data-resolve-type="'+(follow?'FOLLOW-UP':'ISSUE')+'" data-resolve-issue="'+encodeURIComponent(issue)+'">✓ '+(follow?'FOLLOW-UP':'ISSUE')+' RESOLVED</button></article>'}).join('');
+  box.innerHTML=notes.map(n=>{const type=String(n.noteType||n.note_type||'').toUpperCase(),follow=type.includes('FOLLOW'),label=follow?'FOLLOW-UP NEEDED':'ISSUE',id=n.noteId||n.note_id,issue=n.issueInformation||n.issue_information||'',who=n.enteredBy||n.entered_by||'',date=n.businessDate||n.business_date||'';return '<article class="handoff-note '+(follow?'followup':'issue')+'" data-open-note="'+id+'"><small>'+label+' • '+date+'</small><strong>'+issue+'</strong><span>Entered by '+who+'</span><b>VIEW ACTIVITY →</b></article>'}).join('');
  }catch(err){box.innerHTML='<div class="empty-followup"><strong>Handoff unavailable</strong><p>'+err.message+'</p></div>'}
 }
-document.getElementById('openShiftNotes')?.addEventListener('click',e=>{
- const b=e.target.closest('[data-resolve-note]');if(!b)return;
- document.getElementById('resolveShiftNoteId').value=b.dataset.resolveNote;
- document.getElementById('resolveShiftNoteTitle').textContent=b.dataset.resolveType+' Resolved';
- document.getElementById('resolveShiftNoteIssue').textContent=decodeURIComponent(b.dataset.resolveIssue||'');
- document.getElementById('resolveShiftNoteText').value='';document.getElementById('resolveShiftNoteMessage').textContent='';
- document.getElementById('resolveShiftNotePanel').hidden=false;
-});
+async function openShiftNoteDetail_(id){
+ const n=(window.relayOpenNotes_||[]).find(x=>(x.noteId||x.note_id)===id);if(!n)return;
+ document.getElementById('resolveShiftNoteId').value=id;document.getElementById('resolveShiftNoteTitle').textContent=(String(n.noteType||n.note_type||'').toUpperCase().includes('FOLLOW')?'Follow-Up':'Issue')+' Detail';
+ document.getElementById('resolveShiftNoteIssue').textContent=n.issueInformation||n.issue_information||'';
+ document.getElementById('resolveShiftNoteUpdate').value='';document.getElementById('resolveShiftNoteText').value='';document.getElementById('resolveShiftNoteMessage').textContent='';
+ document.getElementById('shiftNoteTimeline').innerHTML='<div class="timeline-loading">Loading activity…</div>';document.getElementById('resolveShiftNotePanel').hidden=false;
+ try{const r=await apiPost({action:'getShiftNoteDetail',sessionId:localStorage.getItem('relaySessionId'),noteId:id});if(!r.ok)throw new Error(r.reason||r.error||'Unable to load activity');const updates=r.updates||[];document.getElementById('shiftNoteTimeline').innerHTML=updates.length?updates.map(u=>'<article><small>'+String(u.enteredAt||u.entered_at||'')+' • '+String(u.enteredBy||u.entered_by||'')+'</small><p>'+String(u.updateText||u.update_text||'')+'</p></article>').join(''):'<div class="timeline-empty">No updates yet.</div>'}catch(err){document.getElementById('shiftNoteTimeline').innerHTML='<div class="timeline-empty">'+err.message+'</div>'}
+}
+document.getElementById('openShiftNotes')?.addEventListener('click',e=>{const card=e.target.closest('[data-open-note]');if(card)openShiftNoteDetail_(card.dataset.openNote)});
 document.getElementById('closeResolveShiftNote')?.addEventListener('click',()=>document.getElementById('resolveShiftNotePanel').hidden=true);
+document.getElementById('addShiftNoteUpdate')?.addEventListener('click',async()=>{
+ const id=document.getElementById('resolveShiftNoteId').value,text=document.getElementById('resolveShiftNoteUpdate').value.trim(),msg=document.getElementById('resolveShiftNoteMessage');if(!text){msg.textContent='Enter an update first.';return}msg.textContent='Saving update…';
+ try{const r=await apiPost({action:'addShiftNoteUpdate',sessionId:localStorage.getItem('relaySessionId'),noteId:id,businessDate:housekeepingBusinessDate(),shift:activeChecklist||'GENERAL',updateText:text});if(!r.ok)throw new Error(r.reason||r.error||'Update failed');msg.textContent='✓ Update added — item remains open.';document.getElementById('resolveShiftNoteUpdate').value='';await openShiftNoteDetail_(id);await loadOpenShiftNotes_()}catch(err){msg.textContent='Update failed: '+err.message}
+});
 document.getElementById('confirmResolveShiftNote')?.addEventListener('click',async()=>{
- const id=document.getElementById('resolveShiftNoteId').value,note=document.getElementById('resolveShiftNoteText').value.trim(),msg=document.getElementById('resolveShiftNoteMessage');
- if(!note){msg.textContent='Enter what was done before resolving this item.';return}
- msg.textContent='Resolving…';
+ const id=document.getElementById('resolveShiftNoteId').value,note=document.getElementById('resolveShiftNoteText').value.trim(),msg=document.getElementById('resolveShiftNoteMessage');if(!note){msg.textContent='Enter the final resolution before closing this item.';return}msg.textContent='Resolving…';
  try{const r=await apiPost({action:'resolveShiftNote',sessionId:localStorage.getItem('relaySessionId'),noteId:id,resolutionNote:note});if(!r.ok)throw new Error(r.reason||r.error||'Resolve failed');msg.textContent='✓ Resolved';setTimeout(async()=>{document.getElementById('resolveShiftNotePanel').hidden=true;await loadOpenShiftNotes_();refreshDashboardOps()},500)}catch(err){msg.textContent='Resolve failed: '+err.message}
 });
