@@ -751,12 +751,18 @@ document.getElementById('dashAddShiftNote')?.addEventListener('click',()=>{show(
 document.querySelectorAll('.rr-dashboard [data-view]').forEach(b=>b.addEventListener('click',()=>show(b.dataset.view)));
 async function refreshDashboardOps(){
  try{
-  const state=await apiPost({action:'getToday',businessDate:housekeepingBusinessDate()});
+  const [state,handoff]=await Promise.all([
+   apiPost({action:'getToday',businessDate:housekeepingBusinessDate()}),
+   currentUser?apiPost({action:'getShiftOperations',sessionId:localStorage.getItem('relaySessionId'),businessDate:housekeepingBusinessDate(),shift:''}):Promise.resolve({ok:false})
+  ]);
   const ready=(state.cleaningSessions||[]).filter(x=>x.status==='READY_FOR_INSPECTION').length;
   const open=(state.maintenanceIssues||[]).filter(x=>x.status==='OPEN').length;
-  const notes=(state.notifications||[]).filter(notificationAllowed).length;
+  const openNotes=handoff.ok?(handoff.openNotes||handoff.shiftNotes||[]).filter(n=>['ISSUE','FOLLOWUP','FOLLOW_UP'].includes(String(n.noteType||n.note_type||'').toUpperCase())&&String(n.status||'OPEN').toUpperCase()==='OPEN'):[];
+  const followups=openNotes.filter(n=>String(n.noteType||n.note_type||'').toUpperCase().includes('FOLLOW')).length;
+  const issues=openNotes.filter(n=>String(n.noteType||n.note_type||'').toUpperCase()==='ISSUE').length;
   const a=document.getElementById('dashInspectionCount'),m=document.getElementById('dashMaintenanceCount'),n=document.getElementById('dashNotificationCount');
-  if(a)a.textContent=ready;if(m)m.textContent=open;if(n)n.textContent=notes;
+  if(a)a.textContent=ready;if(m)m.textContent=open;if(n)n.textContent=followups+issues;
+  document.querySelectorAll('.rr-handoff-row').forEach(row=>{const label=(row.textContent||'').toLowerCase(),bubble=row.querySelector('b,span');if(!bubble)return;if(label.includes('open follow'))bubble.textContent=followups;if(label.includes('awaiting resolution'))bubble.textContent=issues});
  }catch(e){console.warn('Dashboard KPI refresh failed',e)}
 }
 setTimeout(refreshDashboardOps,1500);
@@ -1088,7 +1094,7 @@ async function loadOpenShiftNotes_(){
  try{
   const r=await apiPost({action:'getShiftOperations',sessionId:localStorage.getItem('relaySessionId'),businessDate:housekeepingBusinessDate(),shift:activeChecklist||''});
   if(!r.ok)throw new Error(r.reason||r.error||'Unable to load handoff');
-  const notes=(r.openNotes||r.shiftNotes||[]).filter(n=>['ISSUE','FOLLOWUP','FOLLOW_UP'].includes(String(n.noteType||n.note_type||'').toUpperCase())&&String(n.status||'OPEN').toUpperCase()==='OPEN');
+  const notes=(r.openNotes||r.shiftNotes||r.notes||[]).filter(n=>['ISSUE','FOLLOWUP','FOLLOW_UP'].includes(String(n.noteType||n.note_type||'').toUpperCase())&&String(n.status||'OPEN').toUpperCase()==='OPEN');
   if(!notes.length){box.innerHTML='<div class="empty-followup"><span>↻</span><strong>No open issues or follow-ups</strong><p>Open items will remain here across shifts and business days until resolved.</p></div>';return}
   box.innerHTML=notes.map(n=>{const type=String(n.noteType||n.note_type||'').toUpperCase(),follow=type.includes('FOLLOW'),label=follow?'FOLLOW-UP NEEDED':'ISSUE',id=n.noteId||n.note_id,issue=n.issueInformation||n.issue_information||'',who=n.enteredBy||n.entered_by||'',date=n.businessDate||n.business_date||'';return '<article class="handoff-note '+(follow?'followup':'issue')+'"><small>'+label+' • '+date+'</small><strong>'+issue+'</strong><span>Entered by '+who+'</span><button type="button" data-resolve-note="'+id+'" data-resolve-type="'+(follow?'FOLLOW-UP':'ISSUE')+'" data-resolve-issue="'+encodeURIComponent(issue)+'">✓ '+(follow?'FOLLOW-UP':'ISSUE')+' RESOLVED</button></article>'}).join('');
  }catch(err){box.innerHTML='<div class="empty-followup"><strong>Handoff unavailable</strong><p>'+err.message+'</p></div>'}
