@@ -775,11 +775,13 @@ window.openHkMaintenanceForRoom=function(room){
 };
 
 document.getElementById('togglePassword').addEventListener('click',()=>{const p=document.getElementById('loginPassword');p.type=p.type==='password'?'text':'password'});
-document.getElementById('loginForm').addEventListener('submit',e=>{
- e.preventDefault();const username=document.getElementById('loginUsername').value.trim().toLowerCase(),password=document.getElementById('loginPassword').value,msg=document.getElementById('loginMessage'),btn=document.getElementById('loginSubmit');
+window.rrSignIn=function(){
+ const username=document.getElementById('loginUsername').value.trim().toLowerCase(),password=document.getElementById('loginPassword').value,msg=document.getElementById('loginMessage'),btn=document.getElementById('loginSubmit');
+ if(!loginUsers.length){msg.textContent='R&R is still loading users. Try again in a moment.';return false}
  const user=loginUsers.find(u=>u.active&&String(u.username||'').toLowerCase()===username&&String(u.password||'')===password);
- if(!user){msg.textContent='Username or password is incorrect.';return}
+ if(!user){msg.textContent='Username or password is incorrect.';return false}
  msg.textContent='';btn.textContent='SIGNING IN…';
- try{activateUser(user)}catch(err){document.getElementById('operationsApp').hidden=true;document.getElementById('loginView').hidden=false;msg.textContent='Sign-in loaded your account but the workspace failed: '+err.message;console.error(err)}
- btn.textContent='SIGN IN TO R&R OPERATIONS';
-});
+ try{activateUser(user)}catch(err){document.getElementById('operationsApp').hidden=true;document.getElementById('loginView').hidden=false;msg.textContent='Workspace error: '+err.message;console.error(err)}
+ btn.textContent='SIGN IN TO R&R OPERATIONS';return false;
+};
+document.getElementById('loginForm').addEventListener('submit',e=>{e.preventDefault();window.rrSignIn()});
