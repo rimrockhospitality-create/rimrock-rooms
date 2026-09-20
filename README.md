@@ -77,3 +77,26 @@ Live validation confirmed:
 - Import remained disabled when an employee was unresolved and enabled only after all checks passed
 
 Step 4 import was not executed during Step 3 acceptance.
+
+
+## RELAY Authentication V1 — Locked Architecture
+
+RELAY uses five permission classes: ADMIN, INSPECTOR, FRONT DESK, HOUSEKEEPER, MAINTENANCE.
+
+Production authentication must be server-side. Browser code must never download password hashes, salts, or other users' credentials.
+
+Backend auth store schema:
+- USERS: user_id, property_id, name, username, role, password_hash, password_salt, active, created_at, updated_at
+- AUTH_SESSIONS: session_id, user_id, property_id, role, created_at, expires_at, revoked, last_seen_at
+
+Required backend actions:
+1. authLogin(username, password) -> validates a salted password hash and returns a session token plus the authenticated user's safe profile.
+2. authSession(sessionToken) -> validates an unexpired, non-revoked session and returns the safe profile.
+3. authLogout(sessionToken) -> revokes the session.
+4. adminListUsers(sessionToken) -> ADMIN only; never returns password_hash/password_salt.
+5. adminCreateUser(sessionToken, user fields, temporary password) -> ADMIN only; hashes server-side.
+6. adminUpdateUser(sessionToken, user fields) -> ADMIN only.
+7. adminResetPassword(sessionToken, userId, temporary password) -> ADMIN only; hashes server-side.
+8. adminDeactivateUser(sessionToken, userId) -> ADMIN only; preserves historical attribution.
+
+Legacy ?user= authentication is disabled. GitHub users.json is temporary development data only and must be removed from the production authentication path once backend auth is live.
