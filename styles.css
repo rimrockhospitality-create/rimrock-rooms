@@ -339,3 +339,6 @@ input::placeholder,textarea::placeholder{color:#7d98aa!important;opacity:1}
 
 /* CHOICE SYNC EXIT */
 .import-head-actions{display:flex;gap:10px;align-items:center}.import-exit-btn{background:#0a2c44;color:#dff5ff;border:1px solid #327ca3;border-radius:8px;padding:10px 15px;font-weight:900}.import-exit-btn:hover{background:#123d59}@media(max-width:700px){.import-head-actions{width:100%;margin-top:12px}.import-exit-btn{flex:1}}
+
+/* VISIBLE AUTHENTICATED LOGOUT */
+.app-logout{background:#09283d;color:#bcd6e5;border:1px solid #225875;border-radius:8px;padding:10px 13px;font-weight:850;letter-spacing:.04em;cursor:pointer}.app-logout:hover{background:#123a53;color:#fff}@media(max-width:760px){.app-logout span{display:none}.app-logout{padding:9px 11px}}
