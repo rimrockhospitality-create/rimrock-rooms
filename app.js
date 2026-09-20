@@ -9,13 +9,13 @@ const API_URL='https://script.google.com/macros/s/AKfycby4lxHCqEsiURHZzUv93rDs5r
 const QR_TEST_ROOM='122';
 const QR_TEST_ID='CO534-RM-122';
 const ROLE_VIEWS={
-  HOUSEKEEPER:['Home','Housekeeping'],
-  INSPECTOR:['Home','Inspections'],
-  MAINTENANCE:['Home','Maintenance','Checklists','Preventive Maintenance'],
-  'FRONT DESK':['Home','Housekeeping','Maintenance','Checklists'],
-  MANAGER:['Home','Housekeeping','Inspections','Maintenance','Checklists','Preventive Maintenance','Reports','Property Settings','Users','Settings']
+  ADMIN:['Home','Checklists','Housekeeping','Inspections','Maintenance','Preventive Maintenance','Reports','Property Settings','Users','Settings'],
+  INSPECTOR:['Home','Checklists','Housekeeping','Inspections','Maintenance','Preventive Maintenance','Reports'],
+  'FRONT DESK':['Home','Checklists','Housekeeping','Maintenance'],
+  HOUSEKEEPER:['Housekeeping'],
+  MAINTENANCE:['Maintenance','Preventive Maintenance','Checklists']
 };
-const ROLE_LABELS={HOUSEKEEPER:'Housekeeper',INSPECTOR:'Inspector',MAINTENANCE:'Maintenance','FRONT DESK':'Front Desk',MANAGER:'Manager'};
+const ROLE_LABELS={ADMIN:'Admin',INSPECTOR:'Inspector',MAINTENANCE:'Maintenance','FRONT DESK':'Front Desk',HOUSEKEEPER:'Housekeeper'};
 let currentUser=null;
 const home=document.getElementById('homeView'),housekeepingView=document.getElementById('housekeepingView'),inspectionView=document.getElementById('inspectionView'),maintenanceView=document.getElementById('maintenanceView'),checklistsView=document.getElementById('checklistsView'),importView=document.getElementById('importView'),placeholder=document.getElementById('placeholder'),title=document.getElementById('placeholderTitle'),drawer=document.getElementById('drawer'),drawerLinks=document.getElementById('drawerLinks');
 const todayEl=document.getElementById('today');if(todayEl)todayEl.textContent=new Intl.DateTimeFormat('en-US',{weekday:'long',month:'long',day:'numeric',year:'numeric'}).format(new Date());
@@ -24,11 +24,7 @@ let loginUsers=[],loginProperties=[];
 async function loadSession(){
   const [usersRes,propertiesRes]=await Promise.all([fetch('data/users.json',{cache:'no-store'}),fetch('data/properties.json',{cache:'no-store'})]);
   loginUsers=await usersRes.json();loginProperties=await propertiesRes.json();
-  const legacy=new URLSearchParams(location.search).get('user');
-  if(legacy){
-    const user=loginUsers.find(u=>u.active&&u.userId===legacy);
-    if(user)activateUser(user);
-  }
+  // Legacy ?user= bypass intentionally disabled for RELAY Authentication V1.
 }
 function activateUser(user){
  currentUser=user;const property=loginProperties.find(p=>p.propertyId===currentUser.propertyId);
