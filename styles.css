@@ -362,3 +362,5 @@ input::placeholder,textarea::placeholder{color:#7d98aa!important;opacity:1}
 .hk-room-card .hk-room-meta{color:#4d6c84!important;opacity:1!important}
 .hk-room-card .hk-room-pill{color:#4b6578!important;background:#edf3f7!important;opacity:1!important}
 .hk-board-status{color:#123b58!important;background:#eaf4fa!important}
+
+.inspection-maint-resolve{margin-top:8px;border:1px solid #3198c8;border-radius:7px;background:#0d5277;color:#fff;padding:8px 12px;font-weight:900;cursor:pointer}
