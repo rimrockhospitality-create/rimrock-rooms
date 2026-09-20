@@ -33,7 +33,7 @@
 <div class="app" id="operationsApp" hidden>
   <header class="topbar">
     <div class="brand rr-brand"><span class="rr-mark">R&amp;R</span><span><strong>OPERATIONS</strong><small>RIMROCK ROOMS</small></span></div>
-    <div class="rr-top-right"><button id="appRefresh" class="app-refresh" type="button" title="Refresh R&R data">↻ <span>REFRESH</span></button><div class="property"><strong>Everhome Suites Denver Airport</strong><span>CO534 &nbsp;|&nbsp; 114 Rooms</span></div><button id="notificationBell" class="notification-bell" type="button" aria-label="Notifications">🔔<span id="notificationCount" hidden>0</span></button><button class="profile" aria-label="Open profile"><span>Ryan Kelly<small>Manager / Inspector</small></span><b>RK</b></button></div>
+    <div class="rr-top-right"><button id="appRefresh" class="app-refresh" type="button" title="Refresh R&R data" onclick="window.rrRefreshCurrent&&window.rrRefreshCurrent();return false;">↻ <span>REFRESH</span></button><div class="property"><strong>Everhome Suites Denver Airport</strong><span>CO534 &nbsp;|&nbsp; 114 Rooms</span></div><button id="notificationBell" class="notification-bell" type="button" aria-label="Notifications">🔔<span id="notificationCount" hidden>0</span></button><button class="profile" aria-label="Open profile"><span>Ryan Kelly<small>Manager / Inspector</small></span><b>RK</b></button></div>
   </header>
 
   <aside class="sidebar" aria-label="Primary navigation">
@@ -321,6 +321,6 @@
   </div>
 </div>
 <script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.js"></script>
-<script src="app.js?v=20260919-controls2"></script>
+<script src="app.js?v=20260919-refresh3"></script>
 </body>
 </html>
