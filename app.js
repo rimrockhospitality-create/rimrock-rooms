@@ -68,7 +68,7 @@ function show(view){
   importView.hidden=true;
   placeholder.hidden=(view==='Home'||view==='Housekeeping'||view==='Inspections'||view==='Maintenance'||view==='Checklists'||view==='PM'||view==='Preventive Maintenance'||view==='Users');
   if(!placeholder.hidden) title.textContent=view;
-  if(view==='Housekeeping'){loadHousekeepingBoard();setTimeout(loadSideWorkBoard_,250)}
+  if(view==='Housekeeping') loadHousekeepingBoard()
   if(view==='Inspections') loadInspectionQueue();
   if(view==='Maintenance') loadMaintenanceBoard();
   if(view==='Users') loadUsersAdmin();
@@ -264,7 +264,7 @@ async function loadHousekeepingBoard(){
   const canManageBoard=currentUser.roles.some(r=>['ADMIN','INSPECTOR','FRONT DESK'].includes(r));
   managerImportBtn.hidden=!canManageBoard;emptyChoiceSyncBtn.hidden=true;hkManagerGroups.hidden=!canManageBoard;
   try{
-    const date=housekeepingBusinessDate(),state=await apiPost({action:'getToday',businessDate:date});
+    const date=housekeepingBusinessDate(),state=await apiPost({action:'getToday',businessDate:date},45000);
     if(!state.ok)throw new Error(state.error||'Could not load board');
     const assignments=state.assignments||[],sessions=state.cleaningSessions||[],inspectionIssues=state.inspectionIssues||[];
     if(!('inspectionIssues' in state)){throw new Error('Rework data is not being returned by the live API. Confirm the newest Apps Script deployment is active.')}
@@ -284,6 +284,7 @@ async function loadHousekeepingBoard(){
       const groups={};assignments.forEach(a=>(groups[a.housekeeper]??=[]).push(a.room));
       hkManagerGroups.innerHTML=Object.keys(groups).length?Object.entries(groups).map(([name,rooms])=>'<article><strong>'+name+'</strong><span>'+rooms.length+' room'+(rooms.length===1?'':'s')+': '+rooms.join(', ')+'</span></article>').join(''):'';
     }
+    renderSideWorkBoardFromState_(state);
     hkMyRooms.innerHTML=visible.map(a=>{
       const room=String(a.room),s=sessionByRoom.get(room),rework=reworkByRoom.get(room)||[],activeRework=rework.find(i=>i.status==='REWORK_IN_PROGRESS'),status=activeRework?'REWORK_IN_PROGRESS':rework.length?'REWORK_REQUIRED':(s?.status||'NOT_STARTED');
       const label=status==='REWORK_IN_PROGRESS'?'REWORK IN PROGRESS':status==='REWORK_REQUIRED'?'REWORK REQUIRED':status==='READY_FOR_INSPECTION'?'READY FOR INSPECTION':status==='CLEANING'?'CLEANING':'NOT STARTED';
@@ -1134,14 +1135,20 @@ document.getElementById('inspectionMaintenanceSummary')?.addEventListener('click
 });
 
 // RELAY SIDE DUTY V1 — assigned housekeeping work with silent timing.
-async function loadSideWorkBoard_(){
+function renderSideWorkBoardFromState_(r){
  const host=document.getElementById('housekeepingView');if(!host||!currentUser)return;
  let box=document.getElementById('sideWorkBoard');if(!box){box=document.createElement('section');box.id='sideWorkBoard';box.className='side-work-board';host.appendChild(box)}
  const roles=currentUser.roles||[],canAssign=roles.some(r=>['ADMIN','INSPECTOR','FRONT DESK'].includes(r)),worker=roles.includes('HOUSEKEEPER')?currentUser.name:'';
- try{const r=await apiPost({action:'getWorkBoard',businessDate:housekeepingBusinessDate(),worker:worker});if(!r.ok)throw new Error(r.reason||'Could not load side duties');const tasks=(r.sideWork||[]).filter(x=>x.status!=='COMPLETE');
+ const tasks=(r.sideWork||[]).filter(x=>x.status!=='COMPLETE'&&(!worker||x.assignedTo===worker));
  box.innerHTML='<div class="side-work-head"><div><small>HOUSEKEEPING SIDE DUTIES</small><h2>My Work Beyond Rooms</h2></div>'+(canAssign?'<button id="assignSideWorkBtn">+ ASSIGN SIDE DUTY</button>':'')+'</div><div class="side-work-list">'+(tasks.length?tasks.map(t=>'<article class="side-work-card"><div><strong>'+t.task+'</strong><span>'+t.location+(t.dueAt?' • Due '+t.dueAt:'')+'</span><small>Assigned to '+t.assignedTo+' by '+t.assignedBy+'</small></div>'+(roles.includes('HOUSEKEEPER')?(t.status==='IN_PROGRESS'?'<button class="side-work-complete" data-task="'+t.taskId+'">COMPLETE</button>':'<button class="side-work-start" data-task="'+t.taskId+'">START</button>'):'<b>'+t.status.replaceAll('_',' ')+'</b>')+'</article>').join(''):'<p class="side-work-empty">No side duties assigned.</p>')+'</div>';
  document.getElementById('assignSideWorkBtn')?.addEventListener('click',assignSideWork_);
- }catch(err){box.innerHTML='<div class="side-work-head"><h2>Side Duties</h2></div><p>'+err.message+'</p>'}
+}
+async function loadSideWorkBoard_(){
+ const host=document.getElementById('housekeepingView');if(!host||!currentUser)return;
+ let box=document.getElementById('sideWorkBoard');if(!box){box=document.createElement('section');box.id='sideWorkBoard';box.className='side-work-board';host.appendChild(box)}
+ const roles=currentUser.roles||[],worker=roles.includes('HOUSEKEEPER')?currentUser.name:'';
+ try{const r=await apiPost({action:'getWorkBoard',businessDate:housekeepingBusinessDate(),worker:worker},45000);if(!r.ok)throw new Error(r.reason||'Could not load side duties');renderSideWorkBoardFromState_(r);
+ }catch(err){let box=document.getElementById('sideWorkBoard');if(box)box.innerHTML='<div class="side-work-head"><h2>Side Duties</h2></div><p>'+err.message+'</p>'}
 }
 async function assignSideWork_(){
  try{
