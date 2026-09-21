@@ -379,16 +379,18 @@ function openInspectionCapture(type){
   inspectionCaptureType=type;inspectionBlocking=null;
   const panel=document.getElementById('inspectionCapture'),title=document.getElementById('captureTitle'),label=document.getElementById('captureTypeLabel'),maint=document.getElementById('maintenanceBlocking'),note=document.getElementById('captureNoteWrap'),route=document.getElementById('captureRoutingNote');
   document.getElementById('inspectionPhoto').value='';document.getElementById('inspectionNote').value='';document.getElementById('saveInspectionCapture').disabled=true;maint.querySelectorAll('button').forEach(b=>b.classList.remove('selected'));
-  if(type==='HK_ISSUE'){label.textContent='HK_ISSUE';title.textContent='Housekeeping Issue';maint.hidden=true;note.hidden=false;route.textContent='Routes to housekeeper rework + weekly housekeeping reporting.'}
-  if(type==='MAINT_ISSUE'){label.textContent='MAINT_ISSUE';title.textContent='Maintenance Issue';maint.hidden=false;note.hidden=false;route.textContent='Routes to Maintenance. Blocking choice determines whether the room can become Ready.'}
+  if(type==='HK_ISSUE'){label.textContent='HOUSEKEEPING ISSUE';title.textContent='Housekeeping Issue';maint.hidden=true;note.hidden=false;route.textContent='Routes to housekeeper rework + weekly housekeeping reporting.'}
+  if(type==='MAINT_ISSUE'){label.textContent='MAINTENANCE ISSUE';title.textContent='Maintenance Issue';maint.hidden=false;note.hidden=false;route.textContent='Routes to Maintenance. Blocking choice determines whether the room can become Ready.'}
   if(type==='ROOM_HIGHLIGHT'){label.textContent='ROOM_HIGHLIGHT';title.textContent='Room Photo';maint.hidden=true;note.hidden=true;route.textContent='Positive finished-room photo. Routes to Inspection Report highlights only.'}
   panel.hidden=false;
 }
 document.querySelector('.maintenance-inspection-btn').addEventListener('click',()=>openInspectionCapture('MAINT_ISSUE'));
 document.querySelector('.photo-room-btn').addEventListener('click',()=>openInspectionCapture('ROOM_HIGHLIGHT'));
 document.getElementById('closeInspectionCapture').addEventListener('click',resetInspectionCapture);
-document.getElementById('inspectionPhoto').addEventListener('change',()=>{document.getElementById('saveInspectionCapture').disabled=!(document.getElementById('inspectionPhoto').files.length&&(inspectionCaptureType!=='MAINT_ISSUE'||inspectionBlocking!==null))});
-document.getElementById('maintenanceBlocking').addEventListener('click',e=>{const b=e.target.closest('[data-blocking]');if(!b)return;inspectionBlocking=b.dataset.blocking==='true';e.currentTarget.querySelectorAll('button').forEach(x=>x.classList.toggle('selected',x===b));document.getElementById('saveInspectionCapture').disabled=!document.getElementById('inspectionPhoto').files.length});
+function refreshInspectionSaveButton(){const hasPhoto=!!document.getElementById('inspectionPhoto').files.length,note=document.getElementById('inspectionNote').value.trim();let ok=false;if(inspectionCaptureType==='ROOM_HIGHLIGHT')ok=hasPhoto;else if(inspectionCaptureType==='MAINT_ISSUE')ok=!!note&&inspectionBlocking!==null;else if(inspectionCaptureType==='HK_ISSUE')ok=!!note;document.getElementById('saveInspectionCapture').disabled=!ok}
+document.getElementById('inspectionPhoto').addEventListener('change',refreshInspectionSaveButton);
+document.getElementById('inspectionNote').addEventListener('input',refreshInspectionSaveButton);
+document.getElementById('maintenanceBlocking').addEventListener('click',e=>{const b=e.target.closest('[data-blocking]');if(!b)return;inspectionBlocking=b.dataset.blocking==='true';e.currentTarget.querySelectorAll('button').forEach(x=>x.classList.toggle('selected',x===b));refreshInspectionSaveButton()});
 
 function deficiencyEvidence(q){
   let d=q.querySelector('.deficiency-evidence');if(d)return d;
@@ -439,14 +441,20 @@ document.querySelector('.inspection-question-list').addEventListener('click',e=>
 
 document.getElementById('saveInspectionCapture').addEventListener('click',async()=>{
   const btn=document.getElementById('saveInspectionCapture'),file=document.getElementById('inspectionPhoto').files[0];
-  if(!file){document.getElementById('captureRoutingNote').textContent='Take or choose a photo first.';return}
+  if(inspectionCaptureType==='ROOM_HIGHLIGHT'&&!file){document.getElementById('captureRoutingNote').textContent='Take or choose a photo first.';return}
   btn.disabled=true;btn.textContent='SAVING…';
   try{
-    const dataUrl=await fileToDataUrl(file);
+    const dataUrl=file?await fileToDataUrl(file):'';
     let result;
-    if(inspectionCaptureType==='MAINT_ISSUE'){
+    if(inspectionCaptureType==='HK_ISSUE'){
       const note=document.getElementById('inspectionNote').value.trim();
-      if(!note||inspectionBlocking===null)throw new Error('Photo, note, and blocking choice are required.');
+      if(!note)throw new Error('Describe what needs to be corrected. Photo is optional.');
+      result=await apiPost({action:'saveInspectionIssue',propertyId:'CO534',businessDate:housekeepingBusinessDate(),room:activeInspectionRoom,housekeeper:activeInspectionHousekeeper,inspector:currentUser.name,deficiencyKey:'GENERAL_HK_ISSUE',deficiencyLabel:'Housekeeping Issue',note:note,photoBase64:dataUrl,photoMimeType:file?.type||'image/jpeg'},30000);
+      if(!result.ok)throw new Error(result.reason||result.error||'Housekeeping issue save failed');
+      inspectionCounts.hk++;renderInspectionCounts();document.getElementById('captureRoutingNote').textContent='✓ Housekeeping issue saved'+(result.photoRef?' • photo saved':' • no photo');
+    }else if(inspectionCaptureType==='MAINT_ISSUE'){
+      const note=document.getElementById('inspectionNote').value.trim();
+      if(!note||inspectionBlocking===null)throw new Error('Note and blocking choice are required. Photo is optional.');
       result=await apiPost({action:'saveMaintenanceIssue',propertyId:'CO534',businessDate:housekeepingBusinessDate(),room:activeInspectionRoom,housekeeper:activeInspectionHousekeeper,inspector:currentUser.name,description:note,blocking:inspectionBlocking,photoBase64:dataUrl,photoMimeType:file.type||'image/jpeg'},30000);
       if(!result.ok)throw new Error(result.reason||result.error||'Maintenance save failed');
       inspectionCounts.maint++;if(result.blocking)inspectionCounts.blocking++;renderInspectionCounts();document.getElementById('captureRoutingNote').textContent='✓ Maintenance issue saved • '+(result.blocking?'ROOM HOLD • P2':'NON-BLOCKING • P3');
@@ -464,8 +472,12 @@ document.getElementById('saveInspectionCapture').addEventListener('click',async(
 
 document.querySelector('.inspection-question-list').addEventListener('click',async e=>{
   const b=e.target.closest('[data-resolution]');if(!b)return;
-  const q=b.closest('.inspect-q'),issueId=q.dataset.issueId;
-  if(!issueId){alert('Save the deficiency photo first.');return}
+  const q=b.closest('.inspect-q');let issueId=q.dataset.issueId;
+  if(!issueId){
+    const note=q.querySelector('.deficiency-evidence textarea')?.value?.trim()||'';
+    if(!note){alert('Describe what is wrong first. A photo is optional.');return}
+    try{const saved=await apiPost({action:'saveInspectionIssue',propertyId:'CO534',businessDate:housekeepingBusinessDate(),room:activeInspectionRoom,housekeeper:activeInspectionHousekeeper,inspector:currentUser.name,deficiencyKey:q.dataset.key,deficiencyLabel:q.querySelector('strong').textContent.replace(/\?$/,''),note:note,photoBase64:'',photoMimeType:'image/jpeg'},30000);if(!saved.ok)throw new Error(saved.reason||saved.error||'Issue save failed');issueId=saved.issueId;q.dataset.issueId=issueId;inspectionCounts.hk++;renderInspectionCounts()}catch(err){alert('Could not save issue: '+err.message);return}
+  }
   const resolution=b.dataset.resolution,old=b.textContent;
   q.querySelectorAll('[data-resolution]').forEach(x=>x.disabled=true);b.textContent='SAVING…';
   try{
@@ -538,11 +550,12 @@ async function loadMaintenanceBoard(){
     const p1=items.filter(x=>x.status==='OPEN'&&x.priority==='P1_GUEST_IMPACT'),p2=items.filter(x=>x.status==='OPEN'&&x.priority==='P2_ROOM_BLOCKING'),p3=items.filter(x=>x.status==='OPEN'&&x.priority==='P3_ROUTINE');
     document.getElementById('maintP1').textContent=p1.length;document.getElementById('maintP2').textContent=p2.length;document.getElementById('maintP3').textContent=p3.length;
     const ordered=[...p1,...p2,...p3];status.textContent=ordered.length?ordered.length+' open maintenance item'+(ordered.length===1?'':'s')+'.':'No open maintenance items.';
-    queue.innerHTML=ordered.map(x=>{const isP1=x.priority==='P1_GUEST_IMPACT',isP2=x.priority==='P2_ROOM_BLOCKING',urgent=(x.description||'').includes('⚠ IMMEDIATE ATTENTION');return '<article class="maint-card '+(isP1?'p1':isP2?'p2':'p3')+(urgent?' urgent':'')+'"><div class="maint-top"><div class="maint-room">'+(String(x.room).match(/^\d+$/)?'ROOM ':'')+x.room+'</div><div class="maint-priority">'+(isP1?'🔴 P1 — GUEST IMPACT':isP2?'⛔ P2 — ROOM BLOCKING':'🔧 P3 — ROUTINE')+(urgent?'<br>⚠ IMMEDIATE ATTENTION':'')+'</div></div><p>'+x.description.replace('⚠ IMMEDIATE ATTENTION — ','')+'</p><div class="maint-meta">Reported by '+x.reported_by+' • '+x.reported_at+'</div><div class="maint-actions">'+(x.photo_ref?'<button class="maint-photo" data-photo="'+x.photo_ref+'">VIEW PHOTO</button>':'')+'<button class="maint-resolve" data-id="'+x.maintenance_id+'">✓ MARK RESOLVED</button></div></article>'}).join('');
+    queue.innerHTML=ordered.map(x=>{const isP1=x.priority==='P1_GUEST_IMPACT',isP2=x.priority==='P2_ROOM_BLOCKING',urgent=(x.description||'').includes('⚠ IMMEDIATE ATTENTION');return '<article class="maint-card '+(isP1?'p1':isP2?'p2':'p3')+(urgent?' urgent':'')+'"><div class="maint-top"><div class="maint-room">'+(String(x.room).match(/^\d+$/)?'ROOM ':'')+x.room+'</div><div class="maint-priority">'+(isP1?'🔴 P1 — GUEST IMPACT':isP2?'⛔ P2 — ROOM BLOCKING':'🔧 P3 — ROUTINE')+(urgent?'<br>⚠ IMMEDIATE ATTENTION':'')+'</div></div><p>'+x.description.replace('⚠ IMMEDIATE ATTENTION — ','')+'</p><div class="maint-meta">Reported by '+x.reported_by+' • '+x.reported_at+'</div><div class="maint-actions">'+(x.photo_ref?'<button class="maint-photo" data-photo="'+x.photo_ref+'">VIEW PHOTO</button>':'')+((currentUser?.roles||[]).includes('MAINTENANCE')?'<button class="maint-start-work" data-id="'+x.maintenance_id+'" data-room="'+x.room+'">▶ START PROJECT</button>':'')+'<button class="maint-resolve" data-id="'+x.maintenance_id+'">✓ MARK RESOLVED</button></div></article>'}).join('');
   }catch(err){status.className='hk-board-status error';status.textContent='Could not load maintenance: '+err.message}
 }
 document.getElementById('maintenanceQueue').addEventListener('click',async e=>{
  const p=e.target.closest('.maint-photo');if(p){window.open('https://drive.google.com/open?id='+p.dataset.photo,'_blank');return}
+ const start=e.target.closest('.maint-start-work');if(start){const room=String(start.dataset.room||'');let qrId='';if(/^\d{3}$/.test(room)){qrId=prompt('Scan Room '+room+' QR, or enter the scanned QR value:')||'';if(!qrId)return}start.disabled=true;const old=start.textContent;start.textContent='STARTING…';try{const r=await apiPost({action:'startMaintenanceWork',maintenanceId:start.dataset.id,worker:currentUser.name,qrId:qrId},30000);if(!r.ok)throw new Error(r.reason||r.error||'Could not start project');start.textContent='✓ PROJECT STARTED';start.dataset.session=r.workSessionId}catch(err){start.disabled=false;start.textContent=old;alert(err.message)}return}
  const b=e.target.closest('.maint-resolve');if(!b)return;
  pendingMaintenanceResolve=b.dataset.id;
  document.getElementById('maintenanceResolveTitle').textContent='Resolve '+(b.closest('.maint-card')?.querySelector('.maint-room')?.textContent||'Maintenance');
