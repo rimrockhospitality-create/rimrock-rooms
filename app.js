@@ -455,7 +455,7 @@ document.getElementById('saveInspectionCapture').addEventListener('click',async(
     }else if(inspectionCaptureType==='MAINT_ISSUE'){
       const note=document.getElementById('inspectionNote').value.trim();
       if(!note||inspectionBlocking===null)throw new Error('Note and blocking choice are required. Photo is optional.');
-      result=await apiPost({action:'saveMaintenanceIssue',propertyId:'CO534',businessDate:housekeepingBusinessDate(),room:activeInspectionRoom,housekeeper:activeInspectionHousekeeper,inspector:currentUser.name,description:note,blocking:inspectionBlocking,photoBase64:dataUrl,photoMimeType:file.type||'image/jpeg'},30000);
+      result=await apiPost({action:'saveMaintenanceIssue',propertyId:'CO534',businessDate:housekeepingBusinessDate(),room:activeInspectionRoom,housekeeper:activeInspectionHousekeeper,inspector:currentUser.name,description:note,blocking:inspectionBlocking,photoBase64:dataUrl,photoMimeType:file?.type||'image/jpeg'},30000);
       if(!result.ok)throw new Error(result.reason||result.error||'Maintenance save failed');
       inspectionCounts.maint++;if(result.blocking)inspectionCounts.blocking++;renderInspectionCounts();document.getElementById('captureRoutingNote').textContent='✓ Maintenance issue saved • '+(result.blocking?'ROOM HOLD • P2':'NON-BLOCKING • P3');
     }else if(inspectionCaptureType==='ROOM_HIGHLIGHT'){
