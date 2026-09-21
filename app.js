@@ -68,7 +68,7 @@ function show(view){
   importView.hidden=true;
   placeholder.hidden=(view==='Home'||view==='Housekeeping'||view==='Inspections'||view==='Maintenance'||view==='Checklists'||view==='PM'||view==='Preventive Maintenance'||view==='Users');
   if(!placeholder.hidden) title.textContent=view;
-  if(view==='Housekeeping') loadHousekeepingBoard();
+  if(view==='Housekeeping'){loadHousekeepingBoard();setTimeout(loadSideWorkBoard_,250)}
   if(view==='Inspections') loadInspectionQueue();
   if(view==='Maintenance') loadMaintenanceBoard();
   if(view==='Users') loadUsersAdmin();
@@ -1131,4 +1131,27 @@ document.getElementById('inspectionMaintenanceSummary')?.addEventListener('click
  document.getElementById('maintenanceResolveTitle').textContent='Resolve Maintenance • Room '+activeInspectionRoom;
  document.getElementById('maintenanceResolvePhoto').value='';document.getElementById('maintenanceResolveNote').value='';document.getElementById('maintenanceResolveMessage').textContent='';
  document.getElementById('maintenanceResolvePanel').hidden=false;
+});
+
+// RELAY SIDE DUTY V1 — assigned housekeeping work with silent timing.
+async function loadSideWorkBoard_(){
+ const host=document.getElementById('housekeepingView');if(!host||!currentUser)return;
+ let box=document.getElementById('sideWorkBoard');if(!box){box=document.createElement('section');box.id='sideWorkBoard';box.className='side-work-board';host.appendChild(box)}
+ const roles=currentUser.roles||[],canAssign=roles.some(r=>['ADMIN','INSPECTOR','FRONT DESK'].includes(r)),worker=roles.includes('HOUSEKEEPER')?currentUser.name:'';
+ try{const r=await apiPost({action:'getWorkBoard',businessDate:housekeepingBusinessDate(),worker:worker});if(!r.ok)throw new Error(r.reason||'Could not load side duties');const tasks=(r.sideWork||[]).filter(x=>x.status!=='COMPLETE');
+ box.innerHTML='<div class="side-work-head"><div><small>HOUSEKEEPING SIDE DUTIES</small><h2>My Work Beyond Rooms</h2></div>'+(canAssign?'<button id="assignSideWorkBtn">+ ASSIGN SIDE DUTY</button>':'')+'</div><div class="side-work-list">'+(tasks.length?tasks.map(t=>'<article class="side-work-card"><div><strong>'+t.task+'</strong><span>'+t.location+(t.dueAt?' • Due '+t.dueAt:'')+'</span><small>Assigned to '+t.assignedTo+' by '+t.assignedBy+'</small></div>'+(roles.includes('HOUSEKEEPER')?(t.status==='IN_PROGRESS'?'<button class="side-work-complete" data-task="'+t.taskId+'">COMPLETE</button>':'<button class="side-work-start" data-task="'+t.taskId+'">START</button>'):'<b>'+t.status.replaceAll('_',' ')+'</b>')+'</article>').join(''):'<p class="side-work-empty">No side duties assigned.</p>')+'</div>';
+ document.getElementById('assignSideWorkBtn')?.addEventListener('click',assignSideWork_);
+ }catch(err){box.innerHTML='<div class="side-work-head"><h2>Side Duties</h2></div><p>'+err.message+'</p>'}
+}
+async function assignSideWork_(){
+ const assignedTo=(prompt('Assign to which housekeeper? Enter the RELAY employee name exactly:')||'').trim();if(!assignedTo)return;
+ const task=(prompt('Side duty (example: Public Restrooms, Laundry, Fitness Center, Rec / Grill Area):')||'').trim();if(!task)return;
+ const location=(prompt('Location / work area:',task)||'').trim();if(!location)return;
+ const dueAt=(prompt('Due time (optional, example 1:00 PM):')||'').trim();
+ try{const r=await apiPost({action:'createSideWork',businessDate:housekeepingBusinessDate(),assignedTo,task,location,dueAt,assignedBy:currentUser.name});if(!r.ok)throw new Error(r.reason||'Assignment failed');await loadSideWorkBoard_()}catch(err){alert(err.message)}
+}
+let activeSideWorkSessions={};
+document.addEventListener('click',async e=>{
+ const start=e.target.closest('.side-work-start');if(start){start.disabled=true;try{const r=await apiPost({action:'startSideWork',taskId:start.dataset.task,worker:currentUser.name});if(!r.ok)throw new Error(r.reason||'Could not start');activeSideWorkSessions[start.dataset.task]=r.sessionId;await loadSideWorkBoard_()}catch(err){start.disabled=false;alert(err.message)}return}
+ const done=e.target.closest('.side-work-complete');if(done){const sid=activeSideWorkSessions[done.dataset.task];if(!sid){alert('This side duty needs an active work session on this device.');return}done.disabled=true;try{const r=await apiPost({action:'completeSideWork',sessionId:sid});if(!r.ok)throw new Error(r.reason||'Could not complete');delete activeSideWorkSessions[done.dataset.task];await loadSideWorkBoard_()}catch(err){done.disabled=false;alert(err.message)}}
 });
