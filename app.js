@@ -1144,11 +1144,32 @@ async function loadSideWorkBoard_(){
  }catch(err){box.innerHTML='<div class="side-work-head"><h2>Side Duties</h2></div><p>'+err.message+'</p>'}
 }
 async function assignSideWork_(){
- const assignedTo=(prompt('Assign to which housekeeper? Enter the RELAY employee name exactly:')||'').trim();if(!assignedTo)return;
- const task=(prompt('Side duty (example: Public Restrooms, Laundry, Fitness Center, Rec / Grill Area):')||'').trim();if(!task)return;
- const location=(prompt('Location / work area:',task)||'').trim();if(!location)return;
- const dueAt=(prompt('Due time (optional, example 1:00 PM):')||'').trim();
- try{const r=await apiPost({action:'createSideWork',businessDate:housekeepingBusinessDate(),assignedTo,task,location,dueAt,assignedBy:currentUser.name});if(!r.ok)throw new Error(r.reason||'Assignment failed');await loadSideWorkBoard_()}catch(err){alert(err.message)}
+ try{
+   // Side duties must always use RELAY's authoritative open business day.
+   const day=await apiPost({action:'getBusinessDay',sessionId:localStorage.getItem('relaySessionId')});
+   if(!day.ok||!day.businessDate)throw new Error(day.reason||'Could not confirm the current RELAY business day.');
+   relayBusinessDate=day.businessDate;
+
+   // Employee identity must come from active RELAY HOUSEKEEPER users — never free text.
+   const users=await apiPost({action:'adminListUsers',sessionId:localStorage.getItem('relaySessionId')});
+   if(!users.ok)throw new Error(users.reason||'Could not load active housekeepers.');
+   const housekeepers=(users.users||[]).filter(u=>u.active&&String(u.role).toUpperCase()==='HOUSEKEEPER');
+   if(!housekeepers.length)throw new Error('No active HOUSEKEEPER users are available.');
+
+   const menu=housekeepers.map((u,i)=>(i+1)+'. '+u.name).join('\n');
+   const choice=(prompt('Assign to which housekeeper?\n\n'+menu+'\n\nEnter the number:')||'').trim();
+   if(!choice)return;
+   const idx=Number(choice)-1;
+   if(!Number.isInteger(idx)||idx<0||idx>=housekeepers.length)throw new Error('Choose a valid housekeeper number.');
+   const assignedTo=housekeepers[idx].name;
+
+   const task=(prompt('Side duty (example: Public Restrooms, Laundry, Fitness Center, Rec / Grill Area):')||'').trim();if(!task)return;
+   const location=(prompt('Location / work area:',task)||'').trim();if(!location)return;
+   const dueAt=(prompt('Due time (optional, example 1:00 PM):')||'').trim();
+   const r=await apiPost({action:'createSideWork',businessDate:day.businessDate,assignedTo,task,location,dueAt,assignedBy:currentUser.name});
+   if(!r.ok)throw new Error(r.reason||'Assignment failed');
+   await loadSideWorkBoard_();
+ }catch(err){alert(err.message)}
 }
 let activeSideWorkSessions={};
 document.addEventListener('click',async e=>{
