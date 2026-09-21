@@ -364,3 +364,9 @@ input::placeholder,textarea::placeholder{color:#7d98aa!important;opacity:1}
 .hk-board-status{color:#123b58!important;background:#eaf4fa!important}
 
 .inspection-maint-resolve{margin-top:8px;border:1px solid #3198c8;border-radius:7px;background:#0d5277;color:#fff;padding:8px 12px;font-weight:900;cursor:pointer}
+
+/* RELAY POINT 4 — mobile readability + work sessions */
+.hk-room-number{font-size:22px!important;line-height:1!important;letter-spacing:.03em!important}
+.inspection-card .room-number,.inspection-card h2,.inspection-card h3{font-weight:900!important}
+.maint-start-work{background:#116b48;color:#effff7;border:1px solid #2e9b6d;border-radius:7px;padding:8px 12px;font-weight:900;cursor:pointer}
+@media(max-width:760px){.hk-room-number{font-size:30px!important}.inspection-card .room-number,.inspection-card h2{font-size:28px!important}.inspection-maint-resolve,.maint-start-work,.maint-resolve{min-height:46px;font-size:14px!important}}
