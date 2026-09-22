@@ -1293,7 +1293,15 @@ async function loadSideWorkBoard_(){
  const roles=currentUser.roles||[],isInspector=roles.includes('INSPECTOR')&&!roles.some(x=>['ADMIN','FRONT DESK'].includes(x)),worker=roles.some(x=>['HOUSEKEEPER','MAINTENANCE'].includes(x))?currentUser.name:'';
  // Inspector has no monitoring read: render the dispatch control only.
  if(isInspector){renderSideWorkBoardFromState_({sideWork:[]});return}
- try{const key='side:'+housekeepingBusinessDate()+':'+worker,r=relayCached_(key)||relayCacheSet_(key,await apiPost({action:'getWorkBoard',businessDate:housekeepingBusinessDate(),worker:worker},45000));if(!r.ok)throw new Error(r.reason||'Could not load side duties');renderSideWorkBoardFromState_(r);
+ try{
+   // Let getWorkBoard resolve the authoritative RELAY business day. This avoids a stale
+   // browser date/cache key hiding a newly assigned Side Duty for Maintenance/HK users.
+   const key='side:CURRENT:'+worker;
+   let r=relayCached_(key);
+   if(!r){r=await apiPost({action:'getWorkBoard',worker:worker},45000);relayCacheSet_(key,r)}
+   if(!r.ok)throw new Error(r.reason||'Could not load side duties');
+   if(r.businessDate){relayBusinessDate=r.businessDate;relayBusinessDayLoadedAt=Date.now()}
+   renderSideWorkBoardFromState_(r);
  }catch(err){let box=document.getElementById('sideWorkBoard');if(box)box.innerHTML='<div class="side-work-head"><h2>Side Duties</h2></div><p>'+err.message+'</p>'}
 }
 async function assignSideWork_(){
