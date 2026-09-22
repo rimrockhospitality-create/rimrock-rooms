@@ -618,10 +618,10 @@ async function scanMaintenanceQr_(maintenanceId,room,button){
   // Maintenance now uses the same simple scanner pattern proven in Housekeeping.
   const raw=await relayScanQr_(panel,box,msg,'Scan the '+label+' QR. Scanning starts the maintenance work session automatically.');
   if(raw!==expected){box.innerHTML='▦';msg.textContent='Wrong location QR. Expected '+label+'.';return}
-  box.innerHTML='✓';msg.textContent='✓ Location verified. Starting project…';button.disabled=true;
+  box.innerHTML='✓';msg.textContent='✓ Location verified. Starting work…';button.disabled=true;
   const r=await apiPost({action:'startMaintenanceWork',maintenanceId,worker:currentUser.name,qrId:raw},30000);
-  if(!r.ok)throw new Error(r.reason||r.error||'Could not start project');
-  button.textContent='✓ PROJECT IN PROGRESS';button.dataset.session=r.workSessionId;msg.textContent='✓ IN PROGRESS';setTimeout(()=>{panel.hidden=true},450);
+  if(!r.ok)throw new Error(r.reason||r.error||'Could not start work');
+  button.textContent='✓ WORK IN PROGRESS';button.dataset.session=r.workSessionId;msg.textContent='✓ IN PROGRESS';setTimeout(()=>{panel.hidden=true},450);
  }catch(err){if(String(err?.message)!=='Scanner closed'){button.disabled=false;const reason=err?.message||String(err);msg.textContent=reason==='INVALID_ROOM_QR'?'This QR was read correctly, but the database did not recognize it for '+label+'.':('Could not start maintenance work: '+reason)}}
 }
 function closeMaintenanceQr_(){if(maintenanceQrStream){maintenanceQrStream.getTracks().forEach(t=>t.stop());maintenanceQrStream=null}const p=document.getElementById('maintenanceQrPanel');if(p){p.hidden=true;p.style.removeProperty('display')}}
@@ -629,7 +629,7 @@ document.getElementById('closeMaintenanceQr')?.addEventListener('click',closeMai
 
 document.getElementById('maintenanceQueue').addEventListener('click',async e=>{
  const p=e.target.closest('.maint-photo');if(p){window.open('https://drive.google.com/open?id='+p.dataset.photo,'_blank');return}
- const start=e.target.closest('.maint-start-work');if(start){const location=String(start.dataset.room||'').trim();const panel=document.getElementById('maintenanceQrPanel');if(panel){panel.hidden=false;panel.style.setProperty('display','grid','important');document.body.appendChild(panel)}requestAnimationFrame(()=>scanMaintenanceQr_(start.dataset.id,location,start));return}
+ const start=e.target.closest('.maint-start-work');if(start){if(String(start.dataset.session||'').trim())return;const location=String(start.dataset.room||'').trim();const panel=document.getElementById('maintenanceQrPanel');if(panel){panel.hidden=false;panel.style.setProperty('display','grid','important');document.body.appendChild(panel)}requestAnimationFrame(()=>scanMaintenanceQr_(start.dataset.id,location,start));return}
  const b=e.target.closest('.maint-resolve');if(!b)return;
  pendingMaintenanceResolve=b.dataset.id;
  document.getElementById('maintenanceResolveTitle').textContent='Resolve '+(b.closest('.maint-card')?.querySelector('.maint-room')?.textContent||'Maintenance');
