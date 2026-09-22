@@ -55,7 +55,8 @@ function activateUser(user){
  const login=document.getElementById('loginView'),app=document.getElementById('operationsApp');
  login.hidden=true;login.style.setProperty('display','none','important');
  app.hidden=false;app.style.display='';
- applyIdentity(currentUser,property);applyPermissions(currentUser.roles);buildDrawer(currentUser.roles);updateChoiceSyncAccess_();loadRelayBusinessDay_();updateDailyAuditAccess_();
+ applyIdentity(currentUser,property);applyPermissions(currentUser.roles);buildDrawer(currentUser.roles);updateChoiceSyncAccess_();updateDailyAuditAccess_();
+ // Authentication owns the critical path. Operational Sheets reads happen only after the app is visible.
  if(currentUser.roles.includes('HOUSEKEEPER'))show('Housekeeping');else if(currentUser.roles.includes('MAINTENANCE'))show('Maintenance');else show('Home');
 }
 function allowedViews(roles){return [...new Set(roles.flatMap(r=>ROLE_VIEWS[r]||[]))]}
@@ -287,8 +288,9 @@ async function loadHousekeepingBoard(){
   try{
     const date=housekeepingBusinessDate(),cacheKey='hk:'+date+':'+currentUser.name,state=relayCached_(cacheKey)||relayCacheSet_(cacheKey,await apiPost({action:'getToday',businessDate:date},45000));
     if(!state.ok)throw new Error(state.error||'Could not load board');
+    relayCacheSet_('inspection:'+date,state);relayCacheSet_('maintenance:'+date,state);relayCacheSet_('dashboard:today:'+date,state);
     const assignments=state.assignments||[],sessions=state.cleaningSessions||[],inspectionIssues=state.inspectionIssues||[];
-    if(!('inspectionIssues' in state)){throw new Error('Rework data is not being returned by the live API. Confirm the newest Apps Script deployment is active.')}
+    if(!('inspectionIssues' in state))console.warn('RELAY getToday snapshot does not include inspectionIssues; rendering board without rework overlay.');
     console.log('Rimrock rework payload',inspectionIssues);
     const sessionByRoom=new Map(sessions.map(s=>[String(s.room),s]));
     const reworkByRoom=new Map();
@@ -820,7 +822,7 @@ async function refreshDashboardOps(){
   document.querySelectorAll('.rr-handoff-row').forEach(row=>{const label=(row.textContent||'').toLowerCase(),bubble=row.querySelector('b,span');if(!bubble)return;if(label.includes('open follow'))bubble.textContent=followups;if(label.includes('awaiting resolution'))bubble.textContent=issues});
  }catch(e){console.warn('Dashboard KPI refresh failed',e)}
 }
-setTimeout(refreshDashboardOps,1500);
+setTimeout(()=>{if(currentUser)refreshDashboardOps()},1500);
 
 /* RELAY navigation — single delegated router */
 document.addEventListener('click',function(e){
