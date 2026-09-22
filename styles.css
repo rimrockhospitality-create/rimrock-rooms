@@ -372,3 +372,11 @@ input::placeholder,textarea::placeholder{color:#7d98aa!important;opacity:1}
 @media(max-width:760px){.hk-room-number{font-size:30px!important}.inspection-card .room-number,.inspection-card h2{font-size:28px!important}.inspection-maint-resolve,.maint-start-work,.maint-resolve{min-height:46px;font-size:14px!important}}
 
 .side-work-board{margin:22px 0 100px;padding:20px;border:1px solid #1f5d7e;border-radius:14px;background:#061f32;color:#eef9ff}.side-work-head{display:flex;justify-content:space-between;gap:14px;align-items:end;margin-bottom:14px}.side-work-head small{color:#65c2ef;font-weight:900;letter-spacing:.13em}.side-work-head h2{margin:4px 0 0}.side-work-head button,.side-work-card button{border:1px solid #2c8cba;border-radius:8px;background:#0f6f9f;color:#fff;padding:10px 14px;font-weight:900}.side-work-list{display:grid;gap:9px}.side-work-card{display:flex;justify-content:space-between;gap:15px;align-items:center;padding:14px;background:#092b43;border:1px solid #205c7a;border-radius:9px}.side-work-card strong,.side-work-card span,.side-work-card small{display:block}.side-work-card span{color:#b7d2e1;margin-top:4px}.side-work-card small{color:#7fa8bd;margin-top:4px}.side-work-card b{color:#62c6f3;font-size:11px}.side-work-empty{color:#8fb0c3}@media(max-width:760px){.side-work-board{margin:18px 12px 110px}.side-work-head{display:block}.side-work-head button{width:100%;margin-top:12px}.side-work-card{align-items:stretch;flex-direction:column}.side-work-card button{min-height:46px}}
+
+/* RELAY mobile nav consistency — keep the bottom menu on-brand across role views */
+@media(max-width:760px){
+ .mobile-nav{background:linear-gradient(var(--navy),var(--navy2))!important;border-top:1px solid #ffffff25!important;box-shadow:0 -8px 24px #00172755}
+ .mobile-nav button{background:transparent!important;color:#9fb7cb!important}
+ .mobile-nav .mobile-active{color:#fff!important}
+ .mobile-nav button:last-child{border-left:1px solid #ffffff18}
+}
