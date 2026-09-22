@@ -654,7 +654,19 @@ document.getElementById('confirmMaintenanceResolve').addEventListener('click',as
    const r=await apiPost(payload,45000);
    if(!r.ok)throw new Error(r.reason||r.error||'Resolve failed');
    const savedPhoto=r.completionPhotoRef||r.resolution?.completionPhotoRef||'';msg.textContent='✓ Maintenance resolved'+(savedPhoto?' • photo saved':'');
-   setTimeout(async()=>{pendingMaintenanceResolve='';document.getElementById('maintenanceResolvePanel').hidden=true;b.disabled=false;b.textContent='✓ MARK RESOLVED';await loadMaintenanceBoard()},800);
+   // Successful resolve is already authoritative. Update the visible board immediately instead of
+   // blocking the technician on another full Sheets read.
+   relayCacheClear_('maintenance:');
+   if(card){
+     const wasP1=card.classList.contains('p1'),wasP2=card.classList.contains('p2');
+     card.remove();
+     const counter=document.getElementById(wasP1?'maintP1':wasP2?'maintP2':'maintP3');
+     if(counter)counter.textContent=Math.max(0,Number(counter.textContent||0)-1);
+     const remaining=document.querySelectorAll('#maintenanceQueue .maint-card').length;
+     const status=document.getElementById('maintenanceStatus');
+     if(status)status.textContent=remaining?remaining+' open maintenance item'+(remaining===1?'':'s')+'.':'No open maintenance items.';
+   }
+   setTimeout(()=>{pendingMaintenanceResolve='';document.getElementById('maintenanceResolvePanel').hidden=true;b.disabled=false;b.textContent='✓ MARK RESOLVED'},800);
  }catch(err){b.disabled=false;b.textContent='✓ MARK RESOLVED';msg.textContent='Could not resolve: '+err.message}
 });
 
