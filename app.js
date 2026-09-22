@@ -259,7 +259,9 @@ async function loadRelayBusinessDay_(){try{const r=await apiPost({action:'getBus
 async function loadHousekeepingBoard(){
   if(!currentUser)return;
   hkGreeting.textContent='Good morning, '+currentUser.name.split(' ')[0];
-  hkBoardDate.textContent=new Intl.DateTimeFormat('en-US',{weekday:'long',month:'long',day:'numeric',year:'numeric',timeZone:'America/Denver'}).format(new Date());
+  const authoritativeDate=await loadRelayBusinessDay_();
+  const businessDateObj=new Date(authoritativeDate+' 12:00:00');
+  hkBoardDate.textContent=new Intl.DateTimeFormat('en-US',{weekday:'long',month:'long',day:'numeric',year:'numeric',timeZone:'America/Denver'}).format(businessDateObj);
   hkBoardStatus.className='hk-board-status';hkBoardStatus.textContent='Loading today’s assignments…';hkMyRooms.innerHTML='';
   const canManageBoard=currentUser.roles.some(r=>['ADMIN','INSPECTOR','FRONT DESK'].includes(r));
   managerImportBtn.hidden=!canManageBoard;emptyChoiceSyncBtn.hidden=true;hkManagerGroups.hidden=!canManageBoard;
