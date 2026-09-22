@@ -612,7 +612,7 @@ async function relayScanQr_(panel,box,msg,instruction){
 }
 async function scanMaintenanceQr_(maintenanceId,room,button){
  const panel=document.getElementById('maintenanceQrPanel'),msg=document.getElementById('maintenanceQrMessage'),title=document.getElementById('maintenanceQrTitle'),box=document.getElementById('maintenanceQrCamera'),isRoom=/^\d{3}$/.test(String(room)),label=isRoom?'Room '+room:String(room);
- title.textContent=label;msg.textContent='Opening camera…';box.innerHTML='▦';panel.hidden=false;
+ title.textContent=label;msg.textContent='Opening camera…';box.innerHTML='▦';panel.hidden=false;panel.style.display='grid';
  const expected=isRoom?'CO534-RM-'+room:'CO534-LOC-'+String(room).toUpperCase().replace(/[^A-Z0-9]+/g,'-').replace(/^-|-$/g,'');
  try{
   // Maintenance now uses the same simple scanner pattern proven in Housekeeping.
@@ -624,7 +624,7 @@ async function scanMaintenanceQr_(maintenanceId,room,button){
   button.textContent='✓ PROJECT IN PROGRESS';button.dataset.session=r.workSessionId;msg.textContent='✓ IN PROGRESS';setTimeout(()=>{panel.hidden=true},450);
  }catch(err){if(String(err?.message)!=='Scanner closed'){button.disabled=false;msg.textContent='Camera error: '+(err?.message||String(err))}}
 }
-function closeMaintenanceQr_(){if(maintenanceQrStream){maintenanceQrStream.getTracks().forEach(t=>t.stop());maintenanceQrStream=null}const p=document.getElementById('maintenanceQrPanel');if(p)p.hidden=true}
+function closeMaintenanceQr_(){if(maintenanceQrStream){maintenanceQrStream.getTracks().forEach(t=>t.stop());maintenanceQrStream=null}const p=document.getElementById('maintenanceQrPanel');if(p){p.hidden=true;p.style.removeProperty('display')}}
 document.getElementById('closeMaintenanceQr')?.addEventListener('click',closeMaintenanceQr_);
 
 document.getElementById('maintenanceQueue').addEventListener('click',async e=>{
