@@ -573,7 +573,8 @@ async function loadMaintenanceBoard(){
   const status=document.getElementById('maintenanceStatus'),queue=document.getElementById('maintenanceQueue');
   status.textContent='Loading maintenance…';queue.innerHTML='';
   try{
-    const key='maintenance:'+housekeepingBusinessDate(),state=relayCached_(key)||relayCacheSet_(key,await apiPost({action:'getToday',businessDate:housekeepingBusinessDate()}));
+    const key='maintenance:'+housekeepingBusinessDate();let state=relayCached_(key);
+    if(!state){const isMaintOnly=(currentUser?.roles||[]).includes('MAINTENANCE')&&!(currentUser?.roles||[]).some(r=>['ADMIN','INSPECTOR','FRONT DESK'].includes(r));if(isMaintOnly){const targeted=await apiPost({action:'getMaintenanceBoard',businessDate:housekeepingBusinessDate(),worker:currentUser.name},15000).catch(()=>null);state=targeted?.ok?targeted:await apiPost({action:'getToday',businessDate:housekeepingBusinessDate()},45000)}else state=await apiPost({action:'getToday',businessDate:housekeepingBusinessDate()},45000);relayCacheSet_(key,state)}
     const items=state.maintenanceIssues||[];
     const p1=items.filter(x=>x.status==='OPEN'&&x.priority==='P1_GUEST_IMPACT'),p2=items.filter(x=>x.status==='OPEN'&&x.priority==='P2_ROOM_BLOCKING'),p3=items.filter(x=>x.status==='OPEN'&&x.priority==='P3_ROUTINE');
     document.getElementById('maintP1').textContent=p1.length;document.getElementById('maintP2').textContent=p2.length;document.getElementById('maintP3').textContent=p3.length;
@@ -879,12 +880,12 @@ document.getElementById('loginForm').addEventListener('submit',async e=>{
  if(!username||!password){msg.textContent='Enter your username and password.';return}
  btn.disabled=true;btn.textContent='SIGNING IN…';msg.textContent='';
  try{
-  const r=await apiPost({action:'authLogin',username,password});
+  let r;try{r=await apiPost({action:'authLogin',username,password},45000)}catch(firstErr){console.warn('RELAY auth retry after transient backend failure',firstErr);r=await apiPost({action:'authLogin',username,password},45000)}
   if(!r.ok||!r.user){msg.textContent=r.reason==='ACCOUNT_INACTIVE'?'This RELAY account is inactive.':'Username or password is incorrect.';return}
   localStorage.setItem('relaySessionId',r.sessionId);
   activateUser(normalizeAuthUser_(r.user));
   document.getElementById('loginPassword').value='';
- }catch(err){msg.textContent='RELAY could not reach authentication. Try again.';console.error(err)}
+ }catch(err){msg.textContent='RELAY authentication is temporarily unavailable. Tap SIGN IN once more.';console.error(err)}
  finally{btn.disabled=false;btn.textContent='SIGN IN TO RELAY OPERATIONS'}
 });
 
