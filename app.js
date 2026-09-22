@@ -584,26 +584,45 @@ async function loadMaintenanceBoard(){
 }
 
 let maintenanceQrStream=null;
-async function scanMaintenanceQr_(maintenanceId,room,button){
- const panel=document.getElementById('maintenanceQrPanel'),msg=document.getElementById('maintenanceQrMessage'),title=document.getElementById('maintenanceQrTitle'),box=document.getElementById('maintenanceQrCamera'),isRoom=/^\d{3}$/.test(String(room)),label=isRoom?'Room '+room:String(room);title.textContent=label;msg.textContent='Opening camera…';box.innerHTML='▦';panel.hidden=false;
+async function relayScanQr_(panel,box,msg,instruction){
+ let stream;
  try{
   if(!navigator.mediaDevices?.getUserMedia)throw new Error('Camera scanning is not available in this browser.');
-  maintenanceQrStream=await navigator.mediaDevices.getUserMedia({video:{facingMode:{ideal:'environment'}},audio:false});
+  stream=await navigator.mediaDevices.getUserMedia({video:{facingMode:{ideal:'environment'}},audio:false});
   const video=document.createElement('video'),canvas=document.createElement('canvas'),ctx=canvas.getContext('2d',{willReadFrequently:true});
-  video.setAttribute('playsinline','');video.setAttribute('autoplay','');video.muted=true;video.autoplay=true;video.srcObject=maintenanceQrStream;
-  box.innerHTML='';box.appendChild(video);video.style.width='100%';video.style.minHeight='240px';video.style.height='100%';video.style.objectFit='cover';video.style.borderRadius='12px';
-  // iOS Safari can grant permission before it has usable video dimensions. Wait for a real frame, not just metadata.
-  await new Promise((resolve,reject)=>{
-   const started=Date.now(),check=()=>{if(video.videoWidth>0&&video.videoHeight>0&&video.readyState>=2)return resolve();if(Date.now()-started>10000)return reject(new Error('Camera permission was granted, but live video did not start. Close the scanner and try again.'));requestAnimationFrame(check)};
-   video.onloadedmetadata=()=>{video.play().catch(()=>{});check()};video.onerror=()=>reject(new Error('Camera video could not start.'));video.play().catch(()=>{});check();
+  video.setAttribute('playsinline','');video.muted=true;video.autoplay=true;video.srcObject=stream;
+  box.innerHTML='';box.appendChild(video);video.style.width='100%';video.style.height='100%';video.style.objectFit='cover';video.style.borderRadius='12px';
+  await video.play();msg.textContent=instruction;
+  const detector=('BarcodeDetector' in window)?new BarcodeDetector({formats:['qr_code']}):null;
+  return await new Promise((resolve,reject)=>{
+   const stop=()=>{if(stream){stream.getTracks().forEach(t=>t.stop());stream=null}};
+   const scan=async()=>{
+    if(panel.hidden){stop();return reject(new Error('Scanner closed'))}
+    let raw='';
+    try{
+     if(detector){const codes=await detector.detect(video);raw=codes[0]?.rawValue||''}
+     else if(window.jsQR&&video.readyState>=2){canvas.width=video.videoWidth;canvas.height=video.videoHeight;ctx.drawImage(video,0,0);const img=ctx.getImageData(0,0,canvas.width,canvas.height);raw=jsQR(img.data,img.width,img.height)?.data||''}
+    }catch(_){}
+    if(raw){stop();return resolve(raw)}
+    requestAnimationFrame(scan);
+   };
+   requestAnimationFrame(scan);
   });
-  msg.textContent='Scan the '+label+' QR. Scanning starts the maintenance work session automatically.';
-  let detector=null;if('BarcodeDetector' in window){try{detector=new BarcodeDetector({formats:['qr_code']})}catch(e){console.warn('BarcodeDetector unavailable',e)}}
-  if(!detector&&!window.jsQR)throw new Error('QR scanner did not load. Refresh RELAY and try again.');
-  const expected=isRoom?'CO534-RM-'+room:'CO534-LOC-'+String(room).toUpperCase().replace(/[^A-Z0-9]+/g,'-').replace(/^-|-$/g,'');
- const scan=async()=>{if(panel.hidden)return;let raw='';try{if(video.videoWidth<1||video.videoHeight<1){requestAnimationFrame(scan);return}if(detector){const codes=await detector.detect(video);raw=codes[0]?.rawValue||''}else if(window.jsQR&&video.readyState>=2){canvas.width=video.videoWidth;canvas.height=video.videoHeight;ctx.drawImage(video,0,0);const img=ctx.getImageData(0,0,canvas.width,canvas.height);raw=jsQR(img.data,img.width,img.height)?.data||''}}catch(_){}
- if(raw){if(raw!==expected){msg.textContent='Wrong location QR. Scan '+label+'.';requestAnimationFrame(scan);return}maintenanceQrStream.getTracks().forEach(t=>t.stop());maintenanceQrStream=null;box.innerHTML='✓';msg.textContent='✓ Room verified. Starting project…';button.disabled=true;try{const r=await apiPost({action:'startMaintenanceWork',maintenanceId,worker:currentUser.name,qrId:raw},30000);if(!r.ok)throw new Error(r.reason||r.error||'Could not start project');button.textContent='✓ PROJECT IN PROGRESS';button.dataset.session=r.workSessionId;msg.textContent='✓ IN PROGRESS';setTimeout(()=>{panel.hidden=true},450)}catch(err){button.disabled=false;msg.textContent='Could not start: '+err.message}return}requestAnimationFrame(scan)};requestAnimationFrame(scan)
- }catch(err){msg.textContent='Camera error: '+(err?.message||String(err))}
+ }catch(err){if(stream)stream.getTracks().forEach(t=>t.stop());throw err}
+}
+async function scanMaintenanceQr_(maintenanceId,room,button){
+ const panel=document.getElementById('maintenanceQrPanel'),msg=document.getElementById('maintenanceQrMessage'),title=document.getElementById('maintenanceQrTitle'),box=document.getElementById('maintenanceQrCamera'),isRoom=/^\d{3}$/.test(String(room)),label=isRoom?'Room '+room:String(room);
+ title.textContent=label;msg.textContent='Opening camera…';box.innerHTML='▦';panel.hidden=false;
+ const expected=isRoom?'CO534-RM-'+room:'CO534-LOC-'+String(room).toUpperCase().replace(/[^A-Z0-9]+/g,'-').replace(/^-|-$/g,'');
+ try{
+  // Maintenance now uses the same simple scanner pattern proven in Housekeeping.
+  const raw=await relayScanQr_(panel,box,msg,'Scan the '+label+' QR. Scanning starts the maintenance work session automatically.');
+  if(raw!==expected){box.innerHTML='▦';msg.textContent='Wrong location QR. Expected '+label+'.';return}
+  box.innerHTML='✓';msg.textContent='✓ Location verified. Starting project…';button.disabled=true;
+  const r=await apiPost({action:'startMaintenanceWork',maintenanceId,worker:currentUser.name,qrId:raw},30000);
+  if(!r.ok)throw new Error(r.reason||r.error||'Could not start project');
+  button.textContent='✓ PROJECT IN PROGRESS';button.dataset.session=r.workSessionId;msg.textContent='✓ IN PROGRESS';setTimeout(()=>{panel.hidden=true},450);
+ }catch(err){if(String(err?.message)!=='Scanner closed'){button.disabled=false;msg.textContent='Camera error: '+(err?.message||String(err))}}
 }
 function closeMaintenanceQr_(){if(maintenanceQrStream){maintenanceQrStream.getTracks().forEach(t=>t.stop());maintenanceQrStream=null}const p=document.getElementById('maintenanceQrPanel');if(p)p.hidden=true}
 document.getElementById('closeMaintenanceQr')?.addEventListener('click',closeMaintenanceQr_);
