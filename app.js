@@ -1219,9 +1219,14 @@ async function assignSideWork_(){
    const task=(prompt('Side duty (example: Public Restrooms, Laundry, Fitness Center, Rec / Grill Area):')||'').trim();if(!task)return;
    const location=(prompt('Location / work area:',task)||'').trim();if(!location)return;
    const dueAt=(prompt('Due time (optional, example 1:00 PM):')||'').trim();
-   const r=await apiPost({action:'createSideWork',businessDate:day.businessDate,assignedTo,task,location,dueAt,assignedBy:currentUser.name});
+   let r;
+   try{r=await apiPost({action:'createSideWork',businessDate:day.businessDate,assignedTo,task,location,dueAt,assignedBy:currentUser.name},45000)}
+   catch(err){throw new Error(err.message+' Do not submit it again yet — use REFRESH to confirm whether the assignment was saved.')}
    if(!r.ok)throw new Error(r.reason||'Assignment failed');
-   relayCacheClear_('side:');relayCacheClear_('hk:');await loadSideWorkBoard_();
+   // The write succeeded. Do not make the user wait for a second Sheets read just to redraw the board.
+   relayCacheClear_('side:');relayCacheClear_('hk:');
+   const board=document.getElementById('sideWorkBoard');
+   if(board)board.insertAdjacentHTML('afterbegin','<article class="side-work-card"><div><strong>'+task+'</strong><span>'+location+(dueAt?' • Due '+dueAt:'')+'</span><small>Assigned to '+assignedTo+' • just now</small></div><span class="side-work-status">ASSIGNED</span></article>');
  }catch(err){alert(err.message)}
 }
 let activeSideWorkSessions={},pendingSideWorkScan=null,sideWorkQrStream=null;
