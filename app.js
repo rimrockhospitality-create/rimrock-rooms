@@ -961,19 +961,18 @@ window.rrRefreshCurrent=async function(){
  const b=document.getElementById('appRefresh');if(!currentUser)return;
  if(b){b.disabled=true;b.innerHTML='⟳ <span>REFRESHING</span>'}
  try{
-  // Manual REFRESH is the authoritative override: discard every client cache and rebuild all permitted operational state.
+  // Manual REFRESH remains authoritative, but only reloads the workspace the user is actually viewing.
+  // This avoids simultaneous Sheets requests competing with each other and timing out.
   relayCacheClear_();relayBusinessDate='';relayBusinessDayLoadedAt=0;
   await loadRelayBusinessDay_(true);
-  const roles=currentUser.roles||[],jobs=[refreshDashboardOps()];
-  if(roles.some(r=>['ADMIN','INSPECTOR','FRONT DESK','HOUSEKEEPER'].includes(r)))jobs.push(loadHousekeepingBoard());
-  if(roles.some(r=>['ADMIN','INSPECTOR'].includes(r)))jobs.push(loadInspectionQueue());
-  if(roles.some(r=>['ADMIN','INSPECTOR','FRONT DESK','MAINTENANCE'].includes(r)))jobs.push(loadMaintenanceBoard());
-  if(roles.includes('ADMIN'))jobs.push(loadUsersAdmin());
-  if(roles.some(r=>['ADMIN','INSPECTOR','FRONT DESK','MAINTENANCE'].includes(r)))jobs.push(loadOpenShiftNotes_());
-  await Promise.allSettled(jobs);
+  if(!housekeepingView.hidden)await loadHousekeepingBoard();
+  else if(!inspectionView.hidden)await loadInspectionQueue();
+  else if(!maintenanceView.hidden)await loadMaintenanceBoard();
+  else if(!checklistsView.hidden){renderChecklist();await loadOpenShiftNotes_()}
+  else await refreshDashboardOps();
  }catch(err){console.error('RELAY refresh failed',err);alert('Refresh failed: '+err.message)}
  finally{if(b){b.disabled=false;b.innerHTML='↻ <span>REFRESH</span>'}}
-};
+}
 
 let activeExceptionIndex=null,activeExceptionType='',exceptionState={};
 document.addEventListener('click',e=>{
@@ -1139,7 +1138,7 @@ async function relayLogout_(){
  app.hidden=true;app.style.display='none';login.hidden=false;login.style.removeProperty('display');
  document.getElementById('loginUsername').value='';document.getElementById('loginPassword').value='';document.getElementById('loginMessage').textContent='';
 }
-document.getElementById('topLogoutBtn')?.addEventListener('click',relayLogout_);
+
 
 async function loadOpenShiftNotes_(){
  const box=document.getElementById('openShiftNotes');if(!box||!currentUser)return;
