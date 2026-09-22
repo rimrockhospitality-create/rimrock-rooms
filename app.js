@@ -26,6 +26,18 @@ const RELAY_VIEW_CACHE_MS=15000;
 function relayCached_(key){const x=relayViewCache.get(key);return x&&Date.now()-x.at<RELAY_VIEW_CACHE_MS?x.value:null}
 function relayCacheSet_(key,value){relayViewCache.set(key,{at:Date.now(),value});return value}
 function relayCacheClear_(prefix=''){for(const k of [...relayViewCache.keys()])if(!prefix||k.startsWith(prefix))relayViewCache.delete(k)}
+const RELAY_READ_ACTIONS=new Set(['authLogin','authLogout','authSession','getAssignableHousekeepers','getBusinessDay','getInspectionPhoto','getShiftNoteDetail','getShiftOperations','getToday','getWorkBoard','adminListUsers']);
+const RELAY_WRITE_AFFECTS={
+ syncChoice:['hk:','inspection:','dashboard:'],startRoom:['hk:','dashboard:'],readyRoom:['hk:','inspection:','dashboard:'],
+ startInspection:['inspection:'],saveInspectionIssue:['inspection:','hk:','maintenance:','dashboard:'],resolveInspectionIssue:['inspection:','hk:','dashboard:'],resolveReinspection:['inspection:','hk:','dashboard:'],passInspection:['inspection:','hk:','dashboard:'],
+ logMaintenance:['maintenance:','inspection:','hk:','dashboard:'],saveMaintenanceIssue:['maintenance:','inspection:','hk:','dashboard:'],startMaintenanceWork:['maintenance:'],resolveMaintenanceIssue:['maintenance:','inspection:','hk:','dashboard:'],
+ createSideWork:['side:','hk:','dashboard:'],startSideWork:['side:','hk:'],completeSideWork:['side:','hk:','dashboard:'],
+ saveShiftNote:['shift:','dashboard:'],addShiftNoteUpdate:['shift:','dashboard:'],resolveShiftNote:['shift:','dashboard:'],completeChecklistShift:['shift:','dashboard:'],
+ dailyAudit:['business:','hk:','inspection:','maintenance:','side:','shift:','dashboard:'],
+ adminCreateUser:['users:'],adminUpdateUser:['users:'],adminDeactivateUser:['users:'],adminResetPassword:['users:']
+};
+function relayInvalidateForAction_(action){(RELAY_WRITE_AFFECTS[action]||[]).forEach(p=>relayCacheClear_(p));}
+
 function normalizeAuthUser_(user){return {...user,roles:[String(user.role||'').toUpperCase()]};}
 async function loadSession(){
   const propertiesRes=await fetch('data/properties.json',{cache:'no-store'});
@@ -198,7 +210,9 @@ async function apiPost(payload,timeoutMs=20000){
   try{
     const r=await fetch(API_URL,{method:'POST',headers:{'Content-Type':'text/plain;charset=utf-8'},body:JSON.stringify(payload),redirect:'follow',signal:controller.signal});
     if(!r.ok) throw new Error('API request failed ('+r.status+')');
-    return await r.json();
+    const data=await r.json();
+    if(data?.ok&&payload?.action&&!RELAY_READ_ACTIONS.has(payload.action))relayInvalidateForAction_(payload.action);
+    return data;
   }catch(err){
     if(err.name==='AbortError') throw new Error('The shared database request timed out. The write may still have completed; refresh and Validate before retrying.');
     throw err;
@@ -364,7 +378,7 @@ async function loadInspectionQueue(){
   const status=document.getElementById('inspectionStatus'),queue=document.getElementById('inspectionQueue'),count=document.getElementById('inspectionWaiting');
   status.textContent='Loading inspection queue…';queue.innerHTML='';
   try{
-    const state=await apiPost({action:'getToday',businessDate:housekeepingBusinessDate()});
+    const key='inspection:'+housekeepingBusinessDate(),state=relayCached_(key)||relayCacheSet_(key,await apiPost({action:'getToday',businessDate:housekeepingBusinessDate()}));
     if(!state.ok)throw new Error(state.error||'Could not load inspections');
     const rechecks=(state.inspectionIssues||[]).filter(i=>i.status==='REWORK_COMPLETE'),rq=document.getElementById('reinspectionQueue');
     rq.innerHTML=rechecks.map(i=>'<article class="reinspection-card"><div class="recheck-title">ROOM '+i.room+' — REINSPECTION REQUIRED</div><div>Returned by <strong>'+i.housekeeper+'</strong></div><div class="recheck-item"><strong>'+i.deficiency_label+'</strong>'+(i.note?'<br>'+i.note:'')+'<br><button type="button" class="view-rework-photo" data-photo="'+i.photo_ref+'">View original inspector photo</button></div><div class="recheck-actions"><button type="button" class="recheck-pass" data-issue="'+i.issue_id+'">✓ REWORK PASSED</button><button type="button" class="recheck-fail" data-issue="'+i.issue_id+'">↩ STILL NEEDS WORK</button></div></article>').join('');
@@ -555,7 +569,7 @@ async function loadMaintenanceBoard(){
   const status=document.getElementById('maintenanceStatus'),queue=document.getElementById('maintenanceQueue');
   status.textContent='Loading maintenance…';queue.innerHTML='';
   try{
-    const state=await apiPost({action:'getToday',businessDate:housekeepingBusinessDate()});
+    const key='maintenance:'+housekeepingBusinessDate(),state=relayCached_(key)||relayCacheSet_(key,await apiPost({action:'getToday',businessDate:housekeepingBusinessDate()}));
     const items=state.maintenanceIssues||[];
     const p1=items.filter(x=>x.status==='OPEN'&&x.priority==='P1_GUEST_IMPACT'),p2=items.filter(x=>x.status==='OPEN'&&x.priority==='P2_ROOM_BLOCKING'),p3=items.filter(x=>x.status==='OPEN'&&x.priority==='P3_ROUTINE');
     document.getElementById('maintP1').textContent=p1.length;document.getElementById('maintP2').textContent=p2.length;document.getElementById('maintP3').textContent=p3.length;
@@ -775,10 +789,15 @@ document.getElementById('dashAddShiftNote')?.addEventListener('click',()=>{show(
 document.querySelectorAll('.rr-dashboard [data-view]').forEach(b=>b.addEventListener('click',()=>show(b.dataset.view)));
 async function refreshDashboardOps(){
  try{
-  const [state,handoff]=await Promise.all([
-   apiPost({action:'getToday',businessDate:housekeepingBusinessDate()}),
-   currentUser?apiPost({action:'getShiftOperations',sessionId:localStorage.getItem('relaySessionId'),businessDate:housekeepingBusinessDate(),shift:''}):Promise.resolve({ok:false})
-  ]);
+  const day=housekeepingBusinessDate(),stateKey='dashboard:today:'+day,shiftKey='dashboard:shift:'+day;
+  let state=relayCached_(stateKey),handoff=relayCached_(shiftKey);
+  if(!state||!handoff){
+   const results=await Promise.all([
+    state?Promise.resolve(state):apiPost({action:'getToday',businessDate:day}),
+    handoff?Promise.resolve(handoff):(currentUser?apiPost({action:'getShiftOperations',sessionId:localStorage.getItem('relaySessionId'),businessDate:day,shift:''}):Promise.resolve({ok:false}))
+   ]);
+   state=state||relayCacheSet_(stateKey,results[0]);handoff=handoff||relayCacheSet_(shiftKey,results[1]);
+  }
   const ready=(state.cleaningSessions||[]).filter(x=>x.status==='READY_FOR_INSPECTION').length;
   const open=(state.maintenanceIssues||[]).filter(x=>x.status==='OPEN').length;
   const openNotes=handoff.ok?(handoff.openNotes||handoff.shiftNotes||[]).filter(n=>['ISSUE','FOLLOWUP','FOLLOW_UP'].includes(String(n.noteType||n.note_type||'').toUpperCase())&&String(n.status||'OPEN').toUpperCase()==='OPEN'):[];
@@ -926,12 +945,16 @@ window.rrRefreshCurrent=async function(){
  const b=document.getElementById('appRefresh');if(!currentUser)return;
  if(b){b.disabled=true;b.innerHTML='⟳ <span>REFRESHING</span>'}
  try{
-  const visible=id=>{const el=document.getElementById(id);return el&&!el.hidden&&getComputedStyle(el).display!=='none'};
-  if(visible('housekeepingView'))await loadHousekeepingBoard();
-  else if(visible('inspectionView'))await loadInspectionQueue();
-  else if(visible('maintenanceView'))await loadMaintenanceBoard();
-  else if(visible('checklistsView')){openChecklistHub();await refreshDashboardOps()}
-  else {await refreshDashboardOps();show('Home')}
+  // Manual REFRESH is the authoritative override: discard every client cache and rebuild all permitted operational state.
+  relayCacheClear_();relayBusinessDate='';relayBusinessDayLoadedAt=0;
+  await loadRelayBusinessDay_(true);
+  const roles=currentUser.roles||[],jobs=[refreshDashboardOps()];
+  if(roles.some(r=>['ADMIN','INSPECTOR','FRONT DESK','HOUSEKEEPER'].includes(r)))jobs.push(loadHousekeepingBoard());
+  if(roles.some(r=>['ADMIN','INSPECTOR'].includes(r)))jobs.push(loadInspectionQueue());
+  if(roles.some(r=>['ADMIN','INSPECTOR','FRONT DESK','MAINTENANCE'].includes(r)))jobs.push(loadMaintenanceBoard());
+  if(roles.includes('ADMIN'))jobs.push(loadUsersAdmin());
+  if(roles.some(r=>['ADMIN','INSPECTOR','FRONT DESK','MAINTENANCE'].includes(r)))jobs.push(loadOpenShiftNotes_());
+  await Promise.allSettled(jobs);
  }catch(err){console.error('RELAY refresh failed',err);alert('Refresh failed: '+err.message)}
  finally{if(b){b.disabled=false;b.innerHTML='↻ <span>REFRESH</span>'}}
 };
@@ -998,7 +1021,7 @@ let relayAdminUsers=[];
 async function loadUsersAdmin(){
  const box=document.getElementById('usersList');box.innerHTML='<div class="users-loading">Loading users…</div>';
  try{
-  const sessionId=localStorage.getItem('relaySessionId'),r=await apiPost({action:'adminListUsers',sessionId});
+  const sessionId=localStorage.getItem('relaySessionId'),r=relayCached_('users:list')||relayCacheSet_('users:list',await apiPost({action:'adminListUsers',sessionId}));
   if(!r.ok)throw new Error(r.reason||'Unable to load users');
   relayAdminUsers=r.users||[];renderUsersAdmin();
  }catch(err){box.innerHTML='<div class="users-loading">Unable to load users: '+err.message+'</div>'}
@@ -1105,7 +1128,7 @@ document.getElementById('topLogoutBtn')?.addEventListener('click',relayLogout_);
 async function loadOpenShiftNotes_(){
  const box=document.getElementById('openShiftNotes');if(!box||!currentUser)return;
  try{
-  const r=await apiPost({action:'getShiftOperations',sessionId:localStorage.getItem('relaySessionId'),businessDate:housekeepingBusinessDate(),shift:activeChecklist||''});
+  const key='shift:'+housekeepingBusinessDate()+':'+(activeChecklist||''),r=relayCached_(key)||relayCacheSet_(key,await apiPost({action:'getShiftOperations',sessionId:localStorage.getItem('relaySessionId'),businessDate:housekeepingBusinessDate(),shift:activeChecklist||''}));
   if(!r.ok)throw new Error(r.reason||r.error||'Unable to load handoff');
   const notes=(r.openNotes||r.shiftNotes||r.notes||[]).filter(n=>['ISSUE','FOLLOWUP','FOLLOW_UP'].includes(String(n.noteType||n.note_type||'').toUpperCase())&&String(n.status||'OPEN').toUpperCase()==='OPEN');
   window.relayOpenNotes_=notes;
