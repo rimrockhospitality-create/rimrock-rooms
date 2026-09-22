@@ -88,7 +88,7 @@ function show(view){
   if(!placeholder.hidden) title.textContent=view;
   if(view==='Housekeeping') loadHousekeepingBoard()
   if(view==='Inspections') loadInspectionQueue();
-  if(view==='Maintenance') loadMaintenanceBoard();
+  if(view==='Maintenance'){loadMaintenanceBoard();loadSideWorkBoard_();}
   if(view==='Users') loadUsersAdmin();
   if(view==='Checklists'){openChecklistHub();loadOpenShiftNotes_();}
   document.querySelectorAll('.nav').forEach(b=>b.classList.toggle('active',b.dataset.view===view)); drawer.hidden=true;
@@ -1258,23 +1258,26 @@ document.getElementById('inspectionMaintenanceSummary')?.addEventListener('click
 });
 
 // RELAY SIDE DUTY V1 — assigned housekeeping work with silent timing.
+function sideWorkHost_(){
+ const roles=currentUser?.roles||[];
+ return roles.includes('MAINTENANCE')?document.getElementById('maintenanceView'):document.getElementById('housekeepingView');
+}
 function renderSideWorkBoardFromState_(r){
- const host=document.getElementById('housekeepingView');if(!host||!currentUser)return;
- let box=document.getElementById('sideWorkBoard');if(!box){box=document.createElement('section');box.id='sideWorkBoard';box.className='side-work-board';host.appendChild(box)}
- const roles=currentUser.roles||[],isWorker=roles.includes('HOUSEKEEPER'),isMonitor=roles.some(x=>['ADMIN','FRONT DESK'].includes(x)),isInspector=roles.includes('INSPECTOR'),canAssign=isMonitor||isInspector;
+ const host=sideWorkHost_();if(!host||!currentUser)return;
+ let box=document.getElementById('sideWorkBoard');if(box&&box.parentElement!==host)host.appendChild(box);
+ if(!box){box=document.createElement('section');box.id='sideWorkBoard';box.className='side-work-board';host.appendChild(box)}
+ const roles=currentUser.roles||[],isWorker=roles.some(x=>['HOUSEKEEPER','MAINTENANCE'].includes(x)),isMonitor=roles.some(x=>['ADMIN','FRONT DESK'].includes(x)),isInspector=roles.includes('INSPECTOR'),canAssign=isMonitor||isInspector;
  const worker=isWorker?currentUser.name:'';
- // Inspector can dispatch side work but does not monitor it. FD/Admin see the property queue. HK sees only their own queue.
  const tasks=(r.sideWork||[]).filter(x=>x.status!=='COMPLETE'&&(isMonitor||isWorker&&x.assignedTo===worker));
- // Recover session IDs from either enriched sideWork rows or maintenanceWork session data when available.
  if(isWorker){tasks.forEach(t=>{if(t.sessionId)activeSideWorkSessions[t.taskId]=t.sessionId});(r.sideWorkSessions||[]).forEach(x=>{if(x.status==='IN_PROGRESS'&&x.taskId)activeSideWorkSessions[x.taskId]=x.sessionId})}
- const title=isMonitor?'Active Side Duties':'My Work Beyond Rooms';
- box.innerHTML='<div class="side-work-head"><div><small>HOUSEKEEPING SIDE DUTIES</small><h2>'+title+'</h2></div>'+(canAssign?'<button id="assignSideWorkBtn">+ ASSIGN SIDE DUTY</button>':'')+'</div><div class="side-work-list">'+(isInspector&&!isMonitor?'<p class="side-work-empty">Assign side duties here. Front Desk and Admin monitor completion.</p>':tasks.length?tasks.map(t=>'<article class="side-work-card"><div><strong>'+t.task+'</strong><span>'+t.location+(t.dueAt?' • Due '+t.dueAt:'')+'</span><small>Assigned to '+t.assignedTo+' by '+t.assignedBy+'</small></div>'+(isWorker?(t.status==='IN_PROGRESS'?'<button class="side-work-complete" data-task="'+t.taskId+'">COMPLETE</button>':'<button class="side-work-start" data-task="'+t.taskId+'" data-location="'+String(t.location||'').replace(/"/g,'&quot;')+'">SCAN QR TO START</button>'):'<b>'+t.status.replaceAll('_',' ')+'</b>')+'</article>').join(''):'<p class="side-work-empty">No active side duties.</p>')+'</div>';
+ const title=isMonitor?'Active Side Duties':'My Work Beyond '+(roles.includes('MAINTENANCE')?'Maintenance':'Rooms');
+ box.innerHTML='<div class="side-work-head"><div><small>OPERATIONAL SIDE DUTIES</small><h2>'+title+'</h2></div>'+(canAssign?'<button id="assignSideWorkBtn">+ ASSIGN SIDE DUTY</button>':'')+'</div><div class="side-work-list">'+(isInspector&&!isMonitor?'<p class="side-work-empty">Assign side duties here. Front Desk and Admin monitor completion.</p>':tasks.length?tasks.map(t=>'<article class="side-work-card"><div><strong>'+t.task+'</strong><span>'+t.location+(t.dueAt?' • Due '+t.dueAt:'')+'</span><small>Assigned to '+t.assignedTo+' by '+t.assignedBy+'</small></div>'+(isWorker?(t.status==='IN_PROGRESS'?'<button class="side-work-complete" data-task="'+t.taskId+'">COMPLETE</button>':'<button class="side-work-start" data-task="'+t.taskId+'" data-location="'+String(t.location||'').replace(/"/g,'&quot;')+'">SCAN QR TO START</button>'):'<b>'+t.status.replaceAll('_',' ')+'</b>')+'</article>').join(''):'<p class="side-work-empty">No active side duties.</p>')+'</div>';
  document.getElementById('assignSideWorkBtn')?.addEventListener('click',assignSideWork_);
 }
 async function loadSideWorkBoard_(){
- const host=document.getElementById('housekeepingView');if(!host||!currentUser)return;
+ const host=sideWorkHost_();if(!host||!currentUser)return;
  let box=document.getElementById('sideWorkBoard');if(!box){box=document.createElement('section');box.id='sideWorkBoard';box.className='side-work-board';host.appendChild(box)}
- const roles=currentUser.roles||[],isInspector=roles.includes('INSPECTOR')&&!roles.some(x=>['ADMIN','FRONT DESK'].includes(x)),worker=roles.includes('HOUSEKEEPER')?currentUser.name:'';
+ const roles=currentUser.roles||[],isInspector=roles.includes('INSPECTOR')&&!roles.some(x=>['ADMIN','FRONT DESK'].includes(x)),worker=roles.some(x=>['HOUSEKEEPER','MAINTENANCE'].includes(x))?currentUser.name:'';
  // Inspector has no monitoring read: render the dispatch control only.
  if(isInspector){renderSideWorkBoardFromState_({sideWork:[]});return}
  try{const key='side:'+housekeepingBusinessDate()+':'+worker,r=relayCached_(key)||relayCacheSet_(key,await apiPost({action:'getWorkBoard',businessDate:housekeepingBusinessDate(),worker:worker},45000));if(!r.ok)throw new Error(r.reason||'Could not load side duties');renderSideWorkBoardFromState_(r);
@@ -1282,32 +1285,42 @@ async function loadSideWorkBoard_(){
 }
 async function assignSideWork_(){
  try{
-   // Side duties must always use RELAY's authoritative open business day.
    const day=await apiPost({action:'getBusinessDay',sessionId:localStorage.getItem('relaySessionId')});
    if(!day.ok||!day.businessDate)throw new Error(day.reason||'Could not confirm the current RELAY business day.');
    relayBusinessDate=day.businessDate;
 
-   // Employee identity must come from active RELAY HOUSEKEEPER users — never free text.
-   const users=await apiPost({action:'getAssignableHousekeepers',sessionId:localStorage.getItem('relaySessionId')});
-   if(!users.ok)throw new Error(users.reason||'Could not load active housekeepers.');
-   const housekeepers=users.housekeepers||[];
-   if(!housekeepers.length)throw new Error('No active HOUSEKEEPER users are available.');
+   // Side duties are role-neutral operational work. The backend returns active operational associates.
+   const users=await apiPost({action:'getAssignableSideDutyUsers',sessionId:localStorage.getItem('relaySessionId')});
+   if(!users.ok)throw new Error(users.reason||'Could not load active associates.');
+   const associates=users.users||[];
+   if(!associates.length)throw new Error('No active operational associates are available.');
 
-   const menu=housekeepers.map((u,i)=>(i+1)+'. '+u.name).join('\n');
-   const choice=(prompt('Assign to which housekeeper?\n\n'+menu+'\n\nEnter the number:')||'').trim();
+   const menu=associates.map((u,i)=>(i+1)+'. '+u.name+' — '+String(u.role||'').replaceAll('_',' ')).join('\n');
+   const choice=(prompt('Assign side duty to:\n\n'+menu+'\n\nEnter the number:')||'').trim();
    if(!choice)return;
    const idx=Number(choice)-1;
-   if(!Number.isInteger(idx)||idx<0||idx>=housekeepers.length)throw new Error('Choose a valid housekeeper number.');
-   const assignedTo=housekeepers[idx].name;
+   if(!Number.isInteger(idx)||idx<0||idx>=associates.length)throw new Error('Choose a valid associate number.');
+   const assignedTo=associates[idx].name;
 
-   const task=(prompt('Side duty (example: Public Restrooms, Laundry, Fitness Center, Rec / Grill Area):')||'').trim();if(!task)return;
-   const location=(prompt('Location / work area:',task)||'').trim();if(!location)return;
+   const taskMenu=['STRIP ROOM','Public Restrooms','Laundry','Fitness Center','Rec / Grill Area','OTHER'];
+   const taskChoice=(prompt('Choose side duty:\n\n'+taskMenu.map((t,i)=>(i+1)+'. '+t).join('\n')+'\n\nEnter the number:')||'').trim();
+   if(!taskChoice)return;
+   const ti=Number(taskChoice)-1;
+   if(!Number.isInteger(ti)||ti<0||ti>=taskMenu.length)throw new Error('Choose a valid side duty number.');
+   let task=taskMenu[ti],location='';
+   if(task==='STRIP ROOM'){
+     const room=(prompt('Room number to strip:')||'').trim();
+     if(!/^\d{3}$/.test(room))throw new Error('Enter a valid 3-digit room number.');
+     location=room;
+   }else{
+     if(task==='OTHER'){task=(prompt('Side duty:')||'').trim();if(!task)return}
+     location=(prompt('Location / work area:',task)||'').trim();if(!location)return;
+   }
    const dueAt=(prompt('Due time (optional, example 1:00 PM):')||'').trim();
    let r;
    try{r=await apiPost({action:'createSideWork',businessDate:day.businessDate,assignedTo,task,location,dueAt,assignedBy:currentUser.name},45000)}
    catch(err){throw new Error(err.message+' Do not submit it again yet — use REFRESH to confirm whether the assignment was saved.')}
    if(!r.ok)throw new Error(r.reason||'Assignment failed');
-   // The write succeeded. Inspector dispatches and moves on; FD/Admin monitor the queue; worker sees their own task.
    relayCacheClear_('side:');relayCacheClear_('hk:');
    const roles=currentUser.roles||[],isInspector=roles.includes('INSPECTOR')&&!roles.some(x=>['ADMIN','FRONT DESK'].includes(x));
    if(isInspector){alert('✓ Task assigned');renderSideWorkBoardFromState_({sideWork:[]})}
@@ -1315,7 +1328,7 @@ async function assignSideWork_(){
  }catch(err){alert(err.message)}
 }
 let activeSideWorkSessions={},pendingSideWorkScan=null,sideWorkQrStream=null;
-function sideWorkQrId_(location){return 'CO534-LOC-'+String(location||'').trim().toUpperCase().replace(/[^A-Z0-9]+/g,'-').replace(/^-|-$/g,'')}
+function sideWorkQrId_(location){const v=String(location||'').trim();return /^\d{3}$/.test(v)?'CO534-RM-'+v:'CO534-LOC-'+v.toUpperCase().replace(/[^A-Z0-9]+/g,'-').replace(/^-|-$/g,'')}
 function closeSideWorkQr_(){if(sideWorkQrStream){sideWorkQrStream.getTracks().forEach(t=>t.stop());sideWorkQrStream=null}pendingSideWorkScan=null;const p=document.getElementById('sideWorkQrPanel');if(p)p.hidden=true}
 async function scanSideWorkQr_(taskId,location){
  pendingSideWorkScan={taskId,location};const panel=document.getElementById('sideWorkQrPanel'),msg=document.getElementById('sideWorkQrMessage'),title=document.getElementById('sideWorkQrTitle'),box=document.getElementById('sideWorkQrCamera');
