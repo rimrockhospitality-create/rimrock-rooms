@@ -698,7 +698,7 @@ async function loadNotifications(){
 }
 document.getElementById('notificationBell').addEventListener('click',async()=>{await loadNotifications();home.hidden=true;housekeepingView.hidden=true;inspectionView.hidden=true;maintenanceView.hidden=true;placeholder.hidden=true;document.getElementById('notificationPanel').hidden=false});
 document.getElementById('closeNotifications').addEventListener('click',()=>{document.getElementById('notificationPanel').hidden=true;home.hidden=false});
-setTimeout(loadNotifications,1200);
+// Notifications load on demand when the bell is opened; do not compete with role startup reads.
 
 document.getElementById('notificationList').addEventListener('click',e=>{
  const b=e.target.closest('.notification-link');if(!b)return;
