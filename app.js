@@ -1327,8 +1327,13 @@ async function scanSideWorkQr_(taskId,location){
 document.getElementById('closeSideWorkQr')?.addEventListener('click',closeSideWorkQr_);
 document.addEventListener('click',async e=>{
  const start=e.target.closest('.side-work-start');if(start){scanSideWorkQr_(start.dataset.task,start.dataset.location);return}
- const done=e.target.closest('.side-work-complete');if(done){const sid=activeSideWorkSessions[done.dataset.task];if(!sid){alert('This side duty needs an active work session on this device.');return}
-  const card=done.closest('.side-work-card'),parent=card?.parentNode,next=card?.nextSibling;done.disabled=true;
+ const done=e.target.closest('.side-work-complete');if(done){let sid=activeSideWorkSessions[done.dataset.task];
+  if(!sid){
+   done.disabled=true;done.textContent='CHECKING…';
+   try{relayCacheClear_('side:');const r=await apiPost({action:'getWorkBoard',businessDate:housekeepingBusinessDate(),worker:currentUser.name},45000);if(r.ok){const task=(r.sideWork||[]).find(x=>x.taskId===done.dataset.task&&x.status==='IN_PROGRESS'&&x.sessionId);if(task){sid=task.sessionId;activeSideWorkSessions[done.dataset.task]=sid}}}catch(_){}
+   if(!sid){done.disabled=false;done.textContent='COMPLETE';alert('RELAY could not recover the active work session yet. Refresh once and try COMPLETE again — do not rescan the QR.');return}
+  }
+  const card=done.closest('.side-work-card'),parent=card?.parentNode,next=card?.nextSibling;done.disabled=true;done.textContent='COMPLETE';
   // Optimistic completion: the worker gets an instant response while the write finishes.
   card?.remove();relayCacheClear_('side:');relayCacheClear_('hk:');
   try{const r=await apiPost({action:'completeSideWork',sessionId:sid},45000);if(!r.ok)throw new Error(r.reason||'Could not complete');delete activeSideWorkSessions[done.dataset.task]}
