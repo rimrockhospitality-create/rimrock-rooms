@@ -293,9 +293,22 @@ async function loadHousekeepingBoard(){
       if(state.ok&&state.businessDate){relayBusinessDate=state.businessDate;relayBusinessDayLoadedAt=Date.now();relayCacheSet_('hk:'+relayBusinessDate+':'+currentUser.name,state)}
       date=state.businessDate||housekeepingBusinessDate();
     }else{
-      date=await loadRelayBusinessDay_();
+      // Do not make managers wait on a separate business-day request before the board.
+      // Use the known/open Denver day immediately; getToday is the authoritative board read.
+      date=housekeepingBusinessDate();
       const cacheKey='hk:'+date+':'+currentUser.name;
-      state=relayCached_(cacheKey)||relayCacheSet_(cacheKey,await apiPost({action:'getToday',businessDate:date},45000));
+      state=relayCached_(cacheKey);
+      if(!state){
+        try{state=await apiPost({action:'getToday',businessDate:date},45000)}
+        catch(err){
+          // Apps Script can occasionally return a transient 404 immediately after a deployment.
+          // One automatic retry is safer than making the manager click Housekeeping again.
+          if(String(err?.message||'').includes('(404)'))state=await apiPost({action:'getToday',businessDate:date},45000);
+          else throw err;
+        }
+        relayCacheSet_(cacheKey,state);
+      }
+      relayBusinessDate=date;relayBusinessDayLoadedAt=Date.now();
     }
     const businessDateObj=new Date(date+' 12:00:00');
     hkBoardDate.textContent=new Intl.DateTimeFormat('en-US',{weekday:'long',month:'long',day:'numeric',year:'numeric',timeZone:'America/Denver'}).format(businessDateObj);
