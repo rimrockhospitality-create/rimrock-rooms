@@ -286,7 +286,9 @@ async function loadHousekeepingBoard(){
       const groups={};assignments.forEach(a=>(groups[a.housekeeper]??=[]).push(a.room));
       hkManagerGroups.innerHTML=Object.keys(groups).length?Object.entries(groups).map(([name,rooms])=>'<article><strong>'+name+'</strong><span>'+rooms.length+' room'+(rooms.length===1?'':'s')+': '+rooms.join(', ')+'</span></article>').join(''):'';
     }
+    // getToday does not yet include SIDE_WORK in the live backend. Load it sequentially after the main board so the two requests do not compete.
     renderSideWorkBoardFromState_(state);
+    setTimeout(()=>loadSideWorkBoard_(),0);
     hkMyRooms.innerHTML=visible.map(a=>{
       const room=String(a.room),s=sessionByRoom.get(room),rework=reworkByRoom.get(room)||[],activeRework=rework.find(i=>i.status==='REWORK_IN_PROGRESS'),status=activeRework?'REWORK_IN_PROGRESS':rework.length?'REWORK_REQUIRED':(s?.status||'NOT_STARTED');
       const label=status==='REWORK_IN_PROGRESS'?'REWORK IN PROGRESS':status==='REWORK_REQUIRED'?'REWORK REQUIRED':status==='READY_FOR_INSPECTION'?'READY FOR INSPECTION':status==='CLEANING'?'CLEANING':'NOT STARTED';
