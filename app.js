@@ -1172,7 +1172,7 @@ function renderSideWorkBoardFromState_(r){
  let box=document.getElementById('sideWorkBoard');if(!box){box=document.createElement('section');box.id='sideWorkBoard';box.className='side-work-board';host.appendChild(box)}
  const roles=currentUser.roles||[],canAssign=roles.some(r=>['ADMIN','INSPECTOR','FRONT DESK'].includes(r)),worker=roles.includes('HOUSEKEEPER')?currentUser.name:'';
  const tasks=(r.sideWork||[]).filter(x=>x.status!=='COMPLETE'&&(!worker||x.assignedTo===worker));
- box.innerHTML='<div class="side-work-head"><div><small>HOUSEKEEPING SIDE DUTIES</small><h2>My Work Beyond Rooms</h2></div>'+(canAssign?'<button id="assignSideWorkBtn">+ ASSIGN SIDE DUTY</button>':'')+'</div><div class="side-work-list">'+(tasks.length?tasks.map(t=>'<article class="side-work-card"><div><strong>'+t.task+'</strong><span>'+t.location+(t.dueAt?' • Due '+t.dueAt:'')+'</span><small>Assigned to '+t.assignedTo+' by '+t.assignedBy+'</small></div>'+(roles.includes('HOUSEKEEPER')?(t.status==='IN_PROGRESS'?'<button class="side-work-complete" data-task="'+t.taskId+'">COMPLETE</button>':'<button class="side-work-start" data-task="'+t.taskId+'">START</button>'):'<b>'+t.status.replaceAll('_',' ')+'</b>')+'</article>').join(''):'<p class="side-work-empty">No side duties assigned.</p>')+'</div>';
+ box.innerHTML='<div class="side-work-head"><div><small>HOUSEKEEPING SIDE DUTIES</small><h2>My Work Beyond Rooms</h2></div>'+(canAssign?'<button id="assignSideWorkBtn">+ ASSIGN SIDE DUTY</button>':'')+'</div><div class="side-work-list">'+(tasks.length?tasks.map(t=>'<article class="side-work-card"><div><strong>'+t.task+'</strong><span>'+t.location+(t.dueAt?' • Due '+t.dueAt:'')+'</span><small>Assigned to '+t.assignedTo+' by '+t.assignedBy+'</small></div>'+(roles.includes('HOUSEKEEPER')?(t.status==='IN_PROGRESS'?'<button class="side-work-complete" data-task="'+t.taskId+'">COMPLETE</button>':'<button class="side-work-start" data-task="'+t.taskId+'" data-location="'+String(t.location||'').replace(/"/g,'&quot;')+'">SCAN QR TO START</button>'):'<b>'+t.status.replaceAll('_',' ')+'</b>')+'</article>').join(''):'<p class="side-work-empty">No side duties assigned.</p>')+'</div>';
  document.getElementById('assignSideWorkBtn')?.addEventListener('click',assignSideWork_);
 }
 async function loadSideWorkBoard_(){
@@ -1210,8 +1210,26 @@ async function assignSideWork_(){
    relayCacheClear_('side:');relayCacheClear_('hk:');await loadSideWorkBoard_();
  }catch(err){alert(err.message)}
 }
-let activeSideWorkSessions={};
+let activeSideWorkSessions={},pendingSideWorkScan=null,sideWorkQrStream=null;
+function sideWorkQrId_(location){return 'CO534-LOC-'+String(location||'').trim().toUpperCase().replace(/[^A-Z0-9]+/g,'-').replace(/^-|-$/g,'')}
+function closeSideWorkQr_(){if(sideWorkQrStream){sideWorkQrStream.getTracks().forEach(t=>t.stop());sideWorkQrStream=null}pendingSideWorkScan=null;const p=document.getElementById('sideWorkQrPanel');if(p)p.hidden=true}
+async function scanSideWorkQr_(taskId,location){
+ pendingSideWorkScan={taskId,location};const panel=document.getElementById('sideWorkQrPanel'),msg=document.getElementById('sideWorkQrMessage'),title=document.getElementById('sideWorkQrTitle'),box=document.getElementById('sideWorkQrCamera');
+ title.textContent=location||'Side Duty';msg.textContent='Opening camera…';box.innerHTML='▦';panel.hidden=false;
+ try{
+  sideWorkQrStream=await navigator.mediaDevices.getUserMedia({video:{facingMode:{ideal:'environment'}},audio:false});
+  const video=document.createElement('video'),canvas=document.createElement('canvas'),ctx=canvas.getContext('2d',{willReadFrequently:true});video.setAttribute('playsinline','');video.muted=true;video.autoplay=true;video.srcObject=sideWorkQrStream;box.innerHTML='';box.appendChild(video);video.style.width='100%';video.style.height='100%';video.style.objectFit='cover';video.style.borderRadius='12px';await video.play();
+  msg.textContent='Scan the '+location+' location QR. Scanning starts the task automatically.';
+  const detector=('BarcodeDetector' in window)?new BarcodeDetector({formats:['qr_code']}):null,expected=sideWorkQrId_(location);
+  const scan=async()=>{if(!pendingSideWorkScan||panel.hidden)return;let raw='';try{if(detector){const codes=await detector.detect(video);raw=codes[0]?.rawValue||''}else if(window.jsQR&&video.readyState>=2){canvas.width=video.videoWidth;canvas.height=video.videoHeight;ctx.drawImage(video,0,0);const img=ctx.getImageData(0,0,canvas.width,canvas.height);raw=jsQR(img.data,img.width,img.height)?.data||''}}catch(_){}
+   if(raw){if(raw!==expected){msg.textContent='Wrong location QR. Scan the '+location+' QR.';requestAnimationFrame(scan);return}sideWorkQrStream.getTracks().forEach(t=>t.stop());sideWorkQrStream=null;box.innerHTML='✓';msg.textContent='✓ Location verified. Starting task…';
+    try{const r=await apiPost({action:'startSideWork',taskId,worker:currentUser.name,qrId:raw});if(!r.ok)throw new Error(r.reason||'Could not start');activeSideWorkSessions[taskId]=r.sessionId;msg.textContent='✓ IN PROGRESS';relayCacheClear_('side:');relayCacheClear_('hk:');setTimeout(async()=>{closeSideWorkQr_();await loadSideWorkBoard_()},450)}catch(err){msg.textContent='Could not start: '+err.message}return}
+   requestAnimationFrame(scan)};
+  requestAnimationFrame(scan);
+ }catch(err){msg.textContent='Camera error: '+(err?.message||String(err))}
+}
+document.getElementById('closeSideWorkQr')?.addEventListener('click',closeSideWorkQr_);
 document.addEventListener('click',async e=>{
- const start=e.target.closest('.side-work-start');if(start){start.disabled=true;try{const r=await apiPost({action:'startSideWork',taskId:start.dataset.task,worker:currentUser.name});if(!r.ok)throw new Error(r.reason||'Could not start');activeSideWorkSessions[start.dataset.task]=r.sessionId;relayCacheClear_('side:');relayCacheClear_('hk:');await loadSideWorkBoard_()}catch(err){start.disabled=false;alert(err.message)}return}
- const done=e.target.closest('.side-work-complete');if(done){const sid=activeSideWorkSessions[done.dataset.task];if(!sid){alert('This side duty needs an active work session on this device.');return}done.disabled=true;try{const r=await apiPost({action:'completeSideWork',sessionId:sid});if(!r.ok)throw new Error(r.reason||'Could not complete');delete activeSideWorkSessions[done.dataset.task];relayCacheClear_('side:');relayCacheClear_('hk:');await loadSideWorkBoard_()}catch(err){done.disabled=false;alert(err.message)}}
+ const start=e.target.closest('.side-work-start');if(start){scanSideWorkQr_(start.dataset.task,start.dataset.location);return}
+ const done=e.target.closest('.side-work-complete');if(done){const sid=activeSideWorkSessions[done.dataset.task];if(!sid){alert('This side duty needs an active work session on this device.');return}done.disabled=true;try{const r=await apiPost({action:'completeSideWork',sessionId:sid});if(!r.ok)throw new Error(r.reason||'Could not complete');delete activeSideWorkSessions[done.dataset.task];done.closest('.side-work-card')?.remove();relayCacheClear_('side:');relayCacheClear_('hk:')}catch(err){done.disabled=false;alert(err.message)}}
 });
