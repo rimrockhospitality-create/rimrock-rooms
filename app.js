@@ -309,7 +309,7 @@ async function loadHousekeepingBoard(){
     }
     // Render immediately from cached/snapshot state, then fetch side work only when it is not already present.
     renderSideWorkBoardFromState_(state);
-    if(!('sideWork' in state)) setTimeout(()=>loadSideWorkBoard_(),0);
+    if(!('sideWork' in state)&&!currentUser.roles.includes('INSPECTOR')) setTimeout(()=>loadSideWorkBoard_(),0);
     hkMyRooms.innerHTML=visible.map(a=>{
       const room=String(a.room),s=sessionByRoom.get(room),rework=reworkByRoom.get(room)||[],activeRework=rework.find(i=>i.status==='REWORK_IN_PROGRESS'),status=activeRework?'REWORK_IN_PROGRESS':rework.length?'REWORK_REQUIRED':(s?.status||'NOT_STARTED');
       const label=status==='REWORK_IN_PROGRESS'?'REWORK IN PROGRESS':status==='REWORK_REQUIRED'?'REWORK REQUIRED':status==='READY_FOR_INSPECTION'?'READY FOR INSPECTION':status==='CLEANING'?'CLEANING':'NOT STARTED';
@@ -1184,15 +1184,20 @@ document.getElementById('inspectionMaintenanceSummary')?.addEventListener('click
 function renderSideWorkBoardFromState_(r){
  const host=document.getElementById('housekeepingView');if(!host||!currentUser)return;
  let box=document.getElementById('sideWorkBoard');if(!box){box=document.createElement('section');box.id='sideWorkBoard';box.className='side-work-board';host.appendChild(box)}
- const roles=currentUser.roles||[],canAssign=roles.some(r=>['ADMIN','INSPECTOR','FRONT DESK'].includes(r)),worker=roles.includes('HOUSEKEEPER')?currentUser.name:'';
- const tasks=(r.sideWork||[]).filter(x=>x.status!=='COMPLETE'&&(!worker||x.assignedTo===worker));
- box.innerHTML='<div class="side-work-head"><div><small>HOUSEKEEPING SIDE DUTIES</small><h2>My Work Beyond Rooms</h2></div>'+(canAssign?'<button id="assignSideWorkBtn">+ ASSIGN SIDE DUTY</button>':'')+'</div><div class="side-work-list">'+(tasks.length?tasks.map(t=>'<article class="side-work-card"><div><strong>'+t.task+'</strong><span>'+t.location+(t.dueAt?' • Due '+t.dueAt:'')+'</span><small>Assigned to '+t.assignedTo+' by '+t.assignedBy+'</small></div>'+(roles.includes('HOUSEKEEPER')?(t.status==='IN_PROGRESS'?'<button class="side-work-complete" data-task="'+t.taskId+'">COMPLETE</button>':'<button class="side-work-start" data-task="'+t.taskId+'" data-location="'+String(t.location||'').replace(/"/g,'&quot;')+'">SCAN QR TO START</button>'):'<b>'+t.status.replaceAll('_',' ')+'</b>')+'</article>').join(''):'<p class="side-work-empty">No side duties assigned.</p>')+'</div>';
+ const roles=currentUser.roles||[],isWorker=roles.includes('HOUSEKEEPER'),isMonitor=roles.some(x=>['ADMIN','FRONT DESK'].includes(x)),isInspector=roles.includes('INSPECTOR'),canAssign=isMonitor||isInspector;
+ const worker=isWorker?currentUser.name:'';
+ // Inspector can dispatch side work but does not monitor it. FD/Admin see the property queue. HK sees only their own queue.
+ const tasks=(r.sideWork||[]).filter(x=>x.status!=='COMPLETE'&&(isMonitor||isWorker&&x.assignedTo===worker));
+ const title=isMonitor?'Active Side Duties':'My Work Beyond Rooms';
+ box.innerHTML='<div class="side-work-head"><div><small>HOUSEKEEPING SIDE DUTIES</small><h2>'+title+'</h2></div>'+(canAssign?'<button id="assignSideWorkBtn">+ ASSIGN SIDE DUTY</button>':'')+'</div><div class="side-work-list">'+(isInspector&&!isMonitor?'<p class="side-work-empty">Assign side duties here. Front Desk and Admin monitor completion.</p>':tasks.length?tasks.map(t=>'<article class="side-work-card"><div><strong>'+t.task+'</strong><span>'+t.location+(t.dueAt?' • Due '+t.dueAt:'')+'</span><small>Assigned to '+t.assignedTo+' by '+t.assignedBy+'</small></div>'+(isWorker?(t.status==='IN_PROGRESS'?'<button class="side-work-complete" data-task="'+t.taskId+'">COMPLETE</button>':'<button class="side-work-start" data-task="'+t.taskId+'" data-location="'+String(t.location||'').replace(/"/g,'&quot;')+'">SCAN QR TO START</button>'):'<b>'+t.status.replaceAll('_',' ')+'</b>')+'</article>').join(''):'<p class="side-work-empty">No active side duties.</p>')+'</div>';
  document.getElementById('assignSideWorkBtn')?.addEventListener('click',assignSideWork_);
 }
 async function loadSideWorkBoard_(){
  const host=document.getElementById('housekeepingView');if(!host||!currentUser)return;
  let box=document.getElementById('sideWorkBoard');if(!box){box=document.createElement('section');box.id='sideWorkBoard';box.className='side-work-board';host.appendChild(box)}
- const roles=currentUser.roles||[],worker=roles.includes('HOUSEKEEPER')?currentUser.name:'';
+ const roles=currentUser.roles||[],isInspector=roles.includes('INSPECTOR')&&!roles.some(x=>['ADMIN','FRONT DESK'].includes(x)),worker=roles.includes('HOUSEKEEPER')?currentUser.name:'';
+ // Inspector has no monitoring read: render the dispatch control only.
+ if(isInspector){renderSideWorkBoardFromState_({sideWork:[]});return}
  try{const key='side:'+housekeepingBusinessDate()+':'+worker,r=relayCached_(key)||relayCacheSet_(key,await apiPost({action:'getWorkBoard',businessDate:housekeepingBusinessDate(),worker:worker},45000));if(!r.ok)throw new Error(r.reason||'Could not load side duties');renderSideWorkBoardFromState_(r);
  }catch(err){let box=document.getElementById('sideWorkBoard');if(box)box.innerHTML='<div class="side-work-head"><h2>Side Duties</h2></div><p>'+err.message+'</p>'}
 }
@@ -1223,10 +1228,11 @@ async function assignSideWork_(){
    try{r=await apiPost({action:'createSideWork',businessDate:day.businessDate,assignedTo,task,location,dueAt,assignedBy:currentUser.name},45000)}
    catch(err){throw new Error(err.message+' Do not submit it again yet — use REFRESH to confirm whether the assignment was saved.')}
    if(!r.ok)throw new Error(r.reason||'Assignment failed');
-   // The write succeeded. Do not make the user wait for a second Sheets read just to redraw the board.
+   // The write succeeded. Inspector dispatches and moves on; FD/Admin monitor the queue; worker sees their own task.
    relayCacheClear_('side:');relayCacheClear_('hk:');
-   const board=document.getElementById('sideWorkBoard');
-   if(board)board.insertAdjacentHTML('afterbegin','<article class="side-work-card"><div><strong>'+task+'</strong><span>'+location+(dueAt?' • Due '+dueAt:'')+'</span><small>Assigned to '+assignedTo+' • just now</small></div><span class="side-work-status">ASSIGNED</span></article>');
+   const roles=currentUser.roles||[],isInspector=roles.includes('INSPECTOR')&&!roles.some(x=>['ADMIN','FRONT DESK'].includes(x));
+   if(isInspector){alert('✓ Task assigned');renderSideWorkBoardFromState_({sideWork:[]})}
+   else{const board=document.getElementById('sideWorkBoard');if(board)board.insertAdjacentHTML('afterbegin','<article class="side-work-card"><div><strong>'+task+'</strong><span>'+location+(dueAt?' • Due '+dueAt:'')+'</span><small>Assigned to '+assignedTo+' • just now</small></div><span class="side-work-status">ASSIGNED</span></article>')}
  }catch(err){alert(err.message)}
 }
 let activeSideWorkSessions={},pendingSideWorkScan=null,sideWorkQrStream=null;
