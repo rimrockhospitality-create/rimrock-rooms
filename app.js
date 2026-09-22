@@ -331,7 +331,7 @@ async function startQrCamera(){
   try{
     stream=await navigator.mediaDevices.getUserMedia({video:{facingMode:{ideal:'environment'}},audio:false});
     const box=document.querySelector('.qr-code-placeholder'),video=document.createElement('video'),canvas=document.createElement('canvas'),ctx=canvas.getContext('2d',{willReadFrequently:true});
-    video.setAttribute('playsinline','');video.muted=true;video.autoplay=true;video.srcObject=stream;box.innerHTML='';box.appendChild(video);video.style.width='100%';video.style.height='100%';video.style.objectFit='cover';video.style.borderRadius='12px';
+    video.setAttribute('playsinline','');video.muted=true;video.autoplay=true;video.srcObject=stream;box.innerHTML='';box.style.width='min(82vw,360px)';box.style.height='min(82vw,360px)';box.appendChild(video);video.style.width='100%';video.style.height='100%';video.style.objectFit='cover';video.style.borderRadius='12px';
     await video.play();document.getElementById('confirmQrStart').hidden=true;qrStartMessage.textContent='Point the camera at the Room '+pendingStartRoom+' QR code. Scanning starts cleaning automatically.';
     const detector=('BarcodeDetector' in window)?new BarcodeDetector({formats:['qr_code']}):null;
     const stop=()=>stream&&stream.getTracks().forEach(t=>t.stop());
@@ -612,7 +612,7 @@ async function relayScanQr_(panel,box,msg,instruction){
 }
 async function scanMaintenanceQr_(maintenanceId,room,button){
  const panel=document.getElementById('maintenanceQrPanel'),msg=document.getElementById('maintenanceQrMessage'),title=document.getElementById('maintenanceQrTitle'),box=document.getElementById('maintenanceQrCamera'),isRoom=/^\d{3}$/.test(String(room)),label=isRoom?'Room '+room:String(room);
- title.textContent=label;msg.textContent='Opening camera…';box.innerHTML='▦';panel.hidden=false;panel.style.display='grid';
+ document.body.appendChild(panel);panel.hidden=false;panel.style.setProperty('display','grid','important');panel.style.zIndex='99999';title.textContent=label;msg.textContent='Opening camera…';box.innerHTML='▦';
  const expected=isRoom?'CO534-RM-'+room:'CO534-LOC-'+String(room).toUpperCase().replace(/[^A-Z0-9]+/g,'-').replace(/^-|-$/g,'');
  try{
   // Maintenance now uses the same simple scanner pattern proven in Housekeeping.
@@ -629,7 +629,7 @@ document.getElementById('closeMaintenanceQr')?.addEventListener('click',closeMai
 
 document.getElementById('maintenanceQueue').addEventListener('click',async e=>{
  const p=e.target.closest('.maint-photo');if(p){window.open('https://drive.google.com/open?id='+p.dataset.photo,'_blank');return}
- const start=e.target.closest('.maint-start-work');if(start){const location=String(start.dataset.room||'').trim();scanMaintenanceQr_(start.dataset.id,location,start);return}
+ const start=e.target.closest('.maint-start-work');if(start){const location=String(start.dataset.room||'').trim();const panel=document.getElementById('maintenanceQrPanel');if(panel){panel.hidden=false;panel.style.setProperty('display','grid','important');document.body.appendChild(panel)}requestAnimationFrame(()=>scanMaintenanceQr_(start.dataset.id,location,start));return}
  const b=e.target.closest('.maint-resolve');if(!b)return;
  pendingMaintenanceResolve=b.dataset.id;
  document.getElementById('maintenanceResolveTitle').textContent='Resolve '+(b.closest('.maint-card')?.querySelector('.maint-room')?.textContent||'Maintenance');
