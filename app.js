@@ -644,7 +644,14 @@ document.getElementById('confirmMaintenanceResolve').addEventListener('click',as
  b.disabled=true;b.textContent='RESOLVING…';
  try{
    let photoBase64='',photoMimeType='';if(file){photoBase64=await fileToDataUrl(file);photoMimeType=file.type||'image/jpeg'}
-   const r=await apiPost({action:'resolveMaintenanceIssue',maintenanceId:pendingMaintenanceResolve,resolvedBy:currentUser.name,resolutionNote:note,photoBase64:photoBase64,photoMimeType:photoMimeType},30000);
+   const card=document.querySelector('.maint-resolve[data-id="'+pendingMaintenanceResolve+'"]')?.closest('.maint-card');
+   const startBtn=card?.querySelector('.maint-start-work'),workSessionId=String(startBtn?.dataset.session||'').trim();
+   // A maintenance tech who started work must complete the same timed work session.
+   // Inspectors/managers resolving without a maintenance session continue to use the direct resolve path.
+   const payload=workSessionId
+    ?{action:'completeMaintenanceWork',workSessionId:workSessionId,worker:currentUser.name,resolutionNote:note,photoBase64:photoBase64,photoMimeType:photoMimeType}
+    :{action:'resolveMaintenanceIssue',maintenanceId:pendingMaintenanceResolve,resolvedBy:currentUser.name,resolutionNote:note,photoBase64:photoBase64,photoMimeType:photoMimeType};
+   const r=await apiPost(payload,30000);
    if(!r.ok)throw new Error(r.reason||r.error||'Resolve failed');
    msg.textContent='✓ Maintenance resolved'+(r.completionPhotoRef?' • photo saved':'');
    setTimeout(async()=>{pendingMaintenanceResolve='';document.getElementById('maintenanceResolvePanel').hidden=true;b.disabled=false;b.textContent='✓ MARK RESOLVED';await loadMaintenanceBoard()},800);
