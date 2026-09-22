@@ -974,16 +974,7 @@ document.addEventListener('click',async function(e){
  const refresh=e.target.closest('#appRefresh');
  if(refresh){
   e.preventDefault();e.stopImmediatePropagation();
-  if(!currentUser)return;
-  refresh.disabled=true;refresh.innerHTML='⟳ <span>REFRESHING</span>';
-  try{
-   if(!housekeepingView.hidden)await loadHousekeepingBoard();
-   else if(!inspectionView.hidden)await loadInspectionQueue();
-   else if(!maintenanceView.hidden)await loadMaintenanceBoard();
-   else if(!checklistsView.hidden){renderChecklist();await refreshDashboardOps()}
-   else await refreshDashboardOps();
-  }catch(err){console.error('RELAY refresh failed',err)}
-  finally{refresh.disabled=false;refresh.innerHTML='↻ <span>REFRESH</span>'}
+  if(window.rrRefreshCurrent)await window.rrRefreshCurrent();
   return;
  }
  const note=e.target.closest('#dashAddShiftNote,#addShiftNote,#addChecklistNote');
