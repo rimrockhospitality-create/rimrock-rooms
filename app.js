@@ -667,7 +667,29 @@ document.getElementById('confirmMaintenanceResolve').addEventListener('click',as
      if(status)status.textContent=remaining?remaining+' open maintenance item'+(remaining===1?'':'s')+'.':'No open maintenance items.';
    }
    setTimeout(()=>{pendingMaintenanceResolve='';document.getElementById('maintenanceResolvePanel').hidden=true;b.disabled=false;b.textContent='✓ MARK RESOLVED'},800);
- }catch(err){b.disabled=false;b.textContent='✓ MARK RESOLVED';msg.textContent='Could not resolve: '+err.message}
+ }catch(err){
+   // A transport error can arrive after Apps Script has already committed the completion.
+   // Do not invite a duplicate write/photo upload. Verify the board before allowing another click.
+   msg.textContent='Checking saved status…';
+   try{
+     relayCacheClear_('maintenance:');
+     const check=await apiPost({action:'getMaintenanceBoard',sessionId:localStorage.getItem('relaySessionId'),businessDate:housekeepingBusinessDate(),worker:currentUser.name},20000);
+     const stillOpen=(check.maintenanceIssues||[]).some(x=>x.maintenance_id===pendingMaintenanceResolve);
+     if(check.ok&&!stillOpen){
+       msg.textContent='✓ Maintenance resolved • saved';
+       if(card){
+         const wasP1=card.classList.contains('p1'),wasP2=card.classList.contains('p2');card.remove();
+         const counter=document.getElementById(wasP1?'maintP1':wasP2?'maintP2':'maintP3');
+         if(counter)counter.textContent=Math.max(0,Number(counter.textContent||0)-1);
+         const remaining=document.querySelectorAll('#maintenanceQueue .maint-card').length,status=document.getElementById('maintenanceStatus');
+         if(status)status.textContent=remaining?remaining+' open maintenance item'+(remaining===1?'':'s')+'.':'No open maintenance items.';
+       }
+       setTimeout(()=>{pendingMaintenanceResolve='';document.getElementById('maintenanceResolvePanel').hidden=true;b.disabled=false;b.textContent='✓ MARK RESOLVED'},800);
+       return;
+     }
+   }catch(_){}
+   b.disabled=false;b.textContent='✓ MARK RESOLVED';msg.textContent='Could not confirm completion: '+err.message+'. The item is still open; retry is safe.';
+ }
 });
 
 const maintenanceLogPanel=document.getElementById('maintenanceLogPanel');
