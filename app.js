@@ -279,16 +279,26 @@ async function loadRelayBusinessDay_(force=false){if(!force&&relayBusinessDate&&
 async function loadHousekeepingBoard(){
   if(!currentUser)return;
   hkGreeting.textContent='Good morning, '+currentUser.name.split(' ')[0];
-  const authoritativeDate=await loadRelayBusinessDay_();
-  const businessDateObj=new Date(authoritativeDate+' 12:00:00');
-  hkBoardDate.textContent=new Intl.DateTimeFormat('en-US',{weekday:'long',month:'long',day:'numeric',year:'numeric',timeZone:'America/Denver'}).format(businessDateObj);
   hkBoardStatus.className='hk-board-status';hkBoardStatus.textContent='Loading today’s assignments…';hkMyRooms.innerHTML='';
   const canManageBoard=currentUser.roles.some(r=>['ADMIN','INSPECTOR','FRONT DESK'].includes(r));
+  const isHkOnly=currentUser.roles.includes('HOUSEKEEPER')&&!canManageBoard;
   managerImportBtn.hidden=!canManageBoard;emptyChoiceSyncBtn.hidden=true;hkManagerGroups.hidden=!canManageBoard;
   try{
-    const date=housekeepingBusinessDate(),cacheKey='hk:'+date+':'+currentUser.name,isHkOnly=currentUser.roles.includes('HOUSEKEEPER')&&!currentUser.roles.some(r=>['ADMIN','INSPECTOR','FRONT DESK'].includes(r));
-    // HK-only startup uses the worker-scoped work board instead of the property-wide getToday snapshot.
-    const state=relayCached_(cacheKey)||relayCacheSet_(cacheKey,await apiPost(isHkOnly?{action:'getWorkBoard',businessDate:date,worker:currentUser.name}:{action:'getToday',businessDate:date},45000));
+    // Housekeepers use one server round-trip: getWorkBoard resolves RELAY's business day and returns it with the worker board.
+    // Managers still confirm the authoritative business day before loading the property-wide snapshot.
+    let state,date;
+    if(isHkOnly){
+      const provisional=relayBusinessDate||'CURRENT',cacheKey='hk:'+provisional+':'+currentUser.name;
+      state=relayCached_(cacheKey)||await apiPost({action:'getWorkBoard',worker:currentUser.name},45000);
+      if(state.ok&&state.businessDate){relayBusinessDate=state.businessDate;relayBusinessDayLoadedAt=Date.now();relayCacheSet_('hk:'+relayBusinessDate+':'+currentUser.name,state)}
+      date=state.businessDate||housekeepingBusinessDate();
+    }else{
+      date=await loadRelayBusinessDay_();
+      const cacheKey='hk:'+date+':'+currentUser.name;
+      state=relayCached_(cacheKey)||relayCacheSet_(cacheKey,await apiPost({action:'getToday',businessDate:date},45000));
+    }
+    const businessDateObj=new Date(date+' 12:00:00');
+    hkBoardDate.textContent=new Intl.DateTimeFormat('en-US',{weekday:'long',month:'long',day:'numeric',year:'numeric',timeZone:'America/Denver'}).format(businessDateObj);
     if(!state.ok)throw new Error(state.error||'Could not load board');
     if(!isHkOnly){relayCacheSet_('inspection:'+date,state);relayCacheSet_('maintenance:'+date,state);relayCacheSet_('dashboard:today:'+date,state)}
     const assignments=state.assignments||[],sessions=state.cleaningSessions||[],inspectionIssues=state.inspectionIssues||[];
