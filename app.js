@@ -651,7 +651,7 @@ document.getElementById('confirmMaintenanceResolve').addEventListener('click',as
    const payload=workSessionId
     ?{action:'completeMaintenanceWork',workSessionId:workSessionId,worker:currentUser.name,resolutionNote:note,photoBase64:photoBase64,photoMimeType:photoMimeType}
     :{action:'resolveMaintenanceIssue',maintenanceId:pendingMaintenanceResolve,resolvedBy:currentUser.name,resolutionNote:note,photoBase64:photoBase64,photoMimeType:photoMimeType};
-   const r=await apiPost(payload,30000);
+   const r=await apiPost(payload,45000);
    if(!r.ok)throw new Error(r.reason||r.error||'Resolve failed');
    const savedPhoto=r.completionPhotoRef||r.resolution?.completionPhotoRef||'';msg.textContent='✓ Maintenance resolved'+(savedPhoto?' • photo saved':'');
    setTimeout(async()=>{pendingMaintenanceResolve='';document.getElementById('maintenanceResolvePanel').hidden=true;b.disabled=false;b.textContent='✓ MARK RESOLVED';await loadMaintenanceBoard()},800);
