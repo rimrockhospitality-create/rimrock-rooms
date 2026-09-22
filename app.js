@@ -1315,7 +1315,11 @@ async function scanSideWorkQr_(taskId,location){
   const detector=('BarcodeDetector' in window)?new BarcodeDetector({formats:['qr_code']}):null,expected=sideWorkQrId_(location);
   const scan=async()=>{if(!pendingSideWorkScan||panel.hidden)return;let raw='';try{if(detector){const codes=await detector.detect(video);raw=codes[0]?.rawValue||''}else if(window.jsQR&&video.readyState>=2){canvas.width=video.videoWidth;canvas.height=video.videoHeight;ctx.drawImage(video,0,0);const img=ctx.getImageData(0,0,canvas.width,canvas.height);raw=jsQR(img.data,img.width,img.height)?.data||''}}catch(_){}
    if(raw){if(raw!==expected){msg.textContent='Wrong location QR. Scan the '+location+' QR.';requestAnimationFrame(scan);return}sideWorkQrStream.getTracks().forEach(t=>t.stop());sideWorkQrStream=null;box.innerHTML='✓';msg.textContent='✓ Location verified. Starting task…';
-    try{const r=await apiPost({action:'startSideWork',taskId,worker:currentUser.name,qrId:raw});if(!r.ok)throw new Error(r.reason||'Could not start');activeSideWorkSessions[taskId]=r.sessionId;msg.textContent='✓ IN PROGRESS';relayCacheClear_('side:');relayCacheClear_('hk:');setTimeout(async()=>{closeSideWorkQr_();await loadSideWorkBoard_()},450)}catch(err){msg.textContent='Could not start: '+err.message}return}
+    try{const r=await apiPost({action:'startSideWork',taskId,worker:currentUser.name,qrId:raw});if(!r.ok)throw new Error(r.reason||'Could not start');activeSideWorkSessions[taskId]=r.sessionId;msg.textContent='✓ IN PROGRESS';relayCacheClear_('side:');relayCacheClear_('hk:');
+     // The start write is authoritative. Do not wait on another Sheets read just to show COMPLETE.
+     const startBtn=document.querySelector('.side-work-start[data-task="'+taskId+'"]');
+     if(startBtn){const complete=document.createElement('button');complete.className='side-work-complete';complete.dataset.task=taskId;complete.textContent='COMPLETE';startBtn.replaceWith(complete)}
+     setTimeout(()=>closeSideWorkQr_(),450)}catch(err){msg.textContent='Could not start: '+err.message}return}
    requestAnimationFrame(scan)};
   requestAnimationFrame(scan);
  }catch(err){msg.textContent='Camera error: '+(err?.message||String(err))}
