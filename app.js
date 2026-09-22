@@ -1162,9 +1162,9 @@ async function assignSideWork_(){
    relayBusinessDate=day.businessDate;
 
    // Employee identity must come from active RELAY HOUSEKEEPER users — never free text.
-   const users=await apiPost({action:'adminListUsers',sessionId:localStorage.getItem('relaySessionId')});
+   const users=await apiPost({action:'getAssignableHousekeepers',sessionId:localStorage.getItem('relaySessionId')});
    if(!users.ok)throw new Error(users.reason||'Could not load active housekeepers.');
-   const housekeepers=(users.users||[]).filter(u=>u.active&&String(u.role).toUpperCase()==='HOUSEKEEPER');
+   const housekeepers=users.housekeepers||[];
    if(!housekeepers.length)throw new Error('No active HOUSEKEEPER users are available.');
 
    const menu=housekeepers.map((u,i)=>(i+1)+'. '+u.name).join('\n');
