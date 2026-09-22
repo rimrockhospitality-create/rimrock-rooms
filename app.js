@@ -920,7 +920,7 @@ document.getElementById('loginForm').addEventListener('submit',async e=>{
  if(!username||!password){msg.textContent='Enter your username and password.';return}
  btn.disabled=true;btn.textContent='SIGNING IN…';msg.textContent='';
  try{
-  let r;try{r=await apiPost({action:'authLogin',username,password},45000)}catch(firstErr){console.warn('RELAY auth retry after transient backend failure',firstErr);r=await apiPost({action:'authLogin',username,password},45000)}
+  const r=await apiPost({action:'authLogin',username,password},20000)
   if(!r.ok||!r.user){msg.textContent=r.reason==='ACCOUNT_INACTIVE'?'This RELAY account is inactive.':'Username or password is incorrect.';return}
   localStorage.setItem('relaySessionId',r.sessionId);
   activateUser(normalizeAuthUser_(r.user));
