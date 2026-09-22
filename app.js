@@ -26,11 +26,11 @@ const RELAY_VIEW_CACHE_MS=15000;
 function relayCached_(key){const x=relayViewCache.get(key);return x&&Date.now()-x.at<RELAY_VIEW_CACHE_MS?x.value:null}
 function relayCacheSet_(key,value){relayViewCache.set(key,{at:Date.now(),value});return value}
 function relayCacheClear_(prefix=''){for(const k of [...relayViewCache.keys()])if(!prefix||k.startsWith(prefix))relayViewCache.delete(k)}
-const RELAY_READ_ACTIONS=new Set(['authLogin','authLogout','authSession','getAssignableHousekeepers','getBusinessDay','getInspectionPhoto','getShiftNoteDetail','getShiftOperations','getToday','getWorkBoard','adminListUsers']);
+const RELAY_READ_ACTIONS=new Set(['authLogin','authLogout','authSession','getAssignableHousekeepers','getBusinessDay','getInspectionPhoto','getMaintenanceBoard','getShiftNoteDetail','getShiftOperations','getToday','getWorkBoard','adminListUsers']);
 const RELAY_WRITE_AFFECTS={
  syncChoice:['hk:','inspection:','dashboard:'],startRoom:['hk:','dashboard:'],readyRoom:['hk:','inspection:','dashboard:'],
  startInspection:['inspection:'],saveInspectionIssue:['inspection:','hk:','maintenance:','dashboard:'],resolveInspectionIssue:['inspection:','hk:','dashboard:'],resolveReinspection:['inspection:','hk:','dashboard:'],passInspection:['inspection:','hk:','dashboard:'],
- logMaintenance:['maintenance:','inspection:','hk:','dashboard:'],saveMaintenanceIssue:['maintenance:','inspection:','hk:','dashboard:'],startMaintenanceWork:['maintenance:'],resolveMaintenanceIssue:['maintenance:','inspection:','hk:','dashboard:'],
+ logMaintenance:['maintenance:','inspection:','hk:','dashboard:'],saveMaintenanceIssue:['maintenance:','inspection:','hk:','dashboard:'],startMaintenanceWork:['maintenance:'],completeMaintenanceWork:['maintenance:','inspection:','hk:','dashboard:'],resolveMaintenanceIssue:['maintenance:','inspection:','hk:','dashboard:'],
  createSideWork:['side:','hk:','dashboard:'],startSideWork:['side:','hk:'],completeSideWork:['side:','hk:','dashboard:'],
  saveShiftNote:['shift:','dashboard:'],addShiftNoteUpdate:['shift:','dashboard:'],resolveShiftNote:['shift:','dashboard:'],completeChecklistShift:['shift:','dashboard:'],
  dailyAudit:['business:','hk:','inspection:','maintenance:','side:','shift:','dashboard:'],
@@ -653,7 +653,7 @@ document.getElementById('confirmMaintenanceResolve').addEventListener('click',as
     :{action:'resolveMaintenanceIssue',maintenanceId:pendingMaintenanceResolve,resolvedBy:currentUser.name,resolutionNote:note,photoBase64:photoBase64,photoMimeType:photoMimeType};
    const r=await apiPost(payload,30000);
    if(!r.ok)throw new Error(r.reason||r.error||'Resolve failed');
-   msg.textContent='✓ Maintenance resolved'+(r.completionPhotoRef?' • photo saved':'');
+   const savedPhoto=r.completionPhotoRef||r.resolution?.completionPhotoRef||'';msg.textContent='✓ Maintenance resolved'+(savedPhoto?' • photo saved':'');
    setTimeout(async()=>{pendingMaintenanceResolve='';document.getElementById('maintenanceResolvePanel').hidden=true;b.disabled=false;b.textContent='✓ MARK RESOLVED';await loadMaintenanceBoard()},800);
  }catch(err){b.disabled=false;b.textContent='✓ MARK RESOLVED';msg.textContent='Could not resolve: '+err.message}
 });
