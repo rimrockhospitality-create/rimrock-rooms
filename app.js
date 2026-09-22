@@ -286,9 +286,11 @@ async function loadHousekeepingBoard(){
   const canManageBoard=currentUser.roles.some(r=>['ADMIN','INSPECTOR','FRONT DESK'].includes(r));
   managerImportBtn.hidden=!canManageBoard;emptyChoiceSyncBtn.hidden=true;hkManagerGroups.hidden=!canManageBoard;
   try{
-    const date=housekeepingBusinessDate(),cacheKey='hk:'+date+':'+currentUser.name,state=relayCached_(cacheKey)||relayCacheSet_(cacheKey,await apiPost({action:'getToday',businessDate:date},45000));
+    const date=housekeepingBusinessDate(),cacheKey='hk:'+date+':'+currentUser.name,isHkOnly=currentUser.roles.includes('HOUSEKEEPER')&&!currentUser.roles.some(r=>['ADMIN','INSPECTOR','FRONT DESK'].includes(r));
+    // HK-only startup uses the worker-scoped work board instead of the property-wide getToday snapshot.
+    const state=relayCached_(cacheKey)||relayCacheSet_(cacheKey,await apiPost(isHkOnly?{action:'getWorkBoard',businessDate:date,worker:currentUser.name}:{action:'getToday',businessDate:date},45000));
     if(!state.ok)throw new Error(state.error||'Could not load board');
-    relayCacheSet_('inspection:'+date,state);relayCacheSet_('maintenance:'+date,state);relayCacheSet_('dashboard:today:'+date,state);
+    if(!isHkOnly){relayCacheSet_('inspection:'+date,state);relayCacheSet_('maintenance:'+date,state);relayCacheSet_('dashboard:today:'+date,state)}
     const assignments=state.assignments||[],sessions=state.cleaningSessions||[],inspectionIssues=state.inspectionIssues||[];
     if(!('inspectionIssues' in state))console.warn('RELAY getToday snapshot does not include inspectionIssues; rendering board without rework overlay.');
     console.log('Rimrock rework payload',inspectionIssues);
@@ -309,7 +311,7 @@ async function loadHousekeepingBoard(){
     }
     // Render immediately from cached/snapshot state, then fetch side work only when it is not already present.
     renderSideWorkBoardFromState_(state);
-    if(!('sideWork' in state)&&!currentUser.roles.includes('INSPECTOR')) setTimeout(()=>loadSideWorkBoard_(),0);
+    if(!('sideWork' in state)&&!currentUser.roles.includes('INSPECTOR')&&!isHkOnly) setTimeout(()=>loadSideWorkBoard_(),0);
     hkMyRooms.innerHTML=visible.map(a=>{
       const room=String(a.room),s=sessionByRoom.get(room),rework=reworkByRoom.get(room)||[],activeRework=rework.find(i=>i.status==='REWORK_IN_PROGRESS'),status=activeRework?'REWORK_IN_PROGRESS':rework.length?'REWORK_REQUIRED':(s?.status||'NOT_STARTED');
       const label=status==='REWORK_IN_PROGRESS'?'REWORK IN PROGRESS':status==='REWORK_REQUIRED'?'REWORK REQUIRED':status==='READY_FOR_INSPECTION'?'READY FOR INSPECTION':status==='CLEANING'?'CLEANING':'NOT STARTED';
@@ -1256,5 +1258,11 @@ async function scanSideWorkQr_(taskId,location){
 document.getElementById('closeSideWorkQr')?.addEventListener('click',closeSideWorkQr_);
 document.addEventListener('click',async e=>{
  const start=e.target.closest('.side-work-start');if(start){scanSideWorkQr_(start.dataset.task,start.dataset.location);return}
- const done=e.target.closest('.side-work-complete');if(done){const sid=activeSideWorkSessions[done.dataset.task];if(!sid){alert('This side duty needs an active work session on this device.');return}done.disabled=true;try{const r=await apiPost({action:'completeSideWork',sessionId:sid});if(!r.ok)throw new Error(r.reason||'Could not complete');delete activeSideWorkSessions[done.dataset.task];done.closest('.side-work-card')?.remove();relayCacheClear_('side:');relayCacheClear_('hk:')}catch(err){done.disabled=false;alert(err.message)}}
+ const done=e.target.closest('.side-work-complete');if(done){const sid=activeSideWorkSessions[done.dataset.task];if(!sid){alert('This side duty needs an active work session on this device.');return}
+  const card=done.closest('.side-work-card'),parent=card?.parentNode,next=card?.nextSibling;done.disabled=true;
+  // Optimistic completion: the worker gets an instant response while the write finishes.
+  card?.remove();relayCacheClear_('side:');relayCacheClear_('hk:');
+  try{const r=await apiPost({action:'completeSideWork',sessionId:sid},45000);if(!r.ok)throw new Error(r.reason||'Could not complete');delete activeSideWorkSessions[done.dataset.task]}
+  catch(err){if(parent&&card){next?parent.insertBefore(card,next):parent.appendChild(card);done.disabled=false}alert('Could not save completion. The task has been restored: '+err.message)}
+ }
 });
