@@ -622,7 +622,7 @@ async function scanMaintenanceQr_(maintenanceId,room,button){
   const r=await apiPost({action:'startMaintenanceWork',maintenanceId,worker:currentUser.name,qrId:raw},30000);
   if(!r.ok)throw new Error(r.reason||r.error||'Could not start project');
   button.textContent='✓ PROJECT IN PROGRESS';button.dataset.session=r.workSessionId;msg.textContent='✓ IN PROGRESS';setTimeout(()=>{panel.hidden=true},450);
- }catch(err){if(String(err?.message)!=='Scanner closed'){button.disabled=false;msg.textContent='Camera error: '+(err?.message||String(err))}}
+ }catch(err){if(String(err?.message)!=='Scanner closed'){button.disabled=false;const reason=err?.message||String(err);msg.textContent=reason==='INVALID_ROOM_QR'?'This QR was read correctly, but the database did not recognize it for '+label+'.':('Could not start maintenance work: '+reason)}}
 }
 function closeMaintenanceQr_(){if(maintenanceQrStream){maintenanceQrStream.getTracks().forEach(t=>t.stop());maintenanceQrStream=null}const p=document.getElementById('maintenanceQrPanel');if(p){p.hidden=true;p.style.removeProperty('display')}}
 document.getElementById('closeMaintenanceQr')?.addEventListener('click',closeMaintenanceQr_);
