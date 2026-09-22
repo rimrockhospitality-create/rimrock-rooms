@@ -20,7 +20,12 @@ let currentUser=null;
 const home=document.getElementById('homeView'),housekeepingView=document.getElementById('housekeepingView'),inspectionView=document.getElementById('inspectionView'),maintenanceView=document.getElementById('maintenanceView'),checklistsView=document.getElementById('checklistsView'),importView=document.getElementById('importView'),placeholder=document.getElementById('placeholder'),title=document.getElementById('placeholderTitle'),drawer=document.getElementById('drawer'),drawerLinks=document.getElementById('drawerLinks');
 const todayEl=document.getElementById('today');if(todayEl)todayEl.textContent=new Intl.DateTimeFormat('en-US',{weekday:'long',month:'long',day:'numeric',year:'numeric'}).format(new Date());
 
-let loginProperties=[],relayBusinessDate='';
+let loginProperties=[],relayBusinessDate='',relayBusinessDayLoadedAt=0;
+let relayViewCache=new Map();
+const RELAY_VIEW_CACHE_MS=15000;
+function relayCached_(key){const x=relayViewCache.get(key);return x&&Date.now()-x.at<RELAY_VIEW_CACHE_MS?x.value:null}
+function relayCacheSet_(key,value){relayViewCache.set(key,{at:Date.now(),value});return value}
+function relayCacheClear_(prefix=''){for(const k of [...relayViewCache.keys()])if(!prefix||k.startsWith(prefix))relayViewCache.delete(k)}
 function normalizeAuthUser_(user){return {...user,roles:[String(user.role||'').toUpperCase()]};}
 async function loadSession(){
   const propertiesRes=await fetch('data/properties.json',{cache:'no-store'});
@@ -255,7 +260,7 @@ function updateChoiceSyncAccess_(){const allowed=canSyncChoice_();managerImportB
 function openChoiceSync(){if(!canSyncChoice_())return;housekeepingView.hidden=true;importView.hidden=false}
 managerImportBtn.addEventListener('click',openChoiceSync);emptyChoiceSyncBtn.addEventListener('click',openChoiceSync);
 function housekeepingBusinessDate(){return relayBusinessDate||new Intl.DateTimeFormat('en-US',{timeZone:'America/Denver'}).format(new Date())}
-async function loadRelayBusinessDay_(){try{const r=await apiPost({action:'getBusinessDay',sessionId:localStorage.getItem('relaySessionId')});if(r.ok&&r.businessDate){relayBusinessDate=r.businessDate;document.querySelectorAll('[data-business-date]').forEach(x=>x.textContent=r.businessDate);return r.businessDate}}catch(e){console.warn('Business day load failed',e)}return housekeepingBusinessDate()}
+async function loadRelayBusinessDay_(force=false){if(!force&&relayBusinessDate&&Date.now()-relayBusinessDayLoadedAt<60000)return relayBusinessDate;try{const r=await apiPost({action:'getBusinessDay',sessionId:localStorage.getItem('relaySessionId')});if(r.ok&&r.businessDate){relayBusinessDate=r.businessDate;relayBusinessDayLoadedAt=Date.now();document.querySelectorAll('[data-business-date]').forEach(x=>x.textContent=r.businessDate);return r.businessDate}}catch(e){console.warn('Business day load failed',e)}return housekeepingBusinessDate()}
 async function loadHousekeepingBoard(){
   if(!currentUser)return;
   hkGreeting.textContent='Good morning, '+currentUser.name.split(' ')[0];
@@ -266,7 +271,7 @@ async function loadHousekeepingBoard(){
   const canManageBoard=currentUser.roles.some(r=>['ADMIN','INSPECTOR','FRONT DESK'].includes(r));
   managerImportBtn.hidden=!canManageBoard;emptyChoiceSyncBtn.hidden=true;hkManagerGroups.hidden=!canManageBoard;
   try{
-    const date=housekeepingBusinessDate(),state=await apiPost({action:'getToday',businessDate:date},45000);
+    const date=housekeepingBusinessDate(),cacheKey='hk:'+date+':'+currentUser.name,state=relayCached_(cacheKey)||relayCacheSet_(cacheKey,await apiPost({action:'getToday',businessDate:date},45000));
     if(!state.ok)throw new Error(state.error||'Could not load board');
     const assignments=state.assignments||[],sessions=state.cleaningSessions||[],inspectionIssues=state.inspectionIssues||[];
     if(!('inspectionIssues' in state)){throw new Error('Rework data is not being returned by the live API. Confirm the newest Apps Script deployment is active.')}
@@ -286,9 +291,9 @@ async function loadHousekeepingBoard(){
       const groups={};assignments.forEach(a=>(groups[a.housekeeper]??=[]).push(a.room));
       hkManagerGroups.innerHTML=Object.keys(groups).length?Object.entries(groups).map(([name,rooms])=>'<article><strong>'+name+'</strong><span>'+rooms.length+' room'+(rooms.length===1?'':'s')+': '+rooms.join(', ')+'</span></article>').join(''):'';
     }
-    // getToday does not yet include SIDE_WORK in the live backend. Load it sequentially after the main board so the two requests do not compete.
+    // Render immediately from cached/snapshot state, then fetch side work only when it is not already present.
     renderSideWorkBoardFromState_(state);
-    setTimeout(()=>loadSideWorkBoard_(),0);
+    if(!('sideWork' in state)) setTimeout(()=>loadSideWorkBoard_(),0);
     hkMyRooms.innerHTML=visible.map(a=>{
       const room=String(a.room),s=sessionByRoom.get(room),rework=reworkByRoom.get(room)||[],activeRework=rework.find(i=>i.status==='REWORK_IN_PROGRESS'),status=activeRework?'REWORK_IN_PROGRESS':rework.length?'REWORK_REQUIRED':(s?.status||'NOT_STARTED');
       const label=status==='REWORK_IN_PROGRESS'?'REWORK IN PROGRESS':status==='REWORK_REQUIRED'?'REWORK REQUIRED':status==='READY_FOR_INSPECTION'?'READY FOR INSPECTION':status==='CLEANING'?'CLEANING':'NOT STARTED';
@@ -1151,7 +1156,7 @@ async function loadSideWorkBoard_(){
  const host=document.getElementById('housekeepingView');if(!host||!currentUser)return;
  let box=document.getElementById('sideWorkBoard');if(!box){box=document.createElement('section');box.id='sideWorkBoard';box.className='side-work-board';host.appendChild(box)}
  const roles=currentUser.roles||[],worker=roles.includes('HOUSEKEEPER')?currentUser.name:'';
- try{const r=await apiPost({action:'getWorkBoard',businessDate:housekeepingBusinessDate(),worker:worker},45000);if(!r.ok)throw new Error(r.reason||'Could not load side duties');renderSideWorkBoardFromState_(r);
+ try{const key='side:'+housekeepingBusinessDate()+':'+worker,r=relayCached_(key)||relayCacheSet_(key,await apiPost({action:'getWorkBoard',businessDate:housekeepingBusinessDate(),worker:worker},45000));if(!r.ok)throw new Error(r.reason||'Could not load side duties');renderSideWorkBoardFromState_(r);
  }catch(err){let box=document.getElementById('sideWorkBoard');if(box)box.innerHTML='<div class="side-work-head"><h2>Side Duties</h2></div><p>'+err.message+'</p>'}
 }
 async function assignSideWork_(){
@@ -1179,11 +1184,11 @@ async function assignSideWork_(){
    const dueAt=(prompt('Due time (optional, example 1:00 PM):')||'').trim();
    const r=await apiPost({action:'createSideWork',businessDate:day.businessDate,assignedTo,task,location,dueAt,assignedBy:currentUser.name});
    if(!r.ok)throw new Error(r.reason||'Assignment failed');
-   await loadSideWorkBoard_();
+   relayCacheClear_('side:');relayCacheClear_('hk:');await loadSideWorkBoard_();
  }catch(err){alert(err.message)}
 }
 let activeSideWorkSessions={};
 document.addEventListener('click',async e=>{
- const start=e.target.closest('.side-work-start');if(start){start.disabled=true;try{const r=await apiPost({action:'startSideWork',taskId:start.dataset.task,worker:currentUser.name});if(!r.ok)throw new Error(r.reason||'Could not start');activeSideWorkSessions[start.dataset.task]=r.sessionId;await loadSideWorkBoard_()}catch(err){start.disabled=false;alert(err.message)}return}
- const done=e.target.closest('.side-work-complete');if(done){const sid=activeSideWorkSessions[done.dataset.task];if(!sid){alert('This side duty needs an active work session on this device.');return}done.disabled=true;try{const r=await apiPost({action:'completeSideWork',sessionId:sid});if(!r.ok)throw new Error(r.reason||'Could not complete');delete activeSideWorkSessions[done.dataset.task];await loadSideWorkBoard_()}catch(err){done.disabled=false;alert(err.message)}}
+ const start=e.target.closest('.side-work-start');if(start){start.disabled=true;try{const r=await apiPost({action:'startSideWork',taskId:start.dataset.task,worker:currentUser.name});if(!r.ok)throw new Error(r.reason||'Could not start');activeSideWorkSessions[start.dataset.task]=r.sessionId;relayCacheClear_('side:');relayCacheClear_('hk:');await loadSideWorkBoard_()}catch(err){start.disabled=false;alert(err.message)}return}
+ const done=e.target.closest('.side-work-complete');if(done){const sid=activeSideWorkSessions[done.dataset.task];if(!sid){alert('This side duty needs an active work session on this device.');return}done.disabled=true;try{const r=await apiPost({action:'completeSideWork',sessionId:sid});if(!r.ok)throw new Error(r.reason||'Could not complete');delete activeSideWorkSessions[done.dataset.task];relayCacheClear_('side:');relayCacheClear_('hk:');await loadSideWorkBoard_()}catch(err){done.disabled=false;alert(err.message)}}
 });
