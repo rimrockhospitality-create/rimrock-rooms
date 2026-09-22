@@ -115,6 +115,16 @@
           <button id="confirmQrStart" class="qr-confirm" type="button">OPEN CAMERA & SCAN QR</button>
         </div>
       </div>
+      <div id="maintenanceQrPanel" class="qr-start-panel" hidden>
+        <div class="qr-start-card">
+          <button id="closeMaintenanceQr" class="qr-close" type="button">×</button>
+          <small>MAINTENANCE LOCATION VERIFICATION</small>
+          <h2 id="maintenanceQrTitle">Room</h2>
+          <p id="maintenanceQrMessage">Scan the room QR to begin work.</p>
+          <div id="maintenanceQrCamera" class="qr-code-placeholder">▦</div>
+          <p class="qr-note">Scanning the correct QR starts the maintenance work session automatically. No second START step.</p>
+        </div>
+      </div>
       <div id="sideWorkQrPanel" class="qr-start-panel" hidden>
         <div class="qr-start-card">
           <button id="closeSideWorkQr" class="qr-close" type="button">×</button>
