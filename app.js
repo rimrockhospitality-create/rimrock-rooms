@@ -17,7 +17,7 @@ const ROLE_VIEWS={
 };
 const ROLE_LABELS={ADMIN:'Admin',INSPECTOR:'Inspector',MAINTENANCE:'Maintenance','FRONT DESK':'Front Desk',HOUSEKEEPER:'Housekeeper'};
 let currentUser=null;
-const home=document.getElementById('homeView'),housekeepingView=document.getElementById('housekeepingView'),inspectionView=document.getElementById('inspectionView'),maintenanceView=document.getElementById('maintenanceView'),checklistsView=document.getElementById('checklistsView'),importView=document.getElementById('importView'),placeholder=document.getElementById('placeholder'),title=document.getElementById('placeholderTitle'),drawer=document.getElementById('drawer'),drawerLinks=document.getElementById('drawerLinks');
+const home=document.getElementById('homeView'),reportsView=document.getElementById('reportsView'),housekeepingView=document.getElementById('housekeepingView'),inspectionView=document.getElementById('inspectionView'),maintenanceView=document.getElementById('maintenanceView'),checklistsView=document.getElementById('checklistsView'),importView=document.getElementById('importView'),placeholder=document.getElementById('placeholder'),title=document.getElementById('placeholderTitle'),drawer=document.getElementById('drawer'),drawerLinks=document.getElementById('drawerLinks');
 const todayEl=document.getElementById('today');if(todayEl)todayEl.textContent=new Intl.DateTimeFormat('en-US',{weekday:'long',month:'long',day:'numeric',year:'numeric'}).format(new Date());
 
 let loginProperties=[],relayBusinessDate='',relayBusinessDayLoadedAt=0;
@@ -77,14 +77,14 @@ function applyPermissions(roles){
 function show(view){
   if(currentUser&&!allowedViews(currentUser.roles).includes(view)) return;
   home.hidden=view!=='Home';
-  housekeepingView.hidden=view!=='Housekeeping';
+  housekeepingView.hidden=view!=='Housekeeping';\n  if(reportsView) reportsView.hidden=view!=='Reports';
   inspectionView.hidden=view!=='Inspections';
   maintenanceView.hidden=view!=='Maintenance';
   checklistsView.hidden=view!=='Checklists';
   document.getElementById('pmView').hidden=!(view==='PM'||view==='Preventive Maintenance');
   document.getElementById('usersView').hidden=view!=='Users';
   importView.hidden=true;
-  placeholder.hidden=(view==='Home'||view==='Housekeeping'||view==='Inspections'||view==='Maintenance'||view==='Checklists'||view==='PM'||view==='Preventive Maintenance'||view==='Users');
+  placeholder.hidden=(view==='Home'||view==='Housekeeping'||view==='Inspections'||view==='Maintenance'||view==='Checklists'||view==='PM'||view==='Preventive Maintenance'||view==='Users'||view==='Reports');
   if(!placeholder.hidden) title.textContent=view;
   if(view==='Housekeeping') loadHousekeepingBoard()
   if(view==='Inspections') loadInspectionQueue();
@@ -1386,3 +1386,44 @@ document.addEventListener('click',async e=>{
   catch(err){if(parent&&card){next?parent.insertBefore(card,next):parent.appendChild(card);done.disabled=false}alert('Could not save completion. The task has been restored: '+err.message)}
  }
 });
+
+
+/* Weekly Manager Report V1 — ADP Actual vs Scheduled importer */
+(function(){
+  const input=document.getElementById('adpXlsx'),status=document.getElementById('adpStatus'),results=document.getElementById('adpReportResults'),body=document.getElementById('adpReportBody');
+  if(!input)return;
+  const n=v=>{const x=parseFloat(String(v??'').replace(/,/g,''));return Number.isFinite(x)?x:0};
+  const esc=s=>String(s??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
+  input.addEventListener('change',async()=>{
+    const file=input.files&&input.files[0]; if(!file)return;
+    status.className='hk-board-status'; status.textContent='Reading ADP workbook…'; results.hidden=true;
+    try{
+      if(typeof XLSX==='undefined')throw new Error('Spreadsheet reader did not load. Refresh RELAY and try again.');
+      const wb=XLSX.read(await file.arrayBuffer(),{type:'array'});
+      const ws=wb.Sheets['My Team Actual vs Scheduled']||wb.Sheets[wb.SheetNames[0]];
+      const rows=XLSX.utils.sheet_to_json(ws,{header:1,defval:'',raw:false});
+      const employees=[]; let days=[];
+      for(const row of rows){
+        const dateText=String(row[2]||'').trim(), empText=String(row[1]||'').trim();
+        const dm=dateText.match(/Totals \(Schedule Date\):\s*(?:\u00a0)?(.+)$/i);
+        if(dm){days.push(dm[1].trim());continue}
+        const em=empText.match(/Totals \(Name - Position ID\):\s*(?:\u00a0)?(.+?)\s*-\s*(\d+)\s*$/i);
+        if(em){
+          const raw=em[1].trim(), comma=raw.indexOf(',');
+          const name=comma>=0?(raw.slice(comma+1).trim()+' '+raw.slice(0,comma).trim()):raw;
+          employees.push({name,positionId:em[2],actual:n(row[4]),scheduled:n(row[5]),variance:n(row[6]),days:[...days]});
+          days=[];
+        }
+      }
+      if(!employees.length)throw new Error('No employee totals were found. Please use the ADP “My Team Actual vs Scheduled” XLSX report.');
+      const total=k=>employees.reduce((s,e)=>s+e[k],0);
+      document.getElementById('adpEmployeeCount').textContent=employees.length;
+      document.getElementById('adpActualTotal').textContent=total('actual').toFixed(2);
+      document.getElementById('adpScheduledTotal').textContent=total('scheduled').toFixed(2);
+      const variance=total('variance'); document.getElementById('adpVarianceTotal').textContent=(variance>0?'+':'')+variance.toFixed(2);
+      body.innerHTML=employees.map(e=>'<tr><td><strong>'+esc(e.name)+'</strong></td><td>'+esc(e.positionId)+'</td><td>'+e.actual.toFixed(2)+'</td><td>'+e.scheduled.toFixed(2)+'</td><td class="'+(e.variance>0?'over':e.variance<0?'under':'')+'">'+(e.variance>0?'+':'')+e.variance.toFixed(2)+'</td><td>'+e.days.length+'</td></tr>').join('');
+      status.className='hk-board-status'; status.textContent='✓ ADP workbook read successfully — '+employees.length+' employees loaded.';
+      results.hidden=false;
+    }catch(err){status.className='hk-board-status error';status.textContent=err.message||'Could not read ADP workbook.'}
+  });
+})();
