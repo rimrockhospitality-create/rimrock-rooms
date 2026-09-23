@@ -77,7 +77,8 @@ function applyPermissions(roles){
 function show(view){
   if(currentUser&&!allowedViews(currentUser.roles).includes(view)) return;
   home.hidden=view!=='Home';
-  housekeepingView.hidden=view!=='Housekeeping';\n  if(reportsView) reportsView.hidden=view!=='Reports';
+  housekeepingView.hidden=view!=='Housekeeping';
+  if(reportsView) reportsView.hidden=view!=='Reports';
   inspectionView.hidden=view!=='Inspections';
   maintenanceView.hidden=view!=='Maintenance';
   checklistsView.hidden=view!=='Checklists';
