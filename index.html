@@ -13,7 +13,7 @@
   <meta name="theme-color" content="#073b63">
   <title>RELAY Operations | CO534</title>
   <link rel="stylesheet" href="styles.css?v=20260920-inspectmaint1">
-</head>
+  <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>\n</head>
 <body>
 <section id="loginView" class="rr-login">
   <div class="rr-login-photo"></div>
@@ -89,6 +89,19 @@
   </div>
   <button id="rrFloatMaintenance" class="rr-float" title="Report maintenance">🔧<span>REPORT ISSUE</span></button>
 </section>
+    <section id="reportsView" class="reports-view" hidden>
+      <div class="reports-head"><div><small>MANAGEMENT INTELLIGENCE</small><h1>Weekly Manager Report</h1><p>Upload the ADP “My Team Actual vs Scheduled” workbook. RELAY reads payroll labor without changing production operations data.</p></div></div>
+      <div class="report-upload-card">
+        <div><h2>ADP Labor Import</h2><p>Actual Hours, Scheduled Hours and Variance are read directly from the workbook. No manual re-keying.</p></div>
+        <label class="report-dropzone"><input id="adpXlsx" type="file" accept=".xlsx,.xls,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"><span>▥</span><strong>Choose ADP Time Report</strong><small>My Team Actual vs Scheduled • XLSX</small></label>
+        <div id="adpStatus" class="hk-board-status">Ready for an ADP workbook.</div>
+      </div>
+      <div id="adpReportResults" hidden>
+        <div class="report-kpis"><div><small>EMPLOYEES</small><strong id="adpEmployeeCount">0</strong></div><div><small>ACTUAL HOURS</small><strong id="adpActualTotal">0.00</strong></div><div><small>SCHEDULED HOURS</small><strong id="adpScheduledTotal">0.00</strong></div><div><small>VARIANCE</small><strong id="adpVarianceTotal">0.00</strong></div></div>
+        <div class="report-table-wrap"><table class="report-table"><thead><tr><th>Employee</th><th>Position ID</th><th>Actual</th><th>Scheduled</th><th>Variance</th><th>Dates</th></tr></thead><tbody id="adpReportBody"></tbody></table></div>
+        <p class="report-note">V1 validates the ADP labor side only. RELAY operational productivity will be joined here next; no fake production rows are written.</p>
+      </div>
+    </section>
     <section id="housekeepingView" class="housekeeping-view" hidden>
       <div class="hk-board-head">
         <div><small>SECTION 3 • MY BOARD</small><h1 id="hkGreeting">Housekeeping</h1><p id="hkBoardDate"></p></div>
