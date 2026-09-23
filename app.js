@@ -610,7 +610,7 @@ document.querySelector('.pass-room-btn').addEventListener('click',async function
   const b=this,old=b.textContent;
   b.disabled=true;b.textContent='PASSING…';
   try{
-    const result=await apiPost({action:'passInspection',propertyId:'CO534',businessDate:housekeepingBusinessDate(),room:activeInspectionRoom,inspector:currentUser.name});
+    const result=await apiPost({action:'passInspection',propertyId:'CO534',businessDate:housekeepingBusinessDate(),room:activeInspectionRoom,inspector:currentUser.name},90000);
     if(!result.ok){
       if(result.reason==='UNRESOLVED_HK_ISSUES'){
         const names=(result.issues||[]).map(i=>i.deficiencyLabel+' ('+i.status+')').join('\n');
