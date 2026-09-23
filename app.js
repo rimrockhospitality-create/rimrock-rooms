@@ -608,6 +608,35 @@ document.addEventListener('click',async e=>{
 
 document.querySelector('.pass-room-btn').addEventListener('click',async function(){
   const b=this,old=b.textContent;
+
+  // RELAY inspection rule:
+  // A housekeeping miss stays recorded against the housekeeper, but when the
+  // inspector fixes it during inspection it must be resolved before PASS runs.
+  // Re-save any on-screen inspector corrections here so PASS cannot race ahead
+  // of the resolution write or get blocked by an issue that Ryland already fixed.
+  const inspectorFixed=[...document.querySelectorAll('.inspect-q')].filter(q=>
+    q.dataset.answer==='NO'&&q.dataset.resolution==='FIXED_BY_INSPECTOR'&&q.dataset.issueId
+  );
+  if(inspectorFixed.length){
+    b.disabled=true;b.textContent='FINALIZING FIXES…';
+    try{
+      for(const q of inspectorFixed){
+        const resolved=await apiPost({
+          action:'resolveInspectionIssue',
+          issueId:q.dataset.issueId,
+          inspector:currentUser.name,
+          resolution:'FIXED_BY_INSPECTOR'
+        },30000);
+        if(!resolved.ok)throw new Error(resolved.reason||resolved.error||'Inspector correction could not be finalized');
+        q.dataset.resolution='FIXED_BY_INSPECTOR';
+      }
+    }catch(err){
+      alert('Could not finalize inspector correction: '+err.message);
+      b.disabled=false;b.textContent=old;
+      return;
+    }
+  }
+
   const unresolvedOnScreen=[...document.querySelectorAll('.inspect-q')].filter(q=>q.dataset.answer==='NO'&&!q.dataset.resolution);
   if(unresolvedOnScreen.length){
     const names=unresolvedOnScreen.map(q=>q.querySelector('strong')?.textContent?.replace(/\?$/,'')||'Inspection item').join('\n');
