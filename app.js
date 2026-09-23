@@ -168,11 +168,11 @@ async function validateParsedImport(parsed){
   const [roomsRes,propertiesRes,usersApi]=await Promise.all([
     fetch('data/rooms.json',{cache:'no-store'}),
     fetch('data/properties.json',{cache:'no-store'}),
-    apiPost({action:'adminListUsers',sessionId:localStorage.getItem('relaySessionId')})
+    apiPost({action:'getAssignableHousekeepers',sessionId:localStorage.getItem('relaySessionId')})
   ]);
   const masterRooms=await roomsRes.json(),properties=await propertiesRes.json();
   if(!usersApi.ok)throw new Error(usersApi.error||usersApi.reason||'Could not read active RELAY users');
-  const users=usersApi.users||[];
+  const users=(usersApi.housekeepers||[]).map(u=>({...u,active:true,role:'HOUSEKEEPER'}));
   const roomSet=new Set(masterRooms.filter(r=>r.propertyId==='CO534'&&r.active).map(r=>String(r.roomNumber)));
   const parsedNums=parsed.rooms.map(r=>String(r.room)),unknownRooms=[...new Set(parsedNums.filter(r=>!roomSet.has(r)))];
   const duplicateRows=parsedNums.filter((r,i,a)=>a.indexOf(r)!==i);
