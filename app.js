@@ -373,7 +373,7 @@ async function startQrCamera(){
         if(raw!==expected){qrStartMessage.textContent='Wrong room QR. Expected Room '+pendingStartRoom+'.';box.innerHTML='▦';return}
         qrStartMessage.textContent='✓ Room '+pendingStartRoom+' verified. Starting cleaning session…';box.innerHTML='✓';document.getElementById('confirmQrStart').textContent='STARTING…';document.getElementById('confirmQrStart').disabled=true;
         try{
-          const startResult=await apiPost({action:'startRoom',propertyId:'CO534',businessDate:housekeepingBusinessDate(),room:pendingStartRoom,housekeeper:currentUser.name,qrId:raw});
+          const startResult=await apiPost({action:'startRoom',propertyId:'CO534',businessDate:housekeepingBusinessDate(),room:pendingStartRoom,housekeeper:currentUser.name,qrId:raw},90000);
           if(!startResult.ok)throw new Error(startResult.reason||startResult.error||'Start Room blocked');
           qrStartMessage.textContent='✓ Room '+pendingStartRoom+' started. Status: CLEANING';
           document.getElementById('confirmQrStart').textContent='ROOM STARTED';
