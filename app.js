@@ -421,7 +421,40 @@ async function loadInspectionQueue(){
 
 const inspectionQueueEl=document.getElementById('inspectionQueue'),inspectionDetail=document.getElementById('inspectionDetail');
 let activeInspectionRoom='',activeInspectionHousekeeper='';
-inspectionQueueEl.addEventListener('click',async e=>{const b=e.target.closest('.start-inspection-btn');if(!b)return;const card=b.closest('.inspection-card');activeInspectionRoom=b.dataset.room||'';activeInspectionHousekeeper=b.dataset.housekeeper||'';b.disabled=true;const oldText=b.textContent;b.textContent='OPENING INSPECTION…';try{const opened=await apiPost({action:'startInspection',propertyId:'CO534',businessDate:housekeepingBusinessDate(),room:activeInspectionRoom,housekeeper:activeInspectionHousekeeper,inspector:currentUser.name});if(!opened.ok)throw new Error(opened.reason||opened.error||'Could not open inspection')}catch(err){b.disabled=false;b.textContent=oldText;alert('Could not start inspection: '+err.message);return}document.getElementById('inspectionRoomTitle').textContent='Room '+activeInspectionRoom;document.getElementById('inspectionHousekeeper').textContent='Housekeeper: '+activeInspectionHousekeeper;inspectionQueueEl.hidden=true;document.getElementById('inspectionStatus').hidden=true;inspectionDetail.hidden=false;inspectionDetail.querySelectorAll('input[type=checkbox]').forEach(x=>x.checked=false);const ms=document.getElementById('inspectionMaintenanceSummary'),mi=(window._inspectionMaintenance||[]).filter(m=>String(m.room)===String(activeInspectionRoom)&&m.status==='OPEN');ms.hidden=!mi.length;ms.innerHTML=mi.length?'<strong>Maintenance Issues</strong>'+mi.map(m=>'<div class="maint-summary-item '+(String(m.blocking).toUpperCase()==='TRUE'?'blocking':'routine')+'"><div>'+(String(m.blocking).toUpperCase()==='TRUE'?'🔴 BLOCKING — ':'⚪ NON-BLOCKING — ')+(m.description||'Maintenance issue')+'</div><button type="button" class="inspection-maint-resolve" data-id="'+m.maintenance_id+'">🔧 FIX / RESOLVE</button></div>').join(''):''});
+let pendingInspectionRoom='',pendingInspectionHousekeeper='',inspectionQrStream=null;
+function closeInspectionQr_(){if(inspectionQrStream){inspectionQrStream.getTracks().forEach(t=>t.stop());inspectionQrStream=null}document.getElementById('inspectionQrPanel').hidden=true;pendingInspectionRoom='';pendingInspectionHousekeeper=''}
+document.getElementById('closeInspectionQr').addEventListener('click',closeInspectionQr_);
+async function startInspectionQrCamera_(){
+  if(!pendingInspectionRoom)return;
+  const panel=document.getElementById('inspectionQrPanel'),msg=document.getElementById('inspectionQrMessage'),box=document.getElementById('inspectionQrCamera');
+  msg.textContent='Opening camera for Room '+pendingInspectionRoom+'…';
+  try{
+    inspectionQrStream=await navigator.mediaDevices.getUserMedia({video:{facingMode:{ideal:'environment'}},audio:false});
+    const video=document.createElement('video'),canvas=document.createElement('canvas'),ctx=canvas.getContext('2d',{willReadFrequently:true});
+    video.setAttribute('playsinline','');video.muted=true;video.autoplay=true;video.srcObject=inspectionQrStream;box.innerHTML='';box.appendChild(video);video.style.width='100%';video.style.height='100%';video.style.objectFit='cover';video.style.borderRadius='12px';await video.play();
+    msg.textContent='Point the camera at the Room '+pendingInspectionRoom+' QR code.';
+    const detector=('BarcodeDetector' in window)?new BarcodeDetector({formats:['qr_code']}):null;
+    const scan=async()=>{
+      if(panel.hidden){if(inspectionQrStream)inspectionQrStream.getTracks().forEach(t=>t.stop());return}
+      let raw='';
+      try{if(detector){const codes=await detector.detect(video);raw=codes[0]?.rawValue||''}else if(window.jsQR&&video.readyState>=2){canvas.width=video.videoWidth;canvas.height=video.videoHeight;ctx.drawImage(video,0,0);const img=ctx.getImageData(0,0,canvas.width,canvas.height);raw=jsQR(img.data,img.width,img.height)?.data||''}}catch(e){}
+      if(!raw){requestAnimationFrame(scan);return}
+      if(inspectionQrStream){inspectionQrStream.getTracks().forEach(t=>t.stop());inspectionQrStream=null}
+      const expected='CO534-RM-'+pendingInspectionRoom;
+      if(raw!==expected){msg.textContent='Wrong room QR. Expected Room '+pendingInspectionRoom+'.';box.innerHTML='▦';setTimeout(startInspectionQrCamera_,900);return}
+      msg.textContent='✓ Room '+pendingInspectionRoom+' verified. Starting inspection timer…';box.innerHTML='✓';
+      try{
+        const opened=await apiPost({action:'startInspection',propertyId:'CO534',businessDate:housekeepingBusinessDate(),room:pendingInspectionRoom,housekeeper:pendingInspectionHousekeeper,inspector:currentUser.name,qrId:raw});
+        if(!opened.ok)throw new Error(opened.reason||opened.error||'Could not open inspection');
+        activeInspectionRoom=pendingInspectionRoom;activeInspectionHousekeeper=pendingInspectionHousekeeper;
+        document.getElementById('inspectionRoomTitle').textContent='Room '+activeInspectionRoom;document.getElementById('inspectionHousekeeper').textContent='Housekeeper: '+activeInspectionHousekeeper;
+        panel.hidden=true;pendingInspectionRoom='';pendingInspectionHousekeeper='';inspectionQueueEl.hidden=true;document.getElementById('inspectionStatus').hidden=true;inspectionDetail.hidden=false;inspectionDetail.querySelectorAll('input[type=checkbox]').forEach(x=>x.checked=false);
+        const ms=document.getElementById('inspectionMaintenanceSummary'),mi=(window._inspectionMaintenance||[]).filter(m=>String(m.room)===String(activeInspectionRoom)&&m.status==='OPEN');ms.hidden=!mi.length;ms.innerHTML=mi.length?'<strong>Maintenance Issues</strong>'+mi.map(m=>'<div class="maint-summary-item '+(String(m.blocking).toUpperCase()==='TRUE'?'blocking':'routine')+'"><div>'+(String(m.blocking).toUpperCase()==='TRUE'?'🔴 BLOCKING — ':'⚪ NON-BLOCKING — ')+(m.description||'Maintenance issue')+'</div><button type="button" class="inspection-maint-resolve" data-id="'+m.maintenance_id+'">🔧 FIX / RESOLVE</button></div>').join(''):'';
+      }catch(err){msg.textContent='Could not start inspection: '+err.message;box.innerHTML='▦'}
+    };requestAnimationFrame(scan);
+  }catch(err){if(inspectionQrStream){inspectionQrStream.getTracks().forEach(t=>t.stop());inspectionQrStream=null}msg.textContent='Camera error: '+(err?.message||String(err));box.innerHTML='▦'}
+}
+inspectionQueueEl.addEventListener('click',e=>{const b=e.target.closest('.start-inspection-btn');if(!b)return;pendingInspectionRoom=b.dataset.room||'';pendingInspectionHousekeeper=b.dataset.housekeeper||'';document.getElementById('inspectionQrTitle').textContent='Room '+pendingInspectionRoom;document.getElementById('inspectionQrMessage').textContent='Scan the Room '+pendingInspectionRoom+' QR code to begin the inspection.';document.getElementById('inspectionQrCamera').innerHTML='▦';document.getElementById('inspectionQrPanel').hidden=false;startInspectionQrCamera_()});
 document.getElementById('inspectionBack').addEventListener('click',()=>{inspectionDetail.hidden=true;inspectionQueueEl.hidden=false;document.getElementById('inspectionStatus').hidden=false});
 
 let inspectionCaptureType=null,inspectionBlocking=null;
