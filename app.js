@@ -90,6 +90,7 @@ function show(view){
   if(view==='Housekeeping') loadHousekeepingBoard()
   if(view==='Inspections') loadInspectionQueue();
   if(view==='Maintenance'){loadMaintenanceBoard();loadSideWorkBoard_();}
+  if(view==='Reports') loadWeeklyOpsReport_();
   if(view==='Users') loadUsersAdmin();
   if(view==='Checklists'){openChecklistHub();loadOpenShiftNotes_();}
   document.querySelectorAll('.nav').forEach(b=>b.classList.toggle('active',b.dataset.view===view)); drawer.hidden=true;
@@ -1388,6 +1389,43 @@ document.addEventListener('click',async e=>{
  }
 });
 
+
+async function loadWeeklyOpsReport_(){
+  const host=document.getElementById('weeklyOpsReport'); if(!host||!currentUser)return;
+  host.hidden=false;
+  const set=(id,v)=>{const e=document.getElementById(id);if(e)e.textContent=v};
+  const metric=(label,value)=>'<div><span>'+label+'</span><strong>'+value+'</strong></div>';
+  try{
+    const date=await loadRelayBusinessDay_();
+    set('weeklyOpsPeriod',date?'RELAY business day '+date:'Current RELAY business day');
+    const [today,work]=await Promise.all([
+      apiPost({action:'getToday',businessDate:date},45000),
+      apiPost({action:'getWorkBoard'},45000)
+    ]);
+    if(!today.ok)throw new Error(today.error||today.reason||'Could not load RELAY operations');
+    const assignments=today.assignments||[],clean=today.cleaningSessions||[],ins=today.inspections||[],
+          issues=today.inspectionIssues||[],maint=today.maintenance||today.maintenanceIssues||[],
+          side=work.ok?(work.sideWork||[]):[];
+    const completedClean=clean.filter(x=>['COMPLETE','READY_FOR_INSPECTION'].includes(String(x.status||'').toUpperCase())).length;
+    const passed=ins.filter(x=>String(x.status||'').toUpperCase().includes('PASS')).length;
+    const failed=ins.filter(x=>String(x.status||'').toUpperCase().includes('FAIL')).length;
+    const rework=issues.filter(x=>['REWORK_REQUIRED','REWORK_IN_PROGRESS'].includes(String(x.status||'').toUpperCase())).length;
+    const maintOpen=maint.filter(x=>!['RESOLVED','COMPLETE','CLOSED'].includes(String(x.status||'').toUpperCase())).length;
+    const sideDone=side.filter(x=>String(x.status||'').toUpperCase()==='COMPLETE').length;
+    set('wrRooms',assignments.length);set('wrCleaning',clean.length);set('wrInspections',ins.length);set('wrMaintOpen',maintOpen);set('wrSide',side.length);
+    document.getElementById('wrHousekeeping').innerHTML=[
+      metric('Rooms assigned',assignments.length),metric('Rooms worked / ready',completedClean),
+      metric('Inspection passes',passed),metric('Inspection failures',failed),metric('Open rework',rework)
+    ].join('');
+    document.getElementById('wrOperations').innerHTML=[
+      metric('Maintenance logged',maint.length),metric('Maintenance open',maintOpen),
+      metric('Side duties assigned',side.length),metric('Side duties complete',sideDone),
+      metric('Side duties outstanding',Math.max(0,side.length-sideDone))
+    ].join('');
+    set('weeklyOpsState','LIVE RELAY DATA');
+    set('wrInsight',assignments.length||clean.length||ins.length||maint.length||side.length?'Operational activity is loaded. ADP labor above can now be read alongside RELAY output and quality.':'Production database is clean; operational metrics will populate automatically as tomorrow’s RELAY activity is recorded.');
+  }catch(err){set('weeklyOpsState','RELAY DATA UNAVAILABLE');set('wrInsight','Could not load operational data: '+err.message)}
+}
 
 /* Weekly Manager Report V1 — ADP Actual vs Scheduled importer */
 (function(){
