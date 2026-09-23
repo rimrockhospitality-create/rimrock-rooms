@@ -608,6 +608,12 @@ document.addEventListener('click',async e=>{
 
 document.querySelector('.pass-room-btn').addEventListener('click',async function(){
   const b=this,old=b.textContent;
+  const unresolvedOnScreen=[...document.querySelectorAll('.inspect-q')].filter(q=>q.dataset.answer==='NO'&&!q.dataset.resolution);
+  if(unresolvedOnScreen.length){
+    const names=unresolvedOnScreen.map(q=>q.querySelector('strong')?.textContent?.replace(/\?$/,'')||'Inspection item').join('\n');
+    alert('Choose I FIXED IT or HK NEEDS TO FIX before passing:\n'+names);
+    return;
+  }
   b.disabled=true;b.textContent='PASSING…';
   try{
     const result=await apiPost({action:'passInspection',propertyId:'CO534',businessDate:housekeepingBusinessDate(),room:activeInspectionRoom,inspector:currentUser.name},90000);
