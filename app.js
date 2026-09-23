@@ -286,12 +286,12 @@ async function loadHousekeepingBoard(){
   const isHkOnly=currentUser.roles.includes('HOUSEKEEPER')&&!canManageBoard;
   managerImportBtn.hidden=!canManageBoard;emptyChoiceSyncBtn.hidden=true;hkManagerGroups.hidden=!canManageBoard;
   try{
-    // Housekeepers use one server round-trip: getWorkBoard resolves RELAY's business day and returns it with the worker board.
+    // Housekeepers use one lightweight round-trip for only their rooms, cleaning sessions, and active rework.
     // Managers still confirm the authoritative business day before loading the property-wide snapshot.
     let state,date;
     if(isHkOnly){
       const provisional=relayBusinessDate||'CURRENT',cacheKey='hk:'+provisional+':'+currentUser.name;
-      state=relayCached_(cacheKey)||await apiPost({action:'getWorkBoard',worker:currentUser.name},45000);
+      state=relayCached_(cacheKey)||await apiPost({action:'getHousekeeperBoard',worker:currentUser.name},30000);
       if(state.ok&&state.businessDate){relayBusinessDate=state.businessDate;relayBusinessDayLoadedAt=Date.now();relayCacheSet_('hk:'+relayBusinessDate+':'+currentUser.name,state)}
       date=state.businessDate||housekeepingBusinessDate();
     }else{
