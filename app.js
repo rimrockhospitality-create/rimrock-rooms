@@ -260,7 +260,7 @@ importDaily.addEventListener('click',async()=>{
       rooms:lastParsed.rooms,assignments:lastParsed.assignments,
       comparison:{unchanged,new:newCount,changed,conflicts:0},
       syncedBy:currentUser?.name||'RELAY',sourceFilename:selectedPdf?.name||''
-    });
+    },90000);
     if(!result.ok){throw new Error(result.blocked?'Sync blocked by operational conflict.':(result.error||'Sync failed'))}
     validationSummary.className='validation-summary pass';
     validationSummary.textContent='✓ Choice Sync complete. '+result.rooms+' rooms and '+result.assignments+' active assignment'+(result.assignments===1?'':'s')+' recorded. Sync ID: '+result.syncId;
