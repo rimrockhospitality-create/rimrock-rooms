@@ -415,3 +415,13 @@ input::placeholder,textarea::placeholder{color:#7d98aa!important;opacity:1}
  .report-dropzone{min-height:70px}
  .report-kpis{grid-template-columns:1fr 1fr}
 }
+
+/* Weekly Manager — RELAY operational intelligence */
+.weekly-ops-report{margin-top:14px}
+.weekly-report-head{display:flex;align-items:end;justify-content:space-between;margin-bottom:9px}
+.weekly-report-head small{color:var(--blue);font-weight:900;font-size:10px}.weekly-report-head h2{margin:2px 0;font-size:20px}.weekly-report-head p{margin:0;color:var(--muted);font-size:11px}
+.weekly-report-head>span{font-size:9px;font-weight:900;letter-spacing:.08em;color:#35748f;background:#dff3fb;padding:6px 9px;border-radius:20px}
+.weekly-report-kpis{display:grid;grid-template-columns:repeat(5,1fr);gap:8px}.weekly-report-kpis>div{background:#fff;border:1px solid var(--line);border-radius:9px;padding:10px 12px}.weekly-report-kpis small{display:block;color:var(--muted);font-size:9px;font-weight:900}.weekly-report-kpis strong{display:block;color:#17364e;font-size:21px;margin-top:2px}
+.weekly-report-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:10px}.weekly-report-grid article{background:#fff;border:1px solid var(--line);border-radius:9px;padding:13px}.weekly-report-grid h3{margin:0 0 8px;color:#17364e;font-size:14px}
+.weekly-metrics>div{display:flex;justify-content:space-between;border-top:1px solid #e5edf2;padding:6px 2px;font-size:12px;color:#476276}.weekly-metrics>div strong{color:#17364e}.weekly-insight{margin-top:10px;background:#eaf5fa;border:1px solid #c8e3ef;border-radius:8px;padding:9px 12px;color:#34596c;font-size:12px}.weekly-insight strong{margin-right:6px;color:#17364e}
+@media(max-width:760px){.weekly-report-kpis{grid-template-columns:1fr 1fr}.weekly-report-grid{grid-template-columns:1fr}.weekly-report-head{align-items:start;gap:8px}}
