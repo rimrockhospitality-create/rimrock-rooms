@@ -465,7 +465,7 @@ function openInspectionCapture(type){
   inspectionCaptureType=type;inspectionBlocking=null;
   const panel=document.getElementById('inspectionCapture'),title=document.getElementById('captureTitle'),label=document.getElementById('captureTypeLabel'),maint=document.getElementById('maintenanceBlocking'),note=document.getElementById('captureNoteWrap'),route=document.getElementById('captureRoutingNote');
   document.getElementById('inspectionPhoto').value='';document.getElementById('inspectionNote').value='';document.getElementById('saveInspectionCapture').disabled=true;maint.querySelectorAll('button').forEach(b=>b.classList.remove('selected'));
-  if(type==='HK_ISSUE'){label.textContent='HOUSEKEEPING ISSUE';title.textContent='Housekeeping Issue';maint.hidden=true;note.hidden=false;route.textContent='Routes to housekeeper rework + weekly housekeeping reporting.'}
+  if(type==='HK_ISSUE'){label.textContent='HOUSEKEEPING ISSUE';title.textContent='Housekeeping Issue';maint.hidden=true;note.hidden=false;route.textContent='Report the housekeeping miss first. Then choose I FIXED IT or SEND TO HOUSEKEEPER.'}
   if(type==='MAINT_ISSUE'){label.textContent='MAINTENANCE ISSUE';title.textContent='Maintenance Issue';maint.hidden=false;note.hidden=false;route.textContent='Routes to Maintenance. Blocking choice determines whether the room can become Ready.'}
   if(type==='ROOM_HIGHLIGHT'){label.textContent='ROOM_HIGHLIGHT';title.textContent='Room Photo';maint.hidden=true;note.hidden=true;route.textContent='Positive finished-room photo. Routes to Inspection Report highlights only.'}
   panel.hidden=false;
@@ -537,7 +537,17 @@ document.getElementById('saveInspectionCapture').addEventListener('click',async(
       if(!note)throw new Error('Describe what needs to be corrected. Photo is optional.');
       result=await apiPost({action:'saveInspectionIssue',propertyId:'CO534',businessDate:housekeepingBusinessDate(),room:activeInspectionRoom,housekeeper:activeInspectionHousekeeper,inspector:currentUser.name,deficiencyKey:'GENERAL_HK_ISSUE',deficiencyLabel:'Housekeeping Issue',note:note,photoBase64:dataUrl,photoMimeType:file?.type||'image/jpeg'},30000);
       if(!result.ok)throw new Error(result.reason||result.error||'Housekeeping issue save failed');
-      inspectionCounts.hk++;renderInspectionCounts();document.getElementById('captureRoutingNote').textContent='✓ Housekeeping issue saved'+(result.photoRef?' • photo saved':' • no photo');
+      inspectionCounts.hk++;renderInspectionCounts();
+      const panel=document.getElementById('inspectionCapture');
+      const route=document.getElementById('captureRoutingNote');
+      route.innerHTML='✓ Housekeeping issue reported'+(result.photoRef?' • photo saved':' • no photo')+
+        '<div class="deficiency-resolution capture-resolution" style="margin-top:14px">'+
+        '<button type="button" data-capture-resolution="FIXED_BY_INSPECTOR">✓ I FIXED IT</button>'+
+        '<button type="button" data-capture-resolution="REWORK_REQUIRED">↩ SEND TO HOUSEKEEPER</button></div>';
+      panel.dataset.issueId=result.issueId;
+      btn.textContent='REPORTED';
+      btn.disabled=true;
+      return;
     }else if(inspectionCaptureType==='MAINT_ISSUE'){
       const note=document.getElementById('inspectionNote').value.trim();
       if(!note||inspectionBlocking===null)throw new Error('Note and blocking choice are required. Photo is optional.');
@@ -555,6 +565,25 @@ document.getElementById('saveInspectionCapture').addEventListener('click',async(
 });
 
 
+
+document.getElementById('inspectionCapture').addEventListener('click',async e=>{
+  const choice=e.target.closest('[data-capture-resolution]');if(!choice)return;
+  const panel=document.getElementById('inspectionCapture'),issueId=panel.dataset.issueId;
+  if(!issueId){alert('Report the housekeeping issue first.');return}
+  const resolution=choice.dataset.captureResolution,buttons=panel.querySelectorAll('[data-capture-resolution]');
+  buttons.forEach(x=>x.disabled=true);const old=choice.textContent;choice.textContent='SAVING…';
+  try{
+    const result=await apiPost({action:'resolveInspectionIssue',issueId:issueId,inspector:currentUser.name,resolution:resolution},30000);
+    if(!result.ok)throw new Error(result.reason||result.error||'Resolution save failed');
+    if(result.resolution==='FIXED_BY_INSPECTOR'){
+      document.getElementById('captureRoutingNote').textContent='✓ Issue recorded against '+activeInspectionHousekeeper+' • fixed by '+currentUser.name+' • room may pass if everything else passes.';
+    }else{
+      document.getElementById('captureRoutingNote').textContent='↩ Issue sent back to '+activeInspectionHousekeeper+' for rework • room cannot pass until corrected and verified.';
+    }
+    delete panel.dataset.issueId;
+    setTimeout(()=>resetInspectionCapture(),1400);
+  }catch(err){buttons.forEach(x=>x.disabled=false);choice.textContent=old;alert('Could not save resolution: '+err.message)}
+});
 
 document.querySelector('.inspection-question-list').addEventListener('click',async e=>{
   const b=e.target.closest('[data-resolution]');if(!b)return;
