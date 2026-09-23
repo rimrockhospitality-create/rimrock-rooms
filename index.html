@@ -221,6 +221,16 @@
       <div id="inspectionStatus" class="hk-board-status">Loading inspection queue…</div>
         <div id="reinspectionQueue" class="reinspection-queue"></div>
       <div id="inspectionQueue" class="inspection-queue"></div>
+      <div id="inspectionQrPanel" class="qr-start-panel" hidden>
+        <div class="qr-start-card">
+          <button id="closeInspectionQr" class="qr-close" type="button">×</button>
+          <small>INSPECTION LOCATION VERIFICATION</small>
+          <h2 id="inspectionQrTitle">Room</h2>
+          <p id="inspectionQrMessage">Scan the room QR code to begin the inspection.</p>
+          <div id="inspectionQrCamera" class="qr-code-placeholder">▦</div>
+          <p class="qr-note">The inspection timer begins only after the correct room QR is verified.</p>
+        </div>
+      </div>
       <div id="inspectionDetail" class="inspection-detail" hidden>
         <button id="inspectionBack" class="inspection-back" type="button">← Inspection Queue</button>
         <div class="inspection-room-head"><div><small>ROOM INSPECTION</small><h2 id="inspectionRoomTitle">Room</h2><p id="inspectionHousekeeper"></p></div><span>QUICK CHECK</span></div>
@@ -410,6 +420,6 @@
   </div>
 </div>
 <script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.js"></script>
-<script src="app.js?v=20260923-reports5"></script>
+<script src="app.js?v=20260923-inspectionqr1"></script>
 </body>
 </html>
