@@ -12,7 +12,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="theme-color" content="#073b63">
   <title>RELAY Operations | CO534</title>
-  <link rel="stylesheet" href="styles.css?v=20260923-reports2">
+  <link rel="stylesheet" href="styles.css?v=20260923-reports3">
   <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>\n</head>
 <body>
 <section id="loginView" class="rr-login">
@@ -99,8 +99,23 @@
       <div id="adpReportResults" hidden>
         <div class="report-kpis"><div><small>EMPLOYEES</small><strong id="adpEmployeeCount">0</strong></div><div><small>ACTUAL HOURS</small><strong id="adpActualTotal">0.00</strong></div><div><small>SCHEDULED HOURS</small><strong id="adpScheduledTotal">0.00</strong></div><div><small>VARIANCE</small><strong id="adpVarianceTotal">0.00</strong></div></div>
         <div class="report-table-wrap"><table class="report-table"><thead><tr><th>Employee</th><th>Position ID</th><th>Actual</th><th>Scheduled</th><th>Variance</th><th>Dates</th></tr></thead><tbody id="adpReportBody"></tbody></table></div>
-        <p class="report-note">V1 validates the ADP labor side only. RELAY operational productivity will be joined here next; no fake production rows are written.</p>
+        <p class="report-note">ADP is payroll truth. RELAY activity below is operational context; tracked activity is not expected to equal paid hours.</p>
       </div>
+      <section id="weeklyOpsReport" class="weekly-ops-report" hidden>
+        <div class="weekly-report-head"><div><small>WEEKLY OPERATIONS</small><h2>Labor + RELAY Activity</h2><p id="weeklyOpsPeriod">Current RELAY business day</p></div><span id="weeklyOpsState">LIVE RELAY DATA</span></div>
+        <div class="weekly-report-kpis">
+          <div><small>ROOM ASSIGNMENTS</small><strong id="wrRooms">0</strong></div>
+          <div><small>CLEANING SESSIONS</small><strong id="wrCleaning">0</strong></div>
+          <div><small>INSPECTIONS</small><strong id="wrInspections">0</strong></div>
+          <div><small>MAINTENANCE OPEN</small><strong id="wrMaintOpen">0</strong></div>
+          <div><small>SIDE DUTIES</small><strong id="wrSide">0</strong></div>
+        </div>
+        <div class="weekly-report-grid">
+          <article><h3>Housekeeping & Quality</h3><div id="wrHousekeeping" class="weekly-metrics"></div></article>
+          <article><h3>Maintenance & Side Duties</h3><div id="wrOperations" class="weekly-metrics"></div></article>
+        </div>
+        <div class="weekly-insight"><strong>Management read:</strong><span id="wrInsight">Upload ADP labor to pair payroll with RELAY activity.</span></div>
+      </section>
     </section>
     <section id="housekeepingView" class="housekeeping-view" hidden>
       <div class="hk-board-head">
@@ -393,6 +408,6 @@
   </div>
 </div>
 <script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.js"></script>
-<script src="app.js?v=20260923-reports3"></script>
+<script src="app.js?v=20260923-reports4"></script>
 </body>
 </html>
