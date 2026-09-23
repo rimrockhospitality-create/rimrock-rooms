@@ -13,7 +13,9 @@
   <meta name="theme-color" content="#073b63">
   <title>RELAY Operations | CO534</title>
   <link rel="stylesheet" href="styles.css?v=20260923-reports3">
-  <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>\n</head>
+  <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>\n  <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/jspdf-autotable@3.8.4/dist/jspdf.plugin.autotable.min.js"></script>
+</head>
 <body>
 <section id="loginView" class="rr-login">
   <div class="rr-login-photo"></div>
@@ -90,7 +92,7 @@
   <button id="rrFloatMaintenance" class="rr-float" title="Report maintenance">🔧<span>REPORT ISSUE</span></button>
 </section>
     <section id="reportsView" class="reports-view" hidden>
-      <div class="reports-head"><div><small>MANAGEMENT INTELLIGENCE</small><h1>Weekly Manager Report</h1><p>Upload the ADP “My Team Actual vs Scheduled” workbook. RELAY reads payroll labor without changing production operations data.</p></div></div>
+      <div class="reports-head"><div><small>MANAGEMENT INTELLIGENCE</small><h1>Weekly Manager Report</h1><p>Upload the ADP “My Team Actual vs Scheduled” workbook. RELAY reads payroll labor without changing production operations data.</p></div><button id="exportWeeklyPdf" class="report-export-btn" type="button">⇩ Export PDF</button></div>
       <div class="report-upload-card">
         <div><h2>ADP Labor Import</h2><p>Actual Hours, Scheduled Hours and Variance are read directly from the workbook. No manual re-keying.</p></div>
         <label class="report-dropzone"><input id="adpXlsx" type="file" accept=".xlsx,.xls,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"><span>▥</span><strong>Choose ADP Time Report</strong><small>My Team Actual vs Scheduled • XLSX</small></label>
@@ -408,6 +410,6 @@
   </div>
 </div>
 <script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.js"></script>
-<script src="app.js?v=20260923-reports4"></script>
+<script src="app.js?v=20260923-reports5"></script>
 </body>
 </html>
