@@ -1427,6 +1427,48 @@ async function loadWeeklyOpsReport_(){
   }catch(err){set('weeklyOpsState','RELAY DATA UNAVAILABLE');set('wrInsight','Could not load operational data: '+err.message)}
 }
 
+async function exportWeeklyManagerPdf_(){
+  const btn=document.getElementById('exportWeeklyPdf'),original=btn?.textContent;
+  if(btn){btn.disabled=true;btn.textContent='Building PDF…'}
+  try{
+    if(!window.jspdf?.jsPDF)throw new Error('PDF library did not load. Reload RELAY and try again.');
+    const {jsPDF}=window.jspdf,doc=new jsPDF({unit:'pt',format:'letter'});
+    const txt=id=>document.getElementById(id)?.textContent?.trim()||'—';
+    const navy=[5,31,48],blue=[28,119,183],muted=[76,99,116],line=[220,229,235];
+    doc.setFillColor(...navy);doc.rect(0,0,612,76,'F');
+    doc.setTextColor(255,255,255);doc.setFont('helvetica','bold');doc.setFontSize(20);doc.text('RELAY',36,32);
+    doc.setFontSize(8);doc.text('ROOM OPERATIONS',36,45);
+    doc.setFontSize(15);doc.text('Weekly Manager Report',576,30,{align:'right'});
+    doc.setFont('helvetica','normal');doc.setFontSize(9);doc.text('Everhome Suites Denver Airport  |  CO534',576,46,{align:'right'});
+    doc.setTextColor(...muted);doc.setFontSize(9);doc.text('Generated '+new Date().toLocaleString(),36,98);
+    doc.setTextColor(...navy);doc.setFont('helvetica','bold');doc.setFontSize(13);doc.text('Payroll Labor',36,124);
+    const adpVisible=!document.getElementById('adpReportResults')?.hidden;
+    let y=138;
+    if(adpVisible){
+      const cards=[['Employees',txt('adpEmployeeCount')],['Actual Hours',txt('adpActualTotal')],['Scheduled Hours',txt('adpScheduledTotal')],['Variance',txt('adpVarianceTotal')]];
+      cards.forEach((x,i)=>{const x0=36+i*135;doc.setDrawColor(...line);doc.roundedRect(x0,y,125,42,4,4);doc.setTextColor(...muted);doc.setFontSize(7);doc.text(x[0].toUpperCase(),x0+9,y+13);doc.setTextColor(...navy);doc.setFontSize(15);doc.text(x[1],x0+9,y+32)});
+      y+=56;
+      const rows=[...document.querySelectorAll('#adpReportBody tr')].map(tr=>[...tr.children].map(td=>td.textContent.trim()));
+      if(rows.length&&doc.autoTable){doc.autoTable({startY:y,head:[['Employee','Position ID','Actual','Scheduled','Variance','Dates']],body:rows,theme:'grid',styles:{fontSize:7,cellPadding:4,textColor:navy},headStyles:{fillColor:navy,textColor:255},margin:{left:36,right:36}});y=doc.lastAutoTable.finalY+18}
+    }else{doc.setFont('helvetica','normal');doc.setFontSize(9);doc.setTextColor(...muted);doc.text('ADP workbook not loaded for this export.',36,y+12);y+=30}
+    if(y>620){doc.addPage();y=42}
+    doc.setTextColor(...navy);doc.setFont('helvetica','bold');doc.setFontSize(13);doc.text('RELAY Operational Activity',36,y);y+=8;
+    doc.setFont('helvetica','normal');doc.setFontSize(8);doc.setTextColor(...muted);doc.text(txt('weeklyOpsPeriod'),36,y+12);y+=26;
+    const ops=[['Room Assignments',txt('wrRooms')],['Cleaning Sessions',txt('wrCleaning')],['Inspections',txt('wrInspections')],['Maintenance Open',txt('wrMaintOpen')],['Side Duties',txt('wrSide')]];
+    ops.forEach((x,i)=>{const x0=36+i*108;doc.setDrawColor(...line);doc.roundedRect(x0,y,99,39,4,4);doc.setTextColor(...muted);doc.setFontSize(6.5);doc.text(x[0].toUpperCase(),x0+7,y+12);doc.setTextColor(...navy);doc.setFontSize(14);doc.text(x[1],x0+7,y+30)});y+=55;
+    const sectionRows=id=>[...document.querySelectorAll('#'+id+' > div')].map(d=>[d.querySelector('span')?.textContent||'',d.querySelector('strong')?.textContent||'']);
+    const hk=sectionRows('wrHousekeeping'),op=sectionRows('wrOperations');
+    if(doc.autoTable){doc.autoTable({startY:y,head:[['Housekeeping & Quality','Result']],body:hk,theme:'grid',styles:{fontSize:8,textColor:navy},headStyles:{fillColor:blue,textColor:255},margin:{left:36,right:306},tableWidth:270});const y1=doc.lastAutoTable.finalY;doc.autoTable({startY:y,head:[['Maintenance & Side Duties','Result']],body:op,theme:'grid',styles:{fontSize:8,textColor:navy},headStyles:{fillColor:blue,textColor:255},margin:{left:306,right:36},tableWidth:270});y=Math.max(y1,doc.lastAutoTable.finalY)+18}
+    doc.setFont('helvetica','bold');doc.setFontSize(9);doc.setTextColor(...navy);doc.text('Management read:',36,y);
+    doc.setFont('helvetica','normal');doc.setTextColor(...muted);const insight=doc.splitTextToSize(txt('wrInsight'),450);doc.text(insight,120,y);
+    const pages=doc.getNumberOfPages();for(let p=1;p<=pages;p++){doc.setPage(p);doc.setFontSize(7);doc.setTextColor(...muted);doc.text('RELAY Room Operations • CO534',36,760);doc.text('Page '+p+' of '+pages,576,760,{align:'right'})}
+    const safe=(txt('weeklyOpsPeriod').match(/\d{1,2}\/\d{1,2}\/\d{4}/)||[''])[0].replaceAll('/','-');
+    doc.save('RELAY_CO534_Weekly_Manager_Report'+(safe?'_'+safe:'')+'.pdf');
+  }catch(err){alert('Could not export PDF: '+err.message)}
+  finally{if(btn){btn.disabled=false;btn.textContent=original}}
+}
+document.getElementById('exportWeeklyPdf')?.addEventListener('click',exportWeeklyManagerPdf_);
+
 /* Weekly Manager Report V1 — ADP Actual vs Scheduled importer */
 (function(){
   const input=document.getElementById('adpXlsx'),status=document.getElementById('adpStatus'),results=document.getElementById('adpReportResults'),body=document.getElementById('adpReportBody');
