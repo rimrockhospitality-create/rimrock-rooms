@@ -385,3 +385,33 @@ input::placeholder,textarea::placeholder{color:#7d98aa!important;opacity:1}
 /* Weekly Manager Report — management intelligence */
 .reports-view{padding:28px 34px;max-width:1280px;margin:auto}.reports-head small{color:var(--blue);font-weight:900}.reports-head h1{font-size:34px;margin:5px 0}.reports-head p{color:var(--muted);margin:0;max-width:780px}.report-upload-card{margin-top:24px;background:#fff;border:1px solid var(--line);border-radius:12px;padding:22px;display:grid;grid-template-columns:1fr 360px;gap:22px;align-items:center}.report-upload-card h2{margin:0 0 7px}.report-upload-card p{color:var(--muted);margin:0;line-height:1.5}.report-dropzone{border:2px dashed #a9c5da;border-radius:10px;min-height:130px;display:flex;flex-direction:column;align-items:center;justify-content:center;cursor:pointer;background:#f8fbfd}.report-dropzone input{position:absolute;opacity:0;pointer-events:none}.report-dropzone span{font-size:30px;color:var(--blue)}.report-dropzone strong{color:var(--blue);margin:5px 0}.report-dropzone small{color:var(--muted)}.report-upload-card .hk-board-status{grid-column:1/-1;margin:0}.report-kpis{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin:20px 0}.report-kpis div{background:#fff;border:1px solid var(--line);border-radius:10px;padding:16px}.report-kpis small{display:block;color:var(--muted);font-weight:800}.report-kpis strong{font-size:28px}.report-table-wrap{overflow:auto;background:#fff;border:1px solid var(--line);border-radius:10px}.report-table{width:100%;border-collapse:collapse}.report-table th,.report-table td{padding:13px 15px;text-align:left;border-bottom:1px solid var(--line);white-space:nowrap}.report-table th{font-size:12px;color:var(--muted);background:#f7fafc}.report-table td.over{color:#a14f00;font-weight:800}.report-table td.under{color:#476276}.report-note{color:var(--muted);font-size:13px;margin-top:12px}
 @media(max-width:760px){.reports-view{padding:20px 18px 110px}.reports-head h1{font-size:29px}.report-upload-card{grid-template-columns:1fr}.report-kpis{grid-template-columns:1fr 1fr}}
+
+/* Reports workspace compact pass — 2026-09-23 */
+.reports-view{padding:18px 26px;max-width:1440px}
+.reports-head{display:flex;align-items:end;justify-content:space-between;margin-bottom:12px}
+.reports-head h1{font-size:27px;margin:2px 0}
+.reports-head p{font-size:13px;max-width:900px}
+.report-upload-card{margin-top:10px;padding:14px 16px;grid-template-columns:minmax(300px,1fr) 280px;gap:14px;border-radius:10px}
+.report-upload-card h2{font-size:17px;margin:0 0 3px;color:#17364e}
+.report-upload-card p{font-size:12px;line-height:1.35}
+.report-dropzone{min-height:72px;border-width:1.5px}
+.report-dropzone span{font-size:18px}
+.report-dropzone strong{font-size:13px;margin:2px 0}
+.report-dropzone small{font-size:11px}
+.report-upload-card .hk-board-status{padding:8px 11px;font-size:12px}
+.report-kpis{gap:9px;margin:12px 0}
+.report-kpis div{padding:10px 13px}
+.report-kpis small{font-size:10px}
+.report-kpis strong{font-size:22px;color:#17364e}
+.report-table th,.report-table td{padding:9px 12px}
+.report-table td{color:#17364e;font-size:13px}
+.report-table th{color:#476276}
+.report-note{font-size:11px;margin:8px 2px}
+@media(max-width:760px){
+ .reports-view{padding:16px 12px 110px}
+ .reports-head h1{font-size:24px}
+ .reports-head p{font-size:12px}
+ .report-upload-card{grid-template-columns:1fr;padding:12px}
+ .report-dropzone{min-height:70px}
+ .report-kpis{grid-template-columns:1fr 1fr}
+}
