@@ -99,7 +99,7 @@
       <div class="lf-toolbar"><input id="lfSearch" placeholder="Search item, room, guest or L&amp;F number…"><select id="lfFilter"><option value="OPEN">OPEN ITEMS</option><option value="PENDING_PICKUP">PENDING PICKUP</option><option value="DUE">DUE FOR DISPOSAL</option><option value="CLOSED">CLOSED</option><option value="ALL">SEARCH ALL</option></select></div>
       <div id="lfList" class="lf-list"></div>
       <div id="lfItemPanel" class="lf-panel" hidden><button id="lfClosePanel" class="qr-close" type="button">×</button><small>FOUND ITEM</small><h2 id="lfPanelTitle">Log Found Item</h2>
-        <div class="lf-form-grid"><label>Room / Location<input id="lfLocation" placeholder="Room 218 or Lobby"></label><label>Item Description<input id="lfDescription" placeholder="Black phone charger"></label><label>Found By<input id="lfFoundBy" placeholder="Associate name"></label><label>Guest Name <small>(if known)</small><input id="lfGuestName"></label></div>
+        <div class="lf-form-grid"><label>Room / Location<input id="lfLocation" placeholder="Room 218 or Lobby"></label><label>Item Description<input id="lfDescription" placeholder="Black phone charger"></label><label>Found By<input id="lfFoundBy" placeholder="Associate who found it"></label><label>Entered By<input id="lfEnteredBy" placeholder="Associate logging the item"></label><label>Guest Name <small>(if known)</small><input id="lfGuestName"></label></div>
         <label class="lf-high"><input id="lfHighValue" type="checkbox"> High-value item — store in Safe</label>
         <div class="lf-storage"><span>STORAGE LOCATION</span><strong id="lfStorageLocation">1st Floor L&amp;F Closet — end of hallway</strong></div>
         <label>Photo <small>(recommended)</small><input id="lfPhoto" type="file" accept="image/*" capture="environment"></label><label>Notes<textarea id="lfNotes" rows="2"></textarea></label>
@@ -442,6 +442,6 @@
   </div>
 </div>
 <script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.js"></script>
-<script src="app.js?v=20260924-lostfound1"></script>
+<script src="app.js?v=20260924-lostfound2"></script>
 </body>
 </html>
