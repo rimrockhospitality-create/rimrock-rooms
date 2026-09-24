@@ -428,3 +428,15 @@ input::placeholder,textarea::placeholder{color:#7d98aa!important;opacity:1}
 
 .report-export-btn{border:1px solid #2b6f94;background:#0b3a57;color:#fff;border-radius:7px;padding:9px 13px;font-size:11px;font-weight:900;cursor:pointer;white-space:nowrap}.report-export-btn:hover{background:#105075}.report-export-btn:disabled{opacity:.55;cursor:wait}
 @media(max-width:760px){.reports-head{align-items:flex-start;gap:10px}.report-export-btn{padding:8px 10px}}
+
+
+/* RELAY Performance Reporting — 2026-09-24 */
+.performance-report-grid{display:grid;grid-template-columns:1fr;gap:12px;margin-top:12px}
+.performance-report-grid>article{background:#fff;border:1px solid var(--line);border-radius:10px;padding:13px}
+.performance-report-head{display:flex;align-items:end;justify-content:space-between;gap:12px;margin-bottom:9px}
+.performance-report-head small{color:var(--blue);font-size:9px;font-weight:900;letter-spacing:.08em}
+.performance-report-head h3{margin:2px 0 0;color:#17364e;font-size:15px}
+.performance-report-head>span{font-size:9px;font-weight:900;color:#35748f;background:#e4f4fb;border-radius:20px;padding:5px 8px}
+.performance-report-grid .report-table td strong{color:#17364e}
+.performance-report-grid .report-table td,.performance-report-grid .report-table th{padding:8px 10px;font-size:11px}
+@media(max-width:760px){.performance-report-head{align-items:flex-start}.performance-report-grid>article{padding:10px}.performance-report-grid .report-table{min-width:720px}}
