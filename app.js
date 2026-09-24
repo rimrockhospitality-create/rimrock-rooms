@@ -597,6 +597,8 @@ document.getElementById('inspectionCapture').addEventListener('click',async e=>{
     const result=await apiPost({action:'resolveInspectionIssue',issueId:issueId,inspector:currentUser.name,resolution:resolution},30000);
     if(!result.ok)throw new Error(result.reason||result.error||'Resolution save failed');
     if(result.resolution==='FIXED_BY_INSPECTOR'){
+      if(!window._relayInspectorFixedIssueIds)window._relayInspectorFixedIssueIds=new Set();
+      window._relayInspectorFixedIssueIds.add(issueId);
       document.getElementById('captureRoutingNote').textContent='✓ Issue recorded against '+activeInspectionHousekeeper+' • fixed by '+currentUser.name+' • room may pass if everything else passes.';
     }else{
       document.getElementById('captureRoutingNote').textContent='↩ Issue sent back to '+activeInspectionHousekeeper+' for rework • room cannot pass until corrected and verified.';
@@ -667,19 +669,21 @@ document.querySelector('.pass-room-btn').addEventListener('click',async function
   const inspectorFixed=[...document.querySelectorAll('.inspect-q')].filter(q=>
     q.dataset.answer==='NO'&&q.dataset.resolution==='FIXED_BY_INSPECTOR'&&q.dataset.issueId
   );
-  if(inspectorFixed.length){
+  const reportedFixed=[...(window._relayInspectorFixedIssueIds||new Set())];
+  if(inspectorFixed.length||reportedFixed.length){
     b.disabled=true;b.textContent='FINALIZING FIXES…';
     try{
-      for(const q of inspectorFixed){
+      const issueIds=[...new Set([...inspectorFixed.map(q=>q.dataset.issueId),...reportedFixed])];
+      for(const issueId of issueIds){
         const resolved=await apiPost({
           action:'resolveInspectionIssue',
-          issueId:q.dataset.issueId,
+          issueId:issueId,
           inspector:currentUser.name,
           resolution:'FIXED_BY_INSPECTOR'
         },30000);
         if(!resolved.ok)throw new Error(resolved.reason||resolved.error||'Inspector correction could not be finalized');
-        q.dataset.resolution='FIXED_BY_INSPECTOR';
       }
+      inspectorFixed.forEach(q=>q.dataset.resolution='FIXED_BY_INSPECTOR');
     }catch(err){
       alert('Could not finalize inspector correction: '+err.message);
       b.disabled=false;b.textContent=old;
@@ -708,7 +712,7 @@ document.querySelector('.pass-room-btn').addEventListener('click',async function
     }else{
       alert('✓ HOUSEKEEPING PASSED\n\nROOM '+activeInspectionRoom+' — READY');
     }
-    inspectionDetail.hidden=true;inspectionQueueEl.hidden=false;document.getElementById('inspectionStatus').hidden=false;await loadInspectionQueue();
+    window._relayInspectorFixedIssueIds=new Set();inspectionDetail.hidden=true;inspectionQueueEl.hidden=false;document.getElementById('inspectionStatus').hidden=false;await loadInspectionQueue();
   }catch(err){alert(err.message);b.disabled=false;b.textContent=old}
 });
 
