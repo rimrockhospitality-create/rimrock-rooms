@@ -1317,9 +1317,17 @@ function canDailyAudit_(){return !!currentUser&&currentUser.roles.some(r=>['ADMI
 function updateDailyAuditAccess_(){const b=document.getElementById('dailyAuditBtn');if(b)b.hidden=!canDailyAudit_()}
 async function openDailyAudit_(){
  if(!canDailyAudit_())return;await loadRelayBusinessDay_();
- document.getElementById('dailyAuditCurrentDate').textContent=housekeepingBusinessDate();
+ const bd=housekeepingBusinessDate(),sid=localStorage.getItem('relaySessionId');
+ document.getElementById('dailyAuditCurrentDate').textContent=bd;
  document.getElementById('dailyAuditConfirm').checked=false;document.getElementById('executeDailyAudit').disabled=true;document.getElementById('dailyAuditMessage').textContent='';
+ const warn=document.getElementById('dailyAuditCarryWarning');warn.hidden=true;warn.innerHTML='';
  document.getElementById('dailyAuditPanel').hidden=false;
+ try{
+  const [today,...shifts]=await Promise.all([apiPost({action:'getToday',businessDate:bd},45000),...['AM','PM','AUDIT'].map(shift=>apiPost({action:'getShiftOperations',sessionId:sid,businessDate:bd,shift},45000))]);
+  const maint=(today.maintenanceIssues||today.maintenance||[]).filter(x=>!['RESOLVED','COMPLETE','COMPLETED','CLOSED'].includes(String(x.status||'').toUpperCase()));
+  const open=[...new Map(shifts.flatMap(r=>r&&r.ok?(r.openNotes||[]):[]).map(x=>[String(x.noteId||x.note_id||x.id||JSON.stringify(x)),x])).values()];
+  if(maint.length||open.length){warn.hidden=false;warn.innerHTML='<strong>OPEN ITEMS WILL CARRY FORWARD</strong><p>'+open.length+' open follow-up'+(open.length===1?'':'s')+' • '+maint.length+' open maintenance item'+(maint.length===1?'':'s')+'. These items will not block Daily Audit.</p>'}
+ }catch(e){console.warn('Daily Audit carry-forward preview unavailable',e)}
 }
 document.getElementById('dailyAuditBtn')?.addEventListener('click',openDailyAudit_);
 function exitDailyAudit_(){
