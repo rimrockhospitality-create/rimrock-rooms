@@ -33,7 +33,7 @@ const RELAY_WRITE_AFFECTS={
  logMaintenance:['maintenance:','inspection:','hk:','dashboard:'],saveMaintenanceIssue:['maintenance:','inspection:','hk:','dashboard:'],startMaintenanceWork:['maintenance:'],completeMaintenanceWork:['maintenance:','inspection:','hk:','dashboard:'],resolveMaintenanceIssue:['maintenance:','inspection:','hk:','dashboard:'],
  createSideWork:['side:','hk:','dashboard:'],startSideWork:['side:','hk:'],completeSideWork:['side:','hk:','dashboard:'],
  saveShiftNote:['shift:','dashboard:'],addShiftNoteUpdate:['shift:','dashboard:'],resolveShiftNote:['shift:','dashboard:'],completeChecklistShift:['shift:','dashboard:'],
- dailyAudit:['business:','hk:','inspection:','maintenance:','side:','shift:','dashboard:'],
+ dailyAudit:['business:','hk:','inspection:','maintenance:','side:','shift:','dashboard:'],saveHotelPerformance:['dashboard:'],
  adminCreateUser:['users:'],adminUpdateUser:['users:'],adminDeactivateUser:['users:'],adminResetPassword:['users:']
 };
 function relayInvalidateForAction_(action){(RELAY_WRITE_AFFECTS[action]||[]).forEach(p=>relayCacheClear_(p));}
@@ -1732,4 +1732,88 @@ document.getElementById('exportWeeklyPdf')?.addEventListener('click',exportWeekl
       results.hidden=false;
     }catch(err){status.className='hk-board-status error';status.textContent=err.message||'Could not read ADP workbook.'}
   });
+})();
+
+
+/* RELAY NIGHT AUDIT HOTEL PERFORMANCE IMPORT */
+let relayNightAuditParsed_=null;
+function relayAuditNumber_(v){return Number(String(v||'').replace(/[$,%\s,]/g,''))}
+function relayAuditDateIso_(mdy){
+ const m=String(mdy||'').match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
+ return m?m[3]+'-'+m[1].padStart(2,'0')+'-'+m[2].padStart(2,'0'):'';
+}
+function parseRelayNightAudit_(text){
+ const raw=String(text||'').replace(/\u00a0/g,' ');
+ const start=raw.indexOf('Hotel Statistics');
+ if(start<0)throw new Error('Hotel Statistics was not found in this PDF.');
+ const section=raw.slice(start);
+ const property=(section.match(/Property\s*Code:\s*([A-Z0-9]+)/i)||[])[1]||'';
+ if(property!=='CO534')throw new Error('This audit is for '+(property||'an unknown property')+', not CO534.');
+ const activity=section.indexOf('Checked Out Today');
+ if(activity<0)throw new Error("Today's Activity was not found in Hotel Statistics.");
+ const tail=section.slice(activity+'Checked Out Today'.length,activity+5000);
+ const stop=tail.search(/\bPTD\b/);
+ const valueText=stop>=0?tail.slice(0,stop):tail;
+ const tokens=valueText.match(/\d{1,2}\/\d{1,2}\/\d{4}|\(?-?\$?[\d,]+(?:\.\d+)?%?\)?/g)||[];
+ const groups=[];let g=null;
+ tokens.forEach(t=>{
+   if(/^\d{1,2}\/\d{1,2}\/\d{4}$/.test(t)){g={date:t,values:[]};groups.push(g)}
+   else if(g)g.values.push(t);
+ });
+ if(groups.length<5)throw new Error('Hotel Statistics values could not be read reliably.');
+ const room=groups[0].values,perf=groups[1].values,rev=groups[2].values,guest=groups[3].values,act=groups[4].values;
+ if(room.length<9||perf.length<9||rev.length<5||guest.length<6||act.length<5)throw new Error('Hotel Statistics is incomplete in this PDF.');
+ const result={
+   propertyId:property,businessDate:relayAuditDateIso_(groups[0].date),displayDate:groups[0].date,
+   performance:{
+     occupancy:relayAuditNumber_(perf[0]),adr:relayAuditNumber_(perf[4]),revpar:relayAuditNumber_(perf[7]),
+     roomsSold:relayAuditNumber_(room[5]),roomRevenue:relayAuditNumber_(rev[2]),
+     checkIns:relayAuditNumber_(act[0])+relayAuditNumber_(act[1]),checkOuts:relayAuditNumber_(act[4]),
+     stayovers:relayAuditNumber_(room[4]),noShows:relayAuditNumber_(act[2])
+   }
+ };
+ const p=result.performance;
+ if(!result.businessDate||Object.values(p).some(v=>!Number.isFinite(v)))throw new Error('One or more required Hotel Statistics values could not be read.');
+ return result;
+}
+function relayNightAuditPreviewHtml_(x){
+ const p=x.performance,m=n=>n.toLocaleString('en-US',{style:'currency',currency:'USD',minimumFractionDigits:2}),pct=n=>n.toLocaleString('en-US',{maximumFractionDigits:2})+'%';
+ return '<div class="night-audit-recognized"><b>✓ Night Audit recognized</b><span>Business Date: '+x.displayDate+' &nbsp; • &nbsp; Property: '+x.propertyId+' &nbsp; • &nbsp; Hotel Statistics found ✓</span></div>'+
+ '<div class="night-audit-grid">'+[
+ ['Occupancy',pct(p.occupancy)],['ADR',m(p.adr)],['RevPAR',m(p.revpar)],['Rooms Sold',p.roomsSold],['Room Revenue',m(p.roomRevenue)],
+ ['Check-Ins',p.checkIns],['Check-Outs',p.checkOuts],['Stayovers',p.stayovers],['No-Shows',p.noShows]
+ ].map(v=>'<div><small>'+v[0]+'</small><strong>'+v[1]+'</strong></div>').join('')+'</div>';
+}
+(function initRelayNightAudit_(){
+ const open=document.getElementById('openNightAuditImport'),panel=document.getElementById('nightAuditImportPanel'),close=document.getElementById('closeNightAuditImport'),input=document.getElementById('nightAuditPdf'),status=document.getElementById('nightAuditStatus'),preview=document.getElementById('nightAuditPreview'),save=document.getElementById('importNightAudit');
+ if(!open||!panel||!input)return;
+ open.addEventListener('click',()=>{panel.hidden=false;panel.scrollIntoView({behavior:'smooth',block:'start'})});
+ close?.addEventListener('click',()=>panel.hidden=true);
+ input.addEventListener('change',async()=>{
+   const file=input.files?.[0];relayNightAuditParsed_=null;save.disabled=true;preview.hidden=true;
+   if(!file)return;
+   if(!(file.type==='application/pdf'||file.name.toLowerCase().endsWith('.pdf'))){status.textContent='Choose a PDF file.';return}
+   status.textContent='Reading Hotel Statistics…';
+   try{
+     const pdfjs=await loadPdfJs(),bytes=new Uint8Array(await file.arrayBuffer()),pdf=await pdfjs.getDocument({data:bytes}).promise;
+     let text='';
+     for(let p=1;p<=pdf.numPages;p++){const page=await pdf.getPage(p),content=await page.getTextContent();text+='\n'+content.items.map(i=>i.str).join(' ')}
+     relayNightAuditParsed_=parseRelayNightAudit_(text);
+     relayNightAuditParsed_.sourceFilename=file.name;
+     preview.innerHTML=relayNightAuditPreviewHtml_(relayNightAuditParsed_);preview.hidden=false;save.disabled=false;
+     status.textContent='Review the nine values below, then import.';
+   }catch(err){status.textContent='Could not read audit: '+err.message}
+ });
+ save.addEventListener('click',async()=>{
+   if(!relayNightAuditParsed_)return;
+   save.disabled=true;save.textContent='IMPORTING…';status.textContent='Saving Hotel Performance…';
+   try{
+     const x=relayNightAuditParsed_,r=await apiPost({action:'saveHotelPerformance',propertyId:x.propertyId,businessDate:x.businessDate,performance:x.performance,sourceFilename:x.sourceFilename,importedBy:currentUser?.name||''},45000);
+     if(!r.ok)throw new Error(r.error||'Import failed');
+     relayViewCache.clear();status.textContent='✓ '+x.displayDate+' Night Audit imported. Hotel Performance is now filed with that business day.';
+     save.textContent='IMPORTED ✓';
+     const shown=dorDateKey_(document.getElementById('dorDate')?.textContent||'');
+     if(shown===x.businessDate)await loadDailyOperationsReport_();
+   }catch(err){status.textContent='Import failed: '+err.message;save.disabled=false;save.textContent='IMPORT AUDIT'}
+ });
 })();
