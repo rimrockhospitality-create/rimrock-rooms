@@ -430,10 +430,10 @@
 
   <div id="dailyAuditPanel" class="daily-audit-panel" hidden>
     <div class="daily-audit-card"><button id="closeDailyAudit" class="qr-close" type="button" title="Exit Daily Audit" aria-label="Exit Daily Audit">×</button><small>NIGHT AUDIT • BUSINESS DAY</small><h2>Start New Business Day?</h2>
-      <div class="daily-audit-warning"><strong>⚠ THIS CLOSES THE CURRENT RELAY BUSINESS DAY.</strong><p>Only run Daily Audit after Choice Night Audit / End of Day has completed successfully.</p></div>
+      <div class="daily-audit-warning"><strong>⚠ THIS CLOSES THE CURRENT RELAY BUSINESS DAY.</strong><p>Daily Audit is not tied to midnight or any fixed clock time. Run it when Choice Night Audit / End of Day has completed successfully and the hotel is ready to roll the business day.</p></div><div id="dailyAuditCarryWarning" class="daily-audit-carry" hidden></div>
       <div class="daily-audit-current"><span>CURRENT BUSINESS DAY</span><strong id="dailyAuditCurrentDate">—</strong></div>
-      <p>RELAY will close today's operating workspace and open the next business day. Historical activity is preserved. Open maintenance carries forward. The new housekeeping board will start empty until Front Desk uploads the new Choice board.</p>
-      <label class="audit-confirm"><input id="dailyAuditConfirm" type="checkbox"> I confirm Choice Night Audit / End of Day is complete and I am ready to open the next business day.</label>
+      <p>RELAY will close the current operating workspace and open the next business day. All activity entered before this close remains attached to the current business date, even after midnight. Historical activity is preserved. Open follow-ups and maintenance carry forward. The new housekeeping board will start empty until Front Desk uploads the new Choice board.</p>
+      <label class="audit-confirm"><input id="dailyAuditConfirm" type="checkbox"> I confirm Choice Night Audit / End of Day is complete. I understand unresolved follow-ups and maintenance will carry forward, and I am ready to open the next business day.</label>
       <button id="executeDailyAudit" type="button" disabled>START NEW BUSINESS DAY →</button><p id="dailyAuditMessage"></p>
     </div>
   </div>
@@ -450,6 +450,6 @@
   </div>
 </div>
 <script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.js"></script>
-<script src="app.js?v=20260924-dashboard-live"></script>
+<script src="app.js?v=20260924-audit-close"></script>
 </body>
 </html>
