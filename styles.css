@@ -521,3 +521,14 @@ input::placeholder,textarea::placeholder{color:#7d98aa!important;opacity:1}
 .dor3-maint .dor-pm-checklist{grid-column:1/-1;font-size:7px;color:#294b5e;line-height:1.2}.dor3-maint-box .dor3-maint>div{padding:4px}
 
 .pm-picker-controls{display:flex;flex-wrap:wrap;gap:16px;margin:16px 0}.pm-picker-controls label{display:grid;gap:6px}.pm-picker-controls input,.pm-picker-controls select{padding:10px;max-width:100%}.pm-room-row:disabled{opacity:.6;cursor:default}
+
+
+/* NIGHT AUDIT IMPORT */
+.night-audit-panel{margin:0 0 18px;padding:20px;border:1px solid #d9e1e8;border-radius:14px;background:#fff;box-shadow:0 8px 24px rgba(25,45,65,.08)}
+.night-audit-head{display:flex;justify-content:space-between;gap:20px;align-items:flex-start}.night-audit-head small{font-weight:800;letter-spacing:.12em}.night-audit-head h2{margin:4px 0}.night-audit-head p{margin:0;color:#617080}.night-audit-head button{border:0;background:transparent;font-size:26px;cursor:pointer}
+.night-audit-drop{margin-top:16px;min-height:105px;border:2px dashed #aebbc7;border-radius:12px;display:flex;flex-direction:column;align-items:center;justify-content:center;cursor:pointer}.night-audit-drop input{display:none}.night-audit-drop strong{font-size:16px}.night-audit-drop span{font-size:12px;color:#697786;margin-top:4px}
+.night-audit-status{margin:12px 0;font-weight:700}.night-audit-recognized{display:flex;flex-direction:column;gap:4px;padding:12px;background:#f3f7f5;border-radius:10px}.night-audit-recognized span{font-size:13px;color:#53616d}
+.night-audit-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:8px;margin-top:10px}.night-audit-grid div{padding:10px;border:1px solid #e1e6eb;border-radius:9px}.night-audit-grid small{display:block;font-size:10px;font-weight:800;color:#6b7783}.night-audit-grid strong{display:block;margin-top:3px;font-size:17px}
+.night-audit-import{margin-top:14px;width:100%;padding:12px;border:0;border-radius:9px;font-weight:800;cursor:pointer}.night-audit-import:disabled{opacity:.45;cursor:not-allowed}
+@media(max-width:760px){.night-audit-grid{grid-template-columns:repeat(2,1fr)}}
+@media print{.night-audit-panel,#openNightAuditImport{display:none!important}}
