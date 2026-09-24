@@ -12,7 +12,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="theme-color" content="#073b63">
   <title>RELAY Operations | CO534</title>
-  <link rel="stylesheet" href="styles.css?v=20260924-lostfound1">
+  <link rel="stylesheet" href="styles.css?v=20260924-dailyreport1">
   <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/jspdf-autotable@3.8.4/dist/jspdf.plugin.autotable.min.js"></script>
@@ -110,17 +110,24 @@
       </div>
     </section>
     <section id="reportsView" class="reports-view" hidden>
-      <div class="reports-head"><div><small>MANAGEMENT INTELLIGENCE</small><h1>Weekly Manager Report</h1><p>Upload the ADP “My Team Actual vs Scheduled” workbook. RELAY reads payroll labor without changing production operations data.</p></div><button id="exportWeeklyPdf" class="report-export-btn" type="button">⇩ Export PDF</button></div>
-      <div class="report-upload-card">
-        <div><h2>ADP Labor Import</h2><p>Actual Hours, Scheduled Hours and Variance are read directly from the workbook. No manual re-keying.</p></div>
-        <label class="report-dropzone"><input id="adpXlsx" type="file" accept=".xlsx,.xls,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"><span>▥</span><strong>Choose ADP Time Report</strong><small>My Team Actual vs Scheduled • XLSX</small></label>
-        <div id="adpStatus" class="hk-board-status">Ready for an ADP workbook.</div>
+      <div class="reports-head"><div><small>RELAY • ROOM OPERATIONS</small><h1>Reports</h1><p>Permanent operating records by business date.</p></div></div>
+      <div id="reportLibrary">
+        <button id="openDailyOperationsReport" class="report-launch-card" type="button"><div><small>DAILY OPERATIONS</small><h2>Daily Operations Report</h2><p>One-minute record of what happened at the hotel today.</p></div><span>OPEN REPORT →</span></button>
       </div>
-      <div id="adpReportResults" hidden>
-        <div class="report-kpis"><div><small>EMPLOYEES</small><strong id="adpEmployeeCount">0</strong></div><div><small>ACTUAL HOURS</small><strong id="adpActualTotal">0.00</strong></div><div><small>SCHEDULED HOURS</small><strong id="adpScheduledTotal">0.00</strong></div><div><small>VARIANCE</small><strong id="adpVarianceTotal">0.00</strong></div></div>
-        <div class="report-table-wrap"><table class="report-table"><thead><tr><th>Employee</th><th>Position ID</th><th>Actual</th><th>Scheduled</th><th>Variance</th><th>Dates</th></tr></thead><tbody id="adpReportBody"></tbody></table></div>
-        <p class="report-note">ADP is payroll truth. RELAY activity below is operational context; tracked activity is not expected to equal paid hours.</p>
-      </div>
+      <section id="dailyOperationsReport" class="daily-report" hidden>
+        <div class="daily-report-top"><button id="backToReports" type="button">← REPORTS</button><button id="printDailyReport" type="button">PRINT / SAVE PDF</button></div>
+        <div class="daily-report-title"><div><small>RELAY • ROOM OPERATIONS</small><h1>Daily Operations Report</h1><p>Everhome Suites Denver Airport • CO534</p></div><div><span>BUSINESS DATE</span><strong id="dorDate">—</strong></div></div>
+        <div class="dor-sync"><div><small>CHOICE REPORT SYNCS</small><strong id="dorSyncCount">—</strong></div><div><small>FIRST SYNC</small><strong id="dorFirstSync">—</strong></div><div><small>LAST SYNC</small><strong id="dorLastSync">—</strong></div><div><small>LAST SYNCED BY</small><strong id="dorLastSyncBy">—</strong></div></div>
+        <section><h2>1. Business Day Summary</h2><div id="dorSummary" class="dor-metrics"></div></section>
+        <section><h2>2. Housekeeping Production</h2><div id="dorHousekeeping" class="dor-table"></div></section>
+        <section><h2>3. Inspection &amp; Quality</h2><div id="dorInspection" class="dor-metrics"></div></section>
+        <section><h2>4. Maintenance</h2><div id="dorMaintenance" class="dor-metrics"></div></section>
+        <section><h2>5. Front Desk / Daily Operations</h2><div id="dorFrontDesk" class="dor-list"></div></section>
+        <section><h2>6. Lost &amp; Found — Today's Activity Only</h2><div id="dorLostFound" class="dor-list"></div></section>
+        <section><h2>7. Exceptions / Attention Needed</h2><div id="dorExceptions" class="dor-list"></div></section>
+        <section><h2>8. Daily Timeline / Documentation</h2><div id="dorTimeline" class="dor-list"></div></section>
+        <footer>Prepared automatically by RELAY • Room Operations</footer>
+      </section>
       <section id="weeklyOpsReport" class="weekly-ops-report" hidden>
         <div class="weekly-report-head"><div><small>WEEKLY OPERATIONS</small><h2>Labor + RELAY Activity</h2><p id="weeklyOpsPeriod">Current RELAY business day</p></div><span id="weeklyOpsState">LIVE RELAY DATA</span></div>
         <div class="weekly-report-kpis">
@@ -442,6 +449,6 @@
   </div>
 </div>
 <script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.js"></script>
-<script src="app.js?v=20260924-lostfound2"></script>
+<script src="app.js?v=20260924-dailyreport1"></script>
 </body>
 </html>
