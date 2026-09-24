@@ -6,9 +6,9 @@ class Sheet{
  getRange(row,col,n=1,m=1){const self=this;return {getValues(){return Array.from({length:n},(_,i)=>Array.from({length:m},(_,j)=>self.rows[row+i-1]?.[col+j-1]??''));},getDisplayValues(){return this.getValues().map(r=>r.map(String));},setValue(v){return this.setValues([[v]]);},setValues(v){v.forEach((r,i)=>r.forEach((x,j)=>{self.rows[row+i-1]??=[];self.rows[row+i-1][col+j-1]=x;}));}};}
 }
 const sheets={MAINTENANCE:new Sheet([Array(15).fill('header')]),ROOM_QR:new Sheet([['property','room','qr','x','active'],['CO534','101','CO534-RM-101','','TRUE']])};
-const ss={getSheetByName:n=>sheets[n]||null,insertSheet:n=>sheets[n]=new Sheet()};let uid=0,role='ADMIN',actor='u1';
+const ss={getSpreadsheetTimeZone:()=> 'Etc/GMT',getSheetByName:n=>sheets[n]||null,insertSheet:n=>sheets[n]=new Sheet()};let uid=0,role='ADMIN',actor='u1';
 class FixedDate extends Date{constructor(...args){super(...(args.length?args:['2026-09-24T15:00:00Z']));}static now(){return new Date('2026-09-24T15:00:00Z').getTime();}}
-const ctx={console,Date:FixedDate,JSON,Math,Number,String,Array,Set,Error,Object,Utilities:{getUuid:()=>`id${++uid}`,formatDate:(d,tz,fmt)=>new Date(d).toISOString().slice(0,10)},SpreadsheetApp:{openById:()=>ss,flush(){}},LockService:{getScriptLock:()=>({waitLock(){},releaseLock(){}})}};
+const ctx={console,Date:FixedDate,JSON,Math,Number,String,Array,Set,Error,Object,Utilities:{getUuid:()=>`id${++uid}`,formatDate:(d,tz,fmt)=>new Intl.DateTimeFormat('en-CA',{timeZone:tz,year:'numeric',month:'2-digit',day:'2-digit'}).format(new Date(d))},SpreadsheetApp:{openById:()=>ss,flush(){}},LockService:{getScriptLock:()=>({waitLock(){},releaseLock(){}})}};
 vm.createContext(ctx);
 vm.runInContext("const PROPERTY_ID='CO534',DATABASE_ID='mock';const TAB={MAINTENANCE:'MAINTENANCE',MAINTENANCE_WORK:'MAINTENANCE_WORK_SESSIONS',PM_COMPLETIONS:'PM_COMPLETIONS',PM_ITEMS:'PM_ITEMS',QR:'ROOM_QR',INSPECTIONS:'INSPECTIONS'};",ctx);
 ctx.relayEnsureWorkSheet_=(ss,name,headers)=>{let sh=ss.getSheetByName(name);if(!sh){sh=ss.insertSheet(name);if(headers.length)sh.appendRow(headers);}return sh;};
@@ -42,5 +42,14 @@ const report=call('getMaintenanceReport_',{businessDate:'9/24/2026'});assert.equ
 assert.equal(call('getPmBoard_').sessions.length,0);assert.equal(call('getPmBoard_').schedule[0].dueDate,'2026-12-17');
 role='FRONT DESK';assert.equal(call('getMaintenanceReport_').ok,true);assert.throws(()=>call('initializePmSchedule_'),/PERMISSION/);
 assert.equal(ctx.pmAddDays_('12/31/2026',1),'2027-01-01');assert.equal(ctx.pmAddDays_('2/28/2028',1),'2028-02-29');
+// Date-only GMT cells must keep their calendar day; event timestamps use hotel time.
+assert.equal(ctx.pmDate_(new FixedDate('2026-09-23T00:00:00Z')),'2026-09-23');
+assert.equal(ctx.pmEventDay_(new FixedDate('2026-09-23T00:00:00Z')),'2026-09-22');
+const originalDue=sheets.PM_SCHEDULE.rows[2][2];sheets.PM_SCHEDULE.rows[2][2]=new FixedDate('2026-09-24T00:00:00Z');
+assert.equal(call('getPmBoard_').schedule[1].dueDate,'2026-09-24');sheets.PM_SCHEDULE.rows[2][2]=originalDue;
+sheets.ROOM_STATE=new Sheet([['property','day','room','type','status','condition'],['CO534','9/24/2026','102','NK','VAC','Ready'],['CO534','9/24/2026','103','NK','OCC','Dirty'],['CO534','9/23/2026','104','NK','VAC','Ready'],['OTHER','9/24/2026','105','NK','VAC','Ready']]);
+let board=call('getPmBoard_');assert.equal(board.schedule.find(r=>r.room==='102').choice.status,'VACANT');assert.equal(board.schedule.find(r=>r.room==='103').choice.status,'OCCUPIED');assert.equal(board.schedule.find(r=>r.room==='104').choice,null);assert.equal(board.schedule.find(r=>r.room==='105').choice,null);
+sheets.ROOM_STATE.rows[1][1]='9/23/2026';sheets.ROOM_STATE.rows[2][1]='9/23/2026';board=call('getPmBoard_');assert.equal(board.schedule.find(r=>r.room==='102').choice.current,false);
+sheets.ROOM_STATE.rows[1][1]='9/24/2026';sheets.ROOM_STATE.rows[2][1]='9/24/2026';
 console.log('PASS: 114-room rotation, QR validation, session recovery/ownership, pause/resume, complete checklist, interrupted-save retry, deduplication, linked blocking repair, next due date and report totals.');
 module.exports={ctx,sheets,call,setActor:(id,newRole)=>{actor=id;role=newRole;}};

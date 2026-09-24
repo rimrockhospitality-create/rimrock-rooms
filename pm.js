@@ -1,5 +1,5 @@
 /* RELAY preventive maintenance — Ryan Kelly, CO534. */
-let pmRoom='',pmState={},pmBoard=null,pmActive=null,pmMonth='',pmTab='calendar',pmSaving=Promise.resolve(),pmSaveTimer=null,pmPendingDraft=null,pmDraftRunning=false;
+let pmRoom='',pmState={},pmBoard=null,pmActive=null,pmMonth='',pmTab='rooms',pmRoomSearch='',pmRoomFilter='all',pmSaving=Promise.resolve(),pmSaveTimer=null,pmPendingDraft=null,pmDraftRunning=false;
 const pmEsc=v=>dorEsc_(v);
 async function pmApi(action,data={}){const r=await apiPost({action,sessionId:localStorage.getItem('relaySessionId'),...data},45000);if(!r.ok)throw new Error(r.reason||r.error||'PM request failed');return r;}
 function pmItems(){return ROOM_PM_TASKS.flatMap((t,i)=>pmState[i]?.status?[{index:i,name:t[0],...pmState[i]}]:[]);}
@@ -13,6 +13,7 @@ function renderPmBoard_(){
  document.getElementById('pmKpis').innerHTML=[['DUE TODAY',summary.dueToday],['NEXT 7 DAYS',summary.next7],['OVERDUE',summary.overdue],['COMPLETED TODAY',summary.completedToday]].map(([l,v])=>'<article><small>'+l+'</small><strong>'+v+'</strong></article>').join('');
  let html='';
  if(!b.schedule.length){html='<p>No saved PM rotation yet.</p>'+((currentUser.roles||[]).includes('ADMIN')?'<p>Start the 114-room, 12-week rotation on the current RELAY business day. Existing completion history will be preserved.</p><button id="pmInitialize">START ROOM ROTATION</button>':'<p>Your manager needs to start the room rotation.</p>');}
+ else if(pmTab==='rooms')html='<h2>Choose a Room</h2><p>Pick a room you can access now, even if its PM is due later. The calendar tracks due dates. Completing PM sets the next due date 12 weeks from completion.</p><p>Choice status is from the latest import shown below. Confirm access before entering.</p><div class="pm-picker-controls"><label>Room number <input id="pmRoomSearch" type="search" inputmode="numeric" placeholder="Find room…" value="'+pmEsc(pmRoomSearch)+'"></label><label>Show <select id="pmRoomFilter">'+[['all','All rooms'],['vacant','Vacant in current business-day import'],['due','Due / overdue'],['active','In progress']].map(([v,l])=>'<option value="'+v+'" '+(v===pmRoomFilter?'selected':'')+'>'+l+'</option>').join('')+'</select></label></div><div id="pmRoomChoices"></div>';
  else if(pmTab==='history')html='<h2>PM Completion History</h2>'+ (b.history.length?b.history.slice().reverse().map(h=>'<article class="pm-room-row"><span><strong>ROOM '+pmEsc(h.room)+'</strong><small>'+pmEsc(h.businessDate)+' • '+pmEsc(h.completedBy)+' • '+(h.activeMinutes===null?'Time not recorded':h.activeMinutes+' active min')+' • '+h.workOrders+' repair tickets</small></span></article>').join(''):'<p>No completed PMs recorded.</p>');
  else{
  const row=r=>'<button class="pm-room-row '+(r.dueDate<day?'overdue':'')+'" data-pm-room="'+pmEsc(r.room)+'"><span><strong>ROOM '+pmEsc(r.room)+'</strong><small>Due '+pmEsc(r.dueDate)+(r.dueDate<day?' • OVERDUE':'')+(r.session?' • '+pmEsc(r.session.worker)+' • '+r.session.status.replaceAll('_',' '):'')+'</small></span><b>'+(r.session?'OPEN PM':'SCAN TO START')+' →</b></button>';
@@ -26,8 +27,23 @@ function renderPmBoard_(){
  html+='<div class="pm-due-list"><h2>Due and In Progress</h2>'+(due.length?due.map(row).join(''):'<p>No rooms due or in progress.</p>')+'</div>';
  }
  document.getElementById('pmCalendar').innerHTML=html;
+ if(pmTab==='rooms'&&b.schedule.length)renderPmChoices_();
  document.querySelectorAll('[data-pm-tab]').forEach(x=>x.classList.toggle('active',x.dataset.pmTab===pmTab));
 }
+function renderPmChoices_(){
+ const day=dorDateKey_(pmBoard.businessDate),host=document.getElementById('pmRoomChoices');if(!host)return;
+ const completed=new Set(pmBoard.history.filter(h=>h.businessDate===day).map(h=>h.room));
+ const vacant=r=>r.choice?.current&&r.choice.status==='VACANT';
+ const rank=r=>r.session?0:completed.has(r.room)?5:vacant(r)&&r.dueDate<=day?1:vacant(r)?2:r.dueDate<=day?3:4;
+ const rooms=pmBoard.schedule.filter(r=>r.room.includes(pmRoomSearch)&& (pmRoomFilter==='all'||pmRoomFilter==='vacant'&&vacant(r)||pmRoomFilter==='due'&&r.dueDate<=day||pmRoomFilter==='active'&&r.session)).sort((a,b)=>rank(a)-rank(b)||a.dueDate.localeCompare(b.dueDate)||Number(a.room)-Number(b.room));
+ host.innerHTML='<p role="status">'+rooms.length+' rooms shown</p>'+rooms.map(r=>{
+ const c=r.choice,done=completed.has(r.room),last=pmBoard.history.filter(h=>h.room===r.room).sort((a,b)=>b.businessDate.localeCompare(a.businessDate))[0];
+ const choice=c?(c.status==='VACANT'?'Vacant':c.status==='OCCUPIED'?'Occupied':'Status unknown')+' • Choice '+c.businessDate+(c.current?'':' • Older import')+(c.condition?' • '+c.condition:''):'Choice status unavailable';
+ return '<button class="pm-room-row '+(r.dueDate<day?'overdue':'')+'" data-pm-room="'+pmEsc(r.room)+'" '+(done&&!r.session?'disabled':'')+'><span><strong>ROOM '+pmEsc(r.room)+'</strong><small>'+pmEsc(choice)+'</small><small>Last PM: '+pmEsc(last?.businessDate||(r.lastCompletedAt?new Date(r.lastCompletedAt).toLocaleDateString(undefined,{timeZone:'America/Denver'}):'Not recorded'))+' • Due '+pmEsc(r.dueDate)+(r.dueDate<day?' • OVERDUE':r.dueDate===day?' • DUE TODAY':'')+'</small>'+(r.session?'<small>'+pmEsc(r.session.worker)+' • '+pmEsc(r.session.status.replaceAll('_',' '))+'</small>':'')+'</span><b>'+(r.session?'OPEN PM':done?'COMPLETED TODAY':'SCAN TO START')+' →</b></button>';
+ }).join('')+(rooms.length?'':'<p>No matching rooms. Try All rooms or clear the room number.</p>');
+}
+document.getElementById('pmView').addEventListener('input',e=>{if(e.target.id==='pmRoomSearch'){pmRoomSearch=e.target.value.trim();renderPmChoices_();}});
+document.getElementById('pmView').addEventListener('change',e=>{if(e.target.id==='pmRoomFilter'){pmRoomFilter=e.target.value;renderPmChoices_();}});
 function renderPmTasks(){
  const paused=pmActive?.status==='PAUSED',locked=pmActive?.status==='SAVING';
  document.getElementById('pmTasks').innerHTML=ROOM_PM_TASKS.map((t,i)=>{const v=pmState[i]||{};return '<article class="pm-task '+(v.status?'done':'')+'"><span>'+(v.status?'✓':'○')+'</span><div><h4>'+(i+1)+'. '+pmEsc(t[0])+'</h4><p>'+pmEsc(t[1])+'</p>'+(v.status==='WORK_ORDER'?'<label>Repair details<textarea data-pm-note="'+i+'" '+(paused||locked?'disabled':'')+'>'+pmEsc(v.note||'')+'</textarea></label><label>Priority<select data-pm-priority="'+i+'" '+(paused||locked?'disabled':'')+'>'+[['P3_ROUTINE','Routine'],['P1_GUEST_IMPACT','Guest impact'],['P2_ROOM_BLOCKING','Room blocking']].map(([val,label])=>'<option value="'+val+'" '+(v.priority===val?'selected':'')+'>'+label+'</option>').join('')+'</select></label>':'')+'</div><select data-pm-status="'+i+'" '+(paused||locked?'disabled':'')+'>'+[['','STATUS…'],['PASS','PASS'],['CORRECTED','CORRECTED DURING PM'],['WORK_ORDER','WORK ORDER NEEDED'],['NA','N/A']].map(([val,label])=>'<option value="'+val+'" '+(v.status===val?'selected':'')+'>'+label+'</option>').join('')+'</select></article>';}).join('');

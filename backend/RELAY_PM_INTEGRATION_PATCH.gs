@@ -15,19 +15,29 @@ function pmActor_(body,readOnly){
  return {id:session.userId,name:String(hit.row[2]||hit.row[1]),role:String(session.role).toUpperCase()};
 }
 function pmRows_(ss,name){const s=ss.getSheetByName(name);return s&&s.getLastRow()>1?s.getDataRange().getValues().slice(1):[];}
+let pmSheetTimezone_;
 function pmDate_(value){
- if(value instanceof Date)return Utilities.formatDate(value,'America/Denver','yyyy-MM-dd');
+ if(value instanceof Date){if(!pmSheetTimezone_)pmSheetTimezone_=SpreadsheetApp.openById(DATABASE_ID).getSpreadsheetTimeZone();return Utilities.formatDate(value,pmSheetTimezone_,'yyyy-MM-dd');}
  const s=String(value||''),m=s.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
  return m?m[3]+'-'+('0'+m[1]).slice(-2)+'-'+('0'+m[2]).slice(-2):s.slice(0,10);
 }
+// Actual event timestamps use hotel time; calendar cells use the spreadsheet timezone.
+function pmEventDay_(value){if(!value)return '';const d=new Date(value);return isNaN(d)?'':Utilities.formatDate(d,'America/Denver','yyyy-MM-dd');}
 function pmAddDays_(value,n){const d=new Date(pmDate_(value)+'T12:00:00Z');if(isNaN(d))throw new Error('INVALID_PM_DATE');d.setUTCDate(d.getUTCDate()+n);return d.toISOString().slice(0,10);}
 function pmIso_(v){return v instanceof Date?v.toISOString():String(v||'');}
 function pmSession_(r){return {pmSessionId:r[0],businessDate:r[2],room:String(r[3]),userId:r[4],worker:r[5],startedAt:pmIso_(r[6]),status:r[7],items:JSON.parse(r[10]||'[]'),completedAt:pmIso_(r[11]),activeMinutes:Number(r[12]||0),dueDate:pmDate_(r[13])};}
+function pmChoiceRooms_(ss,day){
+ const rows=pmRows_(ss,'ROOM_STATE').filter(r=>r[0]===PROPERTY_ID&&pmDate_(r[1])<=day);
+ const latest=rows.reduce((date,r)=>pmDate_(r[1])>date?pmDate_(r[1]):date,'');
+ const rooms={};rows.filter(r=>pmDate_(r[1])===latest).forEach(r=>{const status=String(r[4]||'').trim().toUpperCase();rooms[String(r[2])]={status:status==='VAC'?'VACANT':status==='OCC'?'OCCUPIED':'UNKNOWN',condition:String(r[5]||''),businessDate:latest,current:latest===day,updatedAt:pmIso_(r[9])};});
+ return rooms;
+}
 function pmBoardData_(ss,bd){
  const day=pmDate_(bd),sessions=pmRows_(ss,PM_SESSION_TAB).filter(r=>r[1]===PROPERTY_ID&&r[7]!=='COMPLETE').map(pmSession_);
- const schedule=pmRows_(ss,PM_SCHEDULE_TAB).filter(r=>r[1]===PROPERTY_ID).map(r=>({room:String(r[0]),dueDate:pmDate_(r[2]),intervalDays:Number(r[3]),lastPmId:r[4],lastCompletedAt:pmIso_(r[5]),session:sessions.find(s=>s.room===String(r[0]))||null}));
+ const choice=pmChoiceRooms_(ss,day);
+ const schedule=pmRows_(ss,PM_SCHEDULE_TAB).filter(r=>r[1]===PROPERTY_ID).map(r=>({room:String(r[0]),dueDate:pmDate_(r[2]),intervalDays:Number(r[3]),lastPmId:r[4],lastCompletedAt:pmIso_(r[5]),choice:choice[String(r[0])]||null,session:sessions.find(s=>s.room===String(r[0]))||null}));
  const history=pmRows_(ss,TAB.PM_COMPLETIONS).filter(r=>r[1]===PROPERTY_ID&&r[11]==='COMPLETE').map(r=>({pmId:r[0],businessDate:pmDate_(r[2]),room:String(r[3]),completedBy:r[4],completedAt:pmIso_(r[5]),workOrders:Number(r[9]),activeMinutes:r[12]===''||r[12]===undefined?null:Number(r[12])}));
- return {ok:true,businessDate:bd,schedule,history,sessions,summary:{dueToday:schedule.filter(r=>r.dueDate===day).length,overdue:schedule.filter(r=>r.dueDate<day).length,next7:schedule.filter(r=>r.dueDate>=day&&r.dueDate<pmAddDays_(day,7)).length,completedToday:history.filter(r=>r.businessDate===day).length}};
+ return {ok:true,businessDate:pmDate_(bd),schedule,history,sessions,summary:{dueToday:schedule.filter(r=>r.dueDate===day).length,overdue:schedule.filter(r=>r.dueDate<day).length,next7:schedule.filter(r=>r.dueDate>=day&&r.dueDate<pmAddDays_(day,7)).length,completedToday:history.filter(r=>r.businessDate===day).length}};
 }
 function getPmBoard_(body){pmActor_(body,true);const ss=SpreadsheetApp.openById(DATABASE_ID);return jsonResponse_(pmBoardData_(ss,currentBusinessDayRecord_().businessDate));}
 function initializePmSchedule_(body){
@@ -107,7 +117,7 @@ function savePmCompletion_(body){
 }
 function getMaintenanceReport_(body){
  pmActor_(body,true);const ss=SpreadsheetApp.openById(DATABASE_ID),bd=body.businessDate||currentBusinessDayRecord_().businessDate,day=pmDate_(bd);
- const issues=pmRows_(ss,TAB.MAINTENANCE).filter(r=>r[1]===PROPERTY_ID&&pmDate_(r[2])<=day&&(r[11]==='OPEN'||pmDate_(r[2])===day||pmDate_(r[13])===day)).map(r=>{const match=String(r[7]).match(/COMPLETION_PHOTO: ([^\s|]+)/);return {maintenance_id:r[0],business_date:pmDate_(r[2]),room:r[3],priority:r[5],blocking:r[6],description:r[7],photoRef:match?match[1]:r[8],reported_by:r[9],reported_at:pmIso_(r[10]),status:r[11],resolvedBy:r[12],resolvedAt:pmIso_(r[13])};});
- const pm=pmBoardData_(ss,bd),work=pmRows_(ss,TAB.MAINTENANCE_WORK).filter(r=>r[1]===PROPERTY_ID&&r[8]==='COMPLETE'&&pmDate_(r[7])===day).map(r=>({worker:r[5],maintenanceId:r[3],activeMinutes:Math.round(Math.max(0,new Date(r[7])-new Date(r[6])-Number(r[10]||0)*60000)/600)/100}));
+ const issues=pmRows_(ss,TAB.MAINTENANCE).filter(r=>r[1]===PROPERTY_ID&&pmDate_(r[2])<=day&&(r[11]==='OPEN'||pmDate_(r[2])===day||pmEventDay_(r[13])===day)).map(r=>{const match=String(r[7]).match(/COMPLETION_PHOTO: ([^\s|]+)/);return {maintenance_id:r[0],business_date:pmDate_(r[2]),room:r[3],priority:r[5],blocking:r[6],description:r[7],photoRef:match?match[1]:r[8],reported_by:r[9],reported_at:pmIso_(r[10]),status:r[11],resolvedBy:r[12],resolvedAt:pmIso_(r[13])};});
+ const pm=pmBoardData_(ss,bd),work=pmRows_(ss,TAB.MAINTENANCE_WORK).filter(r=>r[1]===PROPERTY_ID&&r[8]==='COMPLETE'&&pmEventDay_(r[7])===day).map(r=>({worker:r[5],maintenanceId:r[3],activeMinutes:Math.round(Math.max(0,new Date(r[7])-new Date(r[6])-Number(r[10]||0)*60000)/600)/100}));
  return jsonResponse_({ok:true,businessDate:bd,maintenance:issues,work,pmCompletions:pm.history.filter(r=>r.businessDate===day),pmSummary:pm.summary});
 }

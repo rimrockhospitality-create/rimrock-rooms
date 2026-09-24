@@ -16,6 +16,14 @@ const run=s=>vm.runInContext(s,context),settle=async()=>{for(let i=0;i<12;i++)aw
 run(fs.readFileSync('app.js','utf8'));run(fs.readFileSync('pm.js','utf8'));await settle();
 run("currentUser={name:'Ryan',roles:['ADMIN'],propertyId:'CO534'};localStorage.setItem('relaySessionId','test');relayScanQr_=async()=> 'CO534-RM-102';show('Preventive Maintenance');");await settle();
 click('#pmInitialize');assert.equal(get('#pmInitialize').textContent,'CREATING ROOM ROTATION…');await settle();assert.match(get('#pmCalendar').textContent,/Room rotation saved: 114 rooms/);setActor('u1','MAINTENANCE');run("currentUser={name:'Brad',roles:['MAINTENANCE'],propertyId:'CO534'}");
+assert.equal(w.document.querySelectorAll('#pmRoomChoices [data-pm-room]').length,114);
+change('#pmRoomFilter','vacant');assert.equal(w.document.querySelectorAll('#pmRoomChoices [data-pm-room]').length,1);
+assert.equal(get('#pmRoomChoices [data-pm-room]').dataset.pmRoom,'102');change('#pmRoomFilter','all');
+get('#pmRoomSearch').value='435';get('#pmRoomSearch').dispatchEvent(new w.Event('input',{bubbles:true}));assert.equal(w.document.querySelectorAll('#pmRoomChoices [data-pm-room]').length,1);
+get('#pmRoomSearch').value='';get('#pmRoomSearch').dispatchEvent(new w.Event('input',{bubbles:true}));
+click('[data-pm-tab="calendar"]');assert.ok(get('.pm-calendar-grid'));click('[data-pm-tab="rooms"]');
+// Future-due room is selectable and early completion must reset its deadline from completion day.
+sheets.PM_SCHEDULE.rows.find(r=>r[0]==='102')[2]='2026-11-01';await run('loadPmBoard_()');
 click('[data-pm-room="102"]');await settle();assert.equal(get('#pmRoomDetail').hidden,false);
 change('[data-pm-status="0"]','PASS');await settle();assert.equal(get('[data-pm-status="0"]').value,'PASS');
 change('[data-pm-status="1"]','WORK_ORDER');change('[data-pm-note="1"]','Coils need repair');await settle();
@@ -23,7 +31,7 @@ click('#pmPause');await settle();assert.equal(get('#pmPause').textContent,'RESUM
 click('#pmBack');await settle();click('[data-pm-room="102"]');await settle();assert.equal(get('[data-pm-note="1"]').value,'Coils need repair');assert.equal(get('[data-pm-status="1"]').value,'WORK_ORDER');
 click('#pmPause');await settle();assert.equal(get('#pmPause').textContent,'PAUSE PM');
 for(let i=2;i<19;i++)change(`[data-pm-status="${i}"]`,'PASS');await settle();click('#pmComplete');await settle();
-assert.equal(sheets.PM_COMPLETIONS.rows.length,3);assert.equal(sheets.MAINTENANCE.rows.length,3);assert.equal(get('#pmCalendar').hidden,false);click('[data-pm-tab="history"]');assert.match(get('#pmCalendar').textContent,/ROOM 102/);
+assert.equal(sheets.PM_SCHEDULE.rows.find(r=>r[0]==='102')[2],'2026-12-17');assert.equal(get('[data-pm-room="102"]').disabled,true);assert.equal(sheets.PM_COMPLETIONS.rows.length,3);assert.equal(sheets.MAINTENANCE.rows.length,3);assert.equal(get('#pmCalendar').hidden,false);click('[data-pm-tab="history"]');assert.match(get('#pmCalendar').textContent,/ROOM 102/);
 await run("currentUser.roles=['ADMIN'];loadDailyOperationsReport_()");assert.match(get('#dorMaintenance').textContent,/2PM Completed/);
 assert.equal(alerts.length,1,alerts.join('\n'));assert.match(alerts[0],/PM saved/);
 console.log('PASS: DOM integration with actual app.js + pm.js + mocked Sheets backend: selected values, saved notes, pause/restore/resume, completion, repair ticket, history, report totals.');w.close();
