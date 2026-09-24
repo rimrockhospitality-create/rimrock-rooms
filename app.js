@@ -537,6 +537,14 @@ document.querySelector('.inspection-question-list').addEventListener('change',as
     },30000);
     if(!result.ok)throw new Error(result.reason||result.error||'Issue save failed');
     q.dataset.issueId=result.issueId;inspectionCounts.hk++;renderInspectionCounts();
+    // A photo save creates the OPEN issue. If the inspector already selected a
+    // resolution before/while the photo finished uploading, apply it to this
+    // exact issue row immediately so PASS never sees a stale OPEN deficiency.
+    if(q.dataset.resolution){
+      const resolved=await apiPost({action:'resolveInspectionIssue',issueId:result.issueId,inspector:currentUser.name,resolution:q.dataset.resolution},30000);
+      if(!resolved.ok)throw new Error(resolved.reason||resolved.error||'Issue resolution save failed');
+      q.dataset.resolution=resolved.resolution;
+    }
     const label=input.closest('label');label.firstChild.textContent='✓ Photo saved to Rimrock Drive ';
   }catch(err){input.disabled=false;alert('Could not save deficiency photo: '+err.message)}
 });
@@ -617,14 +625,17 @@ document.querySelector('.inspection-question-list').addEventListener('click',asy
     try{const saved=await apiPost({action:'saveInspectionIssue',propertyId:'CO534',businessDate:housekeepingBusinessDate(),room:activeInspectionRoom,housekeeper:activeInspectionHousekeeper,inspector:currentUser.name,deficiencyKey:q.dataset.key,deficiencyLabel:q.querySelector('strong').textContent.replace(/\?$/,''),note:note,photoBase64:'',photoMimeType:'image/jpeg'},30000);if(!saved.ok)throw new Error(saved.reason||saved.error||'Issue save failed');issueId=saved.issueId;q.dataset.issueId=issueId;inspectionCounts.hk++;renderInspectionCounts()}catch(err){alert('Could not save issue: '+err.message);return}
   }
   const resolution=b.dataset.resolution,old=b.textContent;
+  // Store the inspector's choice before the network write. This also lets an
+  // in-flight photo upload apply the same choice to the exact issue it creates.
+  q.dataset.resolution=resolution;
   q.querySelectorAll('[data-resolution]').forEach(x=>x.disabled=true);b.textContent='SAVING…';
   try{
-    const result=await apiPost({action:'resolveInspectionIssue',issueId:issueId,inspector:currentUser.name,resolution:resolution});
+    const result=await apiPost({action:'resolveInspectionIssue',issueId:issueId,inspector:currentUser.name,resolution:resolution},30000);
     if(!result.ok)throw new Error(result.reason||result.error||'Resolution save failed');
     q.dataset.resolution=result.resolution;
     q.querySelectorAll('[data-resolution]').forEach(x=>{x.classList.toggle('selected',x===b);x.disabled=false});
     b.textContent=result.resolution==='FIXED_BY_INSPECTOR'?'✓ FIXED BY ME':'↩ REWORK REQUIRED';
-  }catch(err){q.querySelectorAll('[data-resolution]').forEach(x=>x.disabled=false);b.textContent=old;alert('Could not save resolution: '+err.message)}
+  }catch(err){delete q.dataset.resolution;q.querySelectorAll('[data-resolution]').forEach(x=>x.disabled=false);b.textContent=old;alert('Could not save resolution: '+err.message)}
 });
 
 document.addEventListener('click',async e=>{
