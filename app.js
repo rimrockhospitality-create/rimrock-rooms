@@ -88,6 +88,7 @@ function show(view){
   importView.hidden=true;
   placeholder.hidden=(view==='Home'||view==='Housekeeping'||view==='Lost & Found'||view==='Inspections'||view==='Maintenance'||view==='Checklists'||view==='PM'||view==='Preventive Maintenance'||view==='Users'||view==='Reports');
   if(!placeholder.hidden) title.textContent=view;
+  if(view==='Home') refreshDashboardOps();
   if(view==='Housekeeping') loadHousekeepingBoard()
   if(view==='Lost & Found') loadLostFound_();
   if(view==='Inspections') loadInspectionQueue();
@@ -1035,23 +1036,23 @@ document.getElementById('dashAddShiftNote')?.addEventListener('click',()=>{show(
 document.querySelectorAll('.rr-dashboard [data-view]').forEach(b=>b.addEventListener('click',()=>show(b.dataset.view)));
 async function refreshDashboardOps(){
  try{
-  const day=housekeepingBusinessDate(),stateKey='dashboard:today:'+day,shiftKey='dashboard:shift:'+day;
-  let state=relayCached_(stateKey),handoff=relayCached_(shiftKey);
-  if(!state||!handoff){
-   const results=await Promise.all([
-    state?Promise.resolve(state):apiPost({action:'getToday',businessDate:day}),
-    handoff?Promise.resolve(handoff):(currentUser?apiPost({action:'getShiftOperations',sessionId:localStorage.getItem('relaySessionId'),businessDate:day,shift:''}):Promise.resolve({ok:false}))
-   ]);
-   state=state||relayCacheSet_(stateKey,results[0]);handoff=handoff||relayCacheSet_(shiftKey,results[1]);
-  }
-  const ready=(state.cleaningSessions||[]).filter(x=>x.status==='READY_FOR_INSPECTION').length;
-  const open=(state.maintenanceIssues||[]).filter(x=>x.status==='OPEN').length;
-  const openNotes=handoff.ok?(handoff.openNotes||handoff.shiftNotes||[]).filter(n=>['ISSUE','FOLLOWUP','FOLLOW_UP'].includes(String(n.noteType||n.note_type||'').toUpperCase())&&String(n.status||'OPEN').toUpperCase()==='OPEN'):[];
+  if(!currentUser)return;
+  const day=housekeepingBusinessDate(),sid=localStorage.getItem('relaySessionId');
+  const [state,handoff]=await Promise.all([
+   apiPost({action:'getToday',businessDate:day},45000),
+   apiPost({action:'getShiftOperations',sessionId:sid,businessDate:day,shift:''},45000)
+  ]);
+  if(!state?.ok)throw new Error(state?.reason||state?.error||'Today data unavailable');
+  const assignments=state.assignments||[],sessions=state.cleaningSessions||[],maint=state.maintenanceIssues||state.maintenance||[];
+  const readyRooms=new Set(sessions.filter(x=>String(x.status||'').toUpperCase()==='READY_FOR_INSPECTION').map(x=>String(x.room||'')).filter(Boolean));
+  const openMaint=maint.filter(x=>!['RESOLVED','COMPLETE','COMPLETED','CLOSED'].includes(String(x.status||'').toUpperCase())).length;
+  const allNotes=handoff?.ok?(handoff.shiftNotes||handoff.notes||handoff.openNotes||[]):[],openNotes=(handoff?.openNotes||[]).length?handoff.openNotes:allNotes.filter(n=>!['RESOLVED','CLOSED','COMPLETE'].includes(String(n.status||'OPEN').toUpperCase()));
   const followups=openNotes.filter(n=>String(n.noteType||n.note_type||'').toUpperCase().includes('FOLLOW')).length;
   const issues=openNotes.filter(n=>String(n.noteType||n.note_type||'').toUpperCase()==='ISSUE').length;
-  const a=document.getElementById('dashInspectionCount'),m=document.getElementById('dashMaintenanceCount'),n=document.getElementById('dashNotificationCount');
-  if(a)a.textContent=ready;if(m)m.textContent=open;if(n)n.textContent=followups+issues;
-  document.querySelectorAll('.rr-handoff-row').forEach(row=>{const label=(row.textContent||'').toLowerCase(),bubble=row.querySelector('b,span');if(!bubble)return;if(label.includes('open follow'))bubble.textContent=followups;if(label.includes('awaiting resolution'))bubble.textContent=issues});
+  const info=allNotes.filter(n=>['INFO','INFORMATION','INFORMATIONAL'].includes(String(n.noteType||n.note_type||'').toUpperCase())).length;
+  const set=(id,v)=>{const e=document.getElementById(id);if(e)e.textContent=v};
+  set('dashHousekeepingCount',assignments.length);set('dashInspectionCount',readyRooms.size);set('dashMaintenanceCount',openMaint);set('dashFollowupCount',followups);set('dashIssueCount',issues);set('dashNotificationCount',info);
+  relayCacheSet_('dashboard:today:'+day,state);relayCacheSet_('dashboard:shift:'+day,handoff);
  }catch(e){console.warn('Dashboard KPI refresh failed',e)}
 }
 setTimeout(()=>{if(currentUser)refreshDashboardOps()},1500);
