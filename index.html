@@ -12,7 +12,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="theme-color" content="#073b63">
   <title>RELAY Operations | CO534</title>
-  <link rel="stylesheet" href="styles.css?v=20260923-reports3">
+  <link rel="stylesheet" href="styles.css?v=20260924-lostfound1">
   <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/jspdf-autotable@3.8.4/dist/jspdf.plugin.autotable.min.js"></script>
@@ -44,6 +44,7 @@
       <button class="nav active" data-view="Home">⌂ <span>Dashboard</span></button>
       <button class="nav" data-view="Checklists">☑ <span>Checklists</span></button>
       <button class="nav" data-view="Housekeeping">✦ <span>Housekeeping</span></button>
+      <button class="nav" data-view="Lost & Found">▣ <span>Lost & Found</span></button>
       <button class="nav" data-view="Inspections">✓ <span>Inspections</span></button>
       <button class="nav" data-view="Maintenance">🔧 <span>Maintenance</span></button>
       <button class="nav" data-view="Preventive Maintenance">⚙ <span>PM</span></button>
@@ -92,6 +93,22 @@
   </div>
   <button id="rrFloatMaintenance" class="rr-float" title="Report maintenance">🔧<span>REPORT ISSUE</span></button>
 </section>
+    <section id="lostFoundView" class="lost-found-view" hidden>
+      <div class="lf-head"><div><small>FRONT DESK • LOST &amp; FOUND</small><h1>Lost &amp; Found</h1><p>30-day custody log • Standard items: 1st-floor closet at end of hallway • High-value items: Safe</p></div><button id="lfNewItem" type="button">＋ LOG FOUND ITEM</button></div>
+      <div class="lf-kpis"><article><small>IN STORAGE</small><strong id="lfStoredCount">0</strong></article><article><small>PENDING PICKUP</small><strong id="lfPickupCount">0</strong></article><article><small>DUE FOR DISPOSAL</small><strong id="lfDueCount">0</strong></article><article><small>CLOSED</small><strong id="lfClosedCount">0</strong></article></div>
+      <div class="lf-toolbar"><input id="lfSearch" placeholder="Search item, room, guest or L&amp;F number…"><select id="lfFilter"><option value="OPEN">OPEN ITEMS</option><option value="PENDING_PICKUP">PENDING PICKUP</option><option value="DUE">DUE FOR DISPOSAL</option><option value="CLOSED">CLOSED</option><option value="ALL">SEARCH ALL</option></select></div>
+      <div id="lfList" class="lf-list"></div>
+      <div id="lfItemPanel" class="lf-panel" hidden><button id="lfClosePanel" class="qr-close" type="button">×</button><small>FOUND ITEM</small><h2 id="lfPanelTitle">Log Found Item</h2>
+        <div class="lf-form-grid"><label>Room / Location<input id="lfLocation" placeholder="Room 218 or Lobby"></label><label>Item Description<input id="lfDescription" placeholder="Black phone charger"></label><label>Found By<input id="lfFoundBy" placeholder="Associate name"></label><label>Guest Name <small>(if known)</small><input id="lfGuestName"></label></div>
+        <label class="lf-high"><input id="lfHighValue" type="checkbox"> High-value item — store in Safe</label>
+        <div class="lf-storage"><span>STORAGE LOCATION</span><strong id="lfStorageLocation">1st Floor L&amp;F Closet — end of hallway</strong></div>
+        <label>Photo <small>(recommended)</small><input id="lfPhoto" type="file" accept="image/*" capture="environment"></label><label>Notes<textarea id="lfNotes" rows="2"></textarea></label>
+        <button id="lfSaveItem" type="button">SAVE LOST &amp; FOUND ITEM</button><p id="lfMessage"></p>
+      </div>
+      <div id="lfActionPanel" class="lf-panel" hidden><button id="lfCloseAction" class="qr-close" type="button">×</button><small>CHAIN OF CUSTODY</small><h2 id="lfActionTitle">Lost &amp; Found Item</h2><div id="lfActionDetail"></div>
+        <label>Action<select id="lfAction"><option value="PENDING_PICKUP">Pending Pickup</option><option value="RETURNED">Returned / Picked Up</option><option value="SHIPPED">Shipped to Guest</option><option value="DISPOSED">Disposed / Donated</option></select></label><label>Notes / Recipient<textarea id="lfActionNotes" rows="3" placeholder="Who received it, shipping details, or disposal note"></textarea></label><button id="lfSaveAction" type="button">SAVE ACTION</button><p id="lfActionMessage"></p>
+      </div>
+    </section>
     <section id="reportsView" class="reports-view" hidden>
       <div class="reports-head"><div><small>MANAGEMENT INTELLIGENCE</small><h1>Weekly Manager Report</h1><p>Upload the ADP “My Team Actual vs Scheduled” workbook. RELAY reads payroll labor without changing production operations data.</p></div><button id="exportWeeklyPdf" class="report-export-btn" type="button">⇩ Export PDF</button></div>
       <div class="report-upload-card">
@@ -425,6 +442,6 @@
   </div>
 </div>
 <script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.js"></script>
-<script src="app.js?v=20260924-performance1"></script>
+<script src="app.js?v=20260924-lostfound1"></script>
 </body>
 </html>
