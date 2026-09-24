@@ -341,10 +341,31 @@ async function loadHousekeepingBoard(){
       const room=String(a.room),s=sessionByRoom.get(room),rework=reworkByRoom.get(room)||[],activeRework=rework.find(i=>i.status==='REWORK_IN_PROGRESS'),status=activeRework?'REWORK_IN_PROGRESS':rework.length?'REWORK_REQUIRED':(s?.status||'NOT_STARTED');
       const label=status==='REWORK_IN_PROGRESS'?'REWORK IN PROGRESS':status==='REWORK_REQUIRED'?'REWORK REQUIRED':status==='READY_FOR_INSPECTION'?'READY FOR INSPECTION':status==='CLEANING'?'CLEANING':'NOT STARTED';
       const action=status==='REWORK_IN_PROGRESS'?'REWORK COMPLETE':status==='REWORK_REQUIRED'?'START REWORK':status==='CLEANING'?'Room in progress':status==='READY_FOR_INSPECTION'?'Awaiting inspection':'START ROOM';
-      const started=s?.started_at||'';const reworkHtml=rework.length?'<div class="hk-rework-list">'+rework.map(i=>'<div class="hk-rework-item"><strong>'+i.deficiency_label+'</strong>'+(i.note?'<span>'+i.note+'</span>':'')+'<button type="button" class="view-rework-photo" data-photo="'+i.photo_ref+'">View inspector photo</button></div>').join('')+'</div>':'';const issueId=(activeRework||rework[0])?.issue_id||'';const button=status==='REWORK_IN_PROGRESS'&&!canManageBoard?'<button type="button" class="complete-rework-btn" data-room="'+room+'" data-issue="'+issueId+'">REWORK COMPLETE</button>':status==='REWORK_REQUIRED'&&!canManageBoard?'<button type="button" class="rework-room-btn" data-room="'+room+'" data-issue="'+issueId+'">START REWORK</button>':status==='CLEANING'&&!canManageBoard?'<div class="hk-room-actions"><button type="button" class="hk-context-maint" data-room="'+room+'" onclick="openHkMaintenanceForRoom(this.dataset.room);return false;">🔧 REPORT MAINTENANCE</button><button type="button" class="ready-room-btn" data-room="'+room+'">READY FOR INSPECTION</button></div>':'<button type="button" class="start-room-btn" data-room="'+room+'" '+(status==='NOT_STARTED'&&!canManageBoard?'':'disabled')+'>'+(status==='NOT_STARTED'?'SCAN QR TO START':action)+'</button>';return '<article class="hk-room-card"><div class="hk-room-top"><span class="hk-room-number">ROOM '+room+'</span><span class="hk-room-pill">'+label+'</span></div><div class="hk-room-meta">Choice assignment • '+a.housekeeper+(status==='CLEANING'?'<br>Started '+started+'<br><strong class="elapsed-timer" data-start="'+started+'">Elapsed --:--</strong>':'')+'</div>'+reworkHtml+button+'</article>'
+      const started=s?.started_at||'';const reworkHtml=rework.length?'<div class="hk-rework-list">'+rework.map(i=>'<div class="hk-rework-item"><strong>'+i.deficiency_label+'</strong>'+(i.note?'<span>'+i.note+'</span>':'')+'<button type="button" class="view-rework-photo" data-photo="'+i.photo_ref+'">View inspector photo</button></div>').join('')+'</div>':'';const issueId=(activeRework||rework[0])?.issue_id||'';
+      const canInspect=currentUser.roles.some(r=>['ADMIN','INSPECTOR'].includes(r));
+      const button=status==='READY_FOR_INSPECTION'&&canInspect
+        ?'<button type="button" class="hk-start-inspection-btn" data-room="'+room+'" data-housekeeper="'+a.housekeeper+'">START INSPECTION</button>'
+        :status==='REWORK_IN_PROGRESS'&&!canManageBoard?'<button type="button" class="complete-rework-btn" data-room="'+room+'" data-issue="'+issueId+'">REWORK COMPLETE</button>'
+        :status==='REWORK_REQUIRED'&&!canManageBoard?'<button type="button" class="rework-room-btn" data-room="'+room+'" data-issue="'+issueId+'">START REWORK</button>'
+        :status==='CLEANING'&&!canManageBoard?'<div class="hk-room-actions"><button type="button" class="hk-context-maint" data-room="'+room+'" onclick="openHkMaintenanceForRoom(this.dataset.room);return false;">🔧 REPORT MAINTENANCE</button><button type="button" class="ready-room-btn" data-room="'+room+'">READY FOR INSPECTION</button></div>'
+        :'<button type="button" class="start-room-btn" data-room="'+room+'" '+(status==='NOT_STARTED'&&!canManageBoard?'':'disabled')+'>'+(status==='NOT_STARTED'?'SCAN QR TO START':action)+'</button>';return '<article class="hk-room-card"><div class="hk-room-top"><span class="hk-room-number">ROOM '+room+'</span><span class="hk-room-pill">'+label+'</span></div><div class="hk-room-meta">Choice assignment • '+a.housekeeper+(status==='CLEANING'?'<br>Started '+started+'<br><strong class="elapsed-timer" data-start="'+started+'">Elapsed --:--</strong>':'')+'</div>'+reworkHtml+button+'</article>'
     }).join('');
   }catch(err){hkBoardStatus.className='hk-board-status error';hkBoardStatus.textContent='Could not load housekeeping board: '+err.message}
 }
+
+hkMyRooms.addEventListener('click',e=>{
+  const b=e.target.closest('.hk-start-inspection-btn');if(!b)return;
+  e.preventDefault();e.stopPropagation();
+  // Use the same QR-verified inspection flow as the Inspections queue.
+  show('Inspections');
+  pendingInspectionRoom=b.dataset.room||'';
+  pendingInspectionHousekeeper=b.dataset.housekeeper||'';
+  document.getElementById('inspectionQrTitle').textContent='Room '+pendingInspectionRoom;
+  document.getElementById('inspectionQrMessage').textContent='Scan the Room '+pendingInspectionRoom+' QR code to begin the inspection.';
+  document.getElementById('inspectionQrCamera').innerHTML='▦';
+  document.getElementById('inspectionQrPanel').hidden=false;
+  startInspectionQrCamera_();
+});
 
 let pendingStartRoom=null;
 hkMyRooms.addEventListener('click',e=>{const b=e.target.closest('.start-room-btn');if(!b||b.disabled)return;pendingStartRoom=b.dataset.room;qrStartRoom.textContent='Room '+pendingStartRoom;qrStartMessage.textContent='Opening camera… scanning the correct room QR starts cleaning automatically.';qrStartPanel.hidden=false;startQrCamera()});
