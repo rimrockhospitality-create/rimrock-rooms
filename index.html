@@ -73,10 +73,10 @@
         <button class="rr-shift-card maint" data-shift-open="MAINTENANCE"><span>🔧</span><small>ENGINEERING</small><h3>MAINTENANCE</h3><b>12 TASKS</b><div class="rr-dial"><strong>0%</strong><em>NOT STARTED</em></div><i>▶ START MAINT. SHIFT</i></button>
       </div>
       <div class="rr-kpis">
-        <button data-view="Housekeeping"><small>🛏 HOUSEKEEPING</small><strong>MY BOARD</strong><span>Rooms & assignments →</span></button>
+        <button data-view="Housekeeping"><small>🛏 HOUSEKEEPING</small><strong id="dashHousekeepingCount">—</strong><span>Rooms assigned today →</span></button>
         <button data-view="Inspections"><small>☑ INSPECTIONS</small><strong id="dashInspectionCount">—</strong><span>Waiting for review →</span></button>
         <button data-view="Maintenance"><small>🔧 MAINTENANCE</small><strong id="dashMaintenanceCount">—</strong><span>Open work orders →</span></button>
-        <button data-view="Preventive Maintenance"><small>⚙ PM</small><strong>DUE</strong><span>Preventive maintenance →</span></button>
+        <button data-view="Preventive Maintenance"><small>⚙ PM</small><strong id="dashPmCount">—</strong><span>Preventive maintenance due →</span></button>
       </div>
       <div class="rr-focus">
         <div><small>TODAY'S FOCUS</small><h3>Clean. Safe. Guest ready.</h3><p>Communicate, document and follow through. Take care of our guests and each other.</p></div>
@@ -85,8 +85,8 @@
     </div>
     <aside class="rr-handoff">
       <div class="rr-handoff-head"><div><small>SHIFT HANDOFF</small><h3>Open Follow-Ups</h3></div><button type="button" data-view="Checklists">VIEW ALL</button></div>
-      <div class="rr-alert-row danger"><b>3</b><span><strong>Open Follow-Ups</strong><small>From previous shift</small></span><i>›</i></div>
-      <div class="rr-alert-row warn"><b>1</b><span><strong>Awaiting Resolution</strong><small>Assigned to you</small></span><i>›</i></div>
+      <div class="rr-alert-row danger"><b id="dashFollowupCount">0</b><span><strong>Open Follow-Ups</strong><small>From previous shift</small></span><i>›</i></div>
+      <div class="rr-alert-row warn"><b id="dashIssueCount">0</b><span><strong>Awaiting Resolution</strong><small>Assigned to you</small></span><i>›</i></div>
       <div class="rr-alert-row info"><b id="dashNotificationCount">0</b><span><strong>Informational Notes</strong><small>Latest updates</small></span><i>›</i></div>
       <div class="rr-quick"><small>QUICK ACTIONS</small><button id="dailyAuditBtn" class="daily-audit-btn" type="button">🌙 DAILY AUDIT</button><button id="dashAddShiftNote">＋ Add Shift Note</button><button id="dashLogMaintenance">🔧 Report Maintenance</button><button data-view="Housekeeping">🛏 View Room Status</button><button data-view="Reports">▥ Reports</button></div>
     </aside>
@@ -450,6 +450,6 @@
   </div>
 </div>
 <script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.js"></script>
-<script src="app.js?v=20260924-passon"></script>
+<script src="app.js?v=20260924-dashboard-live"></script>
 </body>
 </html>
