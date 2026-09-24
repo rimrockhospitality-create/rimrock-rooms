@@ -491,6 +491,7 @@ function openInspectionCapture(type){
   if(type==='ROOM_HIGHLIGHT'){label.textContent='ROOM_HIGHLIGHT';title.textContent='Room Photo';maint.hidden=true;note.hidden=true;route.textContent='Positive finished-room photo. Routes to Inspection Report highlights only.'}
   panel.hidden=false;
 }
+document.querySelector('.housekeeping-inspection-btn')?.addEventListener('click',()=>openInspectionCapture('HK_ISSUE'));
 document.querySelector('.maintenance-inspection-btn').addEventListener('click',()=>openInspectionCapture('MAINT_ISSUE'));
 document.querySelector('.photo-room-btn').addEventListener('click',()=>openInspectionCapture('ROOM_HIGHLIGHT'));
 document.getElementById('closeInspectionCapture').addEventListener('click',resetInspectionCapture);
