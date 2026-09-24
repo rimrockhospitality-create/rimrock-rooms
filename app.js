@@ -11,13 +11,13 @@ const QR_TEST_ID='CO534-RM-122';
 const ROLE_VIEWS={
   ADMIN:['Home','Checklists','Housekeeping','Inspections','Maintenance','Preventive Maintenance','Reports','Property Settings','Users','Settings'],
   INSPECTOR:['Home','Checklists','Housekeeping','Inspections','Maintenance','Preventive Maintenance','Reports'],
-  'FRONT DESK':['Home','Checklists','Housekeeping','Maintenance'],
+  'FRONT DESK':['Home','Checklists','Housekeeping','Maintenance','Lost & Found'],
   HOUSEKEEPER:['Housekeeping'],
   MAINTENANCE:['Maintenance','Preventive Maintenance','Checklists']
 };
 const ROLE_LABELS={ADMIN:'Admin',INSPECTOR:'Inspector',MAINTENANCE:'Maintenance','FRONT DESK':'Front Desk',HOUSEKEEPER:'Housekeeper'};
 let currentUser=null;
-const home=document.getElementById('homeView'),reportsView=document.getElementById('reportsView'),housekeepingView=document.getElementById('housekeepingView'),inspectionView=document.getElementById('inspectionView'),maintenanceView=document.getElementById('maintenanceView'),checklistsView=document.getElementById('checklistsView'),importView=document.getElementById('importView'),placeholder=document.getElementById('placeholder'),title=document.getElementById('placeholderTitle'),drawer=document.getElementById('drawer'),drawerLinks=document.getElementById('drawerLinks');
+const home=document.getElementById('homeView'),lostFoundView=document.getElementById('lostFoundView'),reportsView=document.getElementById('reportsView'),housekeepingView=document.getElementById('housekeepingView'),inspectionView=document.getElementById('inspectionView'),maintenanceView=document.getElementById('maintenanceView'),checklistsView=document.getElementById('checklistsView'),importView=document.getElementById('importView'),placeholder=document.getElementById('placeholder'),title=document.getElementById('placeholderTitle'),drawer=document.getElementById('drawer'),drawerLinks=document.getElementById('drawerLinks');
 const todayEl=document.getElementById('today');if(todayEl)todayEl.textContent=new Intl.DateTimeFormat('en-US',{weekday:'long',month:'long',day:'numeric',year:'numeric'}).format(new Date());
 
 let loginProperties=[],relayBusinessDate='',relayBusinessDayLoadedAt=0;
@@ -78,6 +78,7 @@ function show(view){
   if(currentUser&&!allowedViews(currentUser.roles).includes(view)) return;
   home.hidden=view!=='Home';
   housekeepingView.hidden=view!=='Housekeeping';
+  if(lostFoundView)lostFoundView.hidden=view!=='Lost & Found';
   if(reportsView) reportsView.hidden=view!=='Reports';
   inspectionView.hidden=view!=='Inspections';
   maintenanceView.hidden=view!=='Maintenance';
@@ -85,9 +86,10 @@ function show(view){
   document.getElementById('pmView').hidden=!(view==='PM'||view==='Preventive Maintenance');
   document.getElementById('usersView').hidden=view!=='Users';
   importView.hidden=true;
-  placeholder.hidden=(view==='Home'||view==='Housekeeping'||view==='Inspections'||view==='Maintenance'||view==='Checklists'||view==='PM'||view==='Preventive Maintenance'||view==='Users'||view==='Reports');
+  placeholder.hidden=(view==='Home'||view==='Housekeeping'||view==='Lost & Found'||view==='Inspections'||view==='Maintenance'||view==='Checklists'||view==='PM'||view==='Preventive Maintenance'||view==='Users'||view==='Reports');
   if(!placeholder.hidden) title.textContent=view;
   if(view==='Housekeeping') loadHousekeepingBoard()
+  if(view==='Lost & Found') loadLostFound_();
   if(view==='Inspections') loadInspectionQueue();
   if(view==='Maintenance'){loadMaintenanceBoard();loadSideWorkBoard_();}
   if(view==='Reports') loadWeeklyOpsReport_();
@@ -998,6 +1000,37 @@ document.querySelectorAll('.rr-command-strip [data-view]').forEach(b=>b.addEvent
 
 document.querySelectorAll('[data-shift-open]').forEach(b=>b.addEventListener('click',()=>{show('Checklists');setTimeout(()=>openChecklist(b.dataset.shiftOpen),0)}));
 ['dashLogMaintenance','rrFloatMaintenance'].forEach(id=>document.getElementById(id)?.addEventListener('click',()=>{home.hidden=true;maintenanceLogPanel.hidden=false}));
+
+const LF_KEY='relayLostFoundCO534';
+let activeLfId='';
+function lfRead_(){try{return JSON.parse(localStorage.getItem(LF_KEY)||'[]')}catch(e){return[]}}
+function lfWrite_(items){localStorage.setItem(LF_KEY,JSON.stringify(items))}
+function lfAge_(x){return Math.max(0,Math.floor((Date.now()-new Date(x.foundAt).getTime())/86400000))}
+function lfDisposition_(x){const d=new Date(x.foundAt);d.setDate(d.getDate()+30);return d}
+function lfStatus_(x){if(['RETURNED','SHIPPED','DISPOSED'].includes(x.status))return x.status;if(lfAge_(x)>=30)return 'DUE';return x.status||'IN_STORAGE'}
+function loadLostFound_(){
+ const items=lfRead_(),q=(document.getElementById('lfSearch')?.value||'').toLowerCase(),filter=document.getElementById('lfFilter')?.value||'OPEN';
+ const status=x=>lfStatus_(x); const closed=x=>['RETURNED','SHIPPED','DISPOSED'].includes(status(x));
+ const visible=items.filter(x=>{const s=status(x);const matches=!q||[x.id,x.location,x.description,x.guestName,x.foundBy].join(' ').toLowerCase().includes(q);if(!matches)return false;if(filter==='ALL')return true;if(filter==='OPEN')return !closed(x)&&s!=='DUE';if(filter==='CLOSED')return closed(x);return s===filter});
+ const set=(id,v)=>{const e=document.getElementById(id);if(e)e.textContent=v};
+ set('lfStoredCount',items.filter(x=>!closed(x)&&status(x)!=='DUE'&&status(x)!=='PENDING_PICKUP').length);set('lfPickupCount',items.filter(x=>status(x)==='PENDING_PICKUP').length);set('lfDueCount',items.filter(x=>status(x)==='DUE').length);set('lfClosedCount',items.filter(closed).length);
+ const host=document.getElementById('lfList');if(!host)return;
+ host.innerHTML=visible.length?visible.sort((a,b)=>new Date(b.foundAt)-new Date(a.foundAt)).map(x=>'<button class="lf-card" data-lf-id="'+x.id+'"><div><small>'+x.id+' • '+new Date(x.foundAt).toLocaleDateString()+'</small><strong>'+x.description+'</strong><span>'+x.location+' • '+x.storage+'</span></div><div><b>'+status(x).replaceAll('_',' ')+'</b><em>DAY '+Math.min(30,lfAge_(x))+' OF 30</em></div></button>').join(''):'<div class="lf-empty">No Lost & Found items match this view.</div>';
+ host.querySelectorAll('[data-lf-id]').forEach(b=>b.onclick=()=>openLfAction_(b.dataset.lfId));
+}
+function openLfAction_(id){const x=lfRead_().find(v=>v.id===id);if(!x)return;activeLfId=id;document.getElementById('lfActionTitle').textContent=x.id+' • '+x.description;document.getElementById('lfActionDetail').innerHTML='<div class="lf-storage"><span>FOUND</span><strong>'+new Date(x.foundAt).toLocaleString()+' • '+x.location+'</strong></div><div class="lf-storage"><span>CURRENT STORAGE</span><strong>'+x.storage+'</strong></div><div class="lf-storage"><span>DISPOSITION DATE</span><strong>'+lfDisposition_(x).toLocaleDateString()+'</strong></div><p>Found by '+x.foundBy+(x.guestName?' • Guest: '+x.guestName:'')+'</p>';document.getElementById('lfActionPanel').hidden=false}
+document.getElementById('lfNewItem')?.addEventListener('click',()=>{document.getElementById('lfItemPanel').hidden=false});
+document.getElementById('lfClosePanel')?.addEventListener('click',()=>document.getElementById('lfItemPanel').hidden=true);
+document.getElementById('lfCloseAction')?.addEventListener('click',()=>document.getElementById('lfActionPanel').hidden=true);
+document.getElementById('lfHighValue')?.addEventListener('change',e=>document.getElementById('lfStorageLocation').textContent=e.target.checked?'Safe':'1st Floor L&F Closet — end of hallway');
+document.getElementById('lfSearch')?.addEventListener('input',loadLostFound_);document.getElementById('lfFilter')?.addEventListener('change',loadLostFound_);
+document.getElementById('lfSaveItem')?.addEventListener('click',()=>{
+ const description=document.getElementById('lfDescription').value.trim(),location=document.getElementById('lfLocation').value.trim(),foundBy=document.getElementById('lfFoundBy').value.trim();if(!description||!location||!foundBy){document.getElementById('lfMessage').textContent='Room/location, item description and found by are required.';return}
+ const items=lfRead_(),now=new Date(),id='LF-'+now.toISOString().slice(0,10).replaceAll('-','')+'-'+String(items.length+1).padStart(3,'0'),high=document.getElementById('lfHighValue').checked;
+ items.push({id,foundAt:now.toISOString(),location,description,foundBy,guestName:document.getElementById('lfGuestName').value.trim(),highValue:high,storage:high?'Safe':'1st Floor L&F Closet — end of hallway',notes:document.getElementById('lfNotes').value.trim(),status:'IN_STORAGE',enteredBy:currentUser?.name||'',history:[{at:now.toISOString(),by:currentUser?.name||'',action:'FOUND / STORED'}]});lfWrite_(items);document.getElementById('lfItemPanel').hidden=true;['lfLocation','lfDescription','lfFoundBy','lfGuestName','lfNotes'].forEach(id=>document.getElementById(id).value='');document.getElementById('lfHighValue').checked=false;document.getElementById('lfStorageLocation').textContent='1st Floor L&F Closet — end of hallway';loadLostFound_();
+});
+document.getElementById('lfSaveAction')?.addEventListener('click',()=>{const items=lfRead_(),x=items.find(v=>v.id===activeLfId);if(!x)return;const action=document.getElementById('lfAction').value,note=document.getElementById('lfActionNotes').value.trim();x.status=action;x.history=x.history||[];x.history.push({at:new Date().toISOString(),by:currentUser?.name||'',action,note});lfWrite_(items);document.getElementById('lfActionPanel').hidden=true;document.getElementById('lfActionNotes').value='';loadLostFound_()});
+
 document.getElementById('dashAddShiftNote')?.addEventListener('click',()=>{show('Checklists');setTimeout(openShiftNote,0)});
 document.querySelectorAll('.rr-dashboard [data-view]').forEach(b=>b.addEventListener('click',()=>show(b.dataset.view)));
 async function refreshDashboardOps(){
