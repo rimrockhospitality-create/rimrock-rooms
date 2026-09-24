@@ -63,7 +63,7 @@ document.getElementById('pmView').addEventListener('click',async e=>{
  const button=e.target.closest('button');if(!button)return;
  try{
  if(button.id==='pmReload')await loadPmBoard_();
- if(button.id==='pmInitialize'){button.disabled=true;await pmApi('initializePmSchedule');await loadPmBoard_();}
+ if(button.id==='pmInitialize'){button.disabled=true;button.textContent='CREATING ROOM ROTATION…';document.getElementById('pmInitializeStatus')?.remove();button.insertAdjacentHTML('afterend','<p id="pmInitializeStatus" role="status">Saving the room schedule. This may take a moment…</p>');const result=await pmApi('initializePmSchedule');const notice=document.getElementById('pmInitializeStatus');if(notice)notice.textContent=(result.count||114)+' rooms saved. Loading the calendar…';await loadPmBoard_();document.getElementById('pmCalendar').insertAdjacentHTML('afterbegin','<p role="status">✓ Room rotation saved: '+Number(result.count||114)+' rooms.</p>');}
  if(button.id==='pmSaveDraft')await pmSaveDraft();
  if(button.id==='pmBack'){if(pmActive?.status!=='SAVING')await pmSaveDraft();document.getElementById('pmRoomDetail').hidden=true;document.getElementById('pmCalendar').hidden=false;await loadPmBoard_();}
  if(button.id==='pmPause'){button.disabled=true;await pmSaveDraft();const r=await pmApi('updatePmSession',{pmSessionId:pmActive.pmSessionId,items:pmItems(),command:pmActive.status==='PAUSED'?'RESUME':'PAUSE'});pmOpenSession(r.session);}
@@ -71,7 +71,7 @@ document.getElementById('pmView').addEventListener('click',async e=>{
  if(pmItems().length!==ROOM_PM_TASKS.length)throw new Error('Complete all 19 checklist items first.');button.disabled=true;button.textContent='SAVING PM…';clearTimeout(pmSaveTimer);if(pmActive.status!=='SAVING')await pmSaveDraft();else await pmSaving.catch(()=>{});
  const r=await pmApi('savePmCompletion',{pmSessionId:pmActive.pmSessionId,items:pmItems()});pmActive=null;pmState={};relayCacheClear_();document.getElementById('pmRoomDetail').hidden=true;document.getElementById('pmCalendar').hidden=false;await loadPmBoard_();alert('PM saved. '+(r.workOrders||0)+' linked repair tickets.');
  }
- }catch(err){alert('PM could not be saved: '+err.message);}finally{button.disabled=false;if(button.id==='pmComplete')button.textContent='COMPLETE ROOM PM';}
+ }catch(err){if(button.id==='pmInitialize'){const notice=document.getElementById('pmInitializeStatus');if(notice)notice.textContent='Could not confirm setup: '+err.message;}alert('PM could not be saved: '+err.message);}finally{button.disabled=false;if(button.id==='pmInitialize')button.textContent='START ROOM ROTATION';if(button.id==='pmComplete')button.textContent='COMPLETE ROOM PM';}
 });
 document.getElementById('pmTasks').addEventListener('change',e=>{
  const i=e.target.dataset.pmStatus??e.target.dataset.pmNote??e.target.dataset.pmPriority;if(i===undefined)return;
