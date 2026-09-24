@@ -1,6 +1,6 @@
 const {JSDOM}=require('jsdom'),fs=require('fs'),vm=require('vm'),assert=require('node:assert/strict');
 const {call,sheets,setActor}=require('./pm-integration.test.cjs');
-setActor('u1','MAINTENANCE');sheets.ROOM_QR.appendRow(['CO534','102','CO534-RM-102','','TRUE']);
+setActor('u1','ADMIN');sheets.PM_SCHEDULE.rows=[sheets.PM_SCHEDULE.rows[0]];sheets.ROOM_QR.appendRow(['CO534','102','CO534-RM-102','','TRUE']);
 const dom=new JSDOM(fs.readFileSync('index.html','utf8'),{url:'http://localhost',runScripts:'outside-only',pretendToBeVisual:true}),w=dom.window,context=dom.getInternalVMContext(),alerts=[];
 w.alert=s=>alerts.push(s);w.HTMLElement.prototype.scrollIntoView=function(){};w.fetch=async(url,opts)=>{
  if(String(url).startsWith('data/'))return {ok:true,json:async()=>JSON.parse(fs.readFileSync(url,'utf8'))};
@@ -14,7 +14,8 @@ w.alert=s=>alerts.push(s);w.HTMLElement.prototype.scrollIntoView=function(){};w.
 const run=s=>vm.runInContext(s,context),settle=async()=>{for(let i=0;i<12;i++)await new Promise(r=>setImmediate(r));},get=s=>w.document.querySelector(s),click=s=>{assert.ok(get(s),s);get(s).click();},change=(s,v)=>{get(s).value=v;get(s).dispatchEvent(new w.Event('change',{bubbles:true}));};
 (async()=>{
 run(fs.readFileSync('app.js','utf8'));run(fs.readFileSync('pm.js','utf8'));await settle();
-run("currentUser={name:'Brad',roles:['MAINTENANCE'],propertyId:'CO534'};localStorage.setItem('relaySessionId','test');relayScanQr_=async()=> 'CO534-RM-102';show('Preventive Maintenance');");await settle();
+run("currentUser={name:'Ryan',roles:['ADMIN'],propertyId:'CO534'};localStorage.setItem('relaySessionId','test');relayScanQr_=async()=> 'CO534-RM-102';show('Preventive Maintenance');");await settle();
+click('#pmInitialize');assert.equal(get('#pmInitialize').textContent,'CREATING ROOM ROTATION…');await settle();assert.match(get('#pmCalendar').textContent,/Room rotation saved: 114 rooms/);setActor('u1','MAINTENANCE');run("currentUser={name:'Brad',roles:['MAINTENANCE'],propertyId:'CO534'}");
 click('[data-pm-room="102"]');await settle();assert.equal(get('#pmRoomDetail').hidden,false);
 change('[data-pm-status="0"]','PASS');await settle();assert.equal(get('[data-pm-status="0"]').value,'PASS');
 change('[data-pm-status="1"]','WORK_ORDER');change('[data-pm-note="1"]','Coils need repair');await settle();
