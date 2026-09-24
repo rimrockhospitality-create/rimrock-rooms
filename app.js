@@ -671,57 +671,20 @@ document.addEventListener('click',async e=>{
 
 document.querySelector('.pass-room-btn').addEventListener('click',async function(){
   const b=this,old=b.textContent;
-
-  // RELAY inspection rule:
-  // A housekeeping miss stays recorded against the housekeeper, but when the
-  // inspector fixes it during inspection it must be resolved before PASS runs.
-  // Re-save any on-screen inspector corrections here so PASS cannot race ahead
-  // of the resolution write or get blocked by an issue that Ryland already fixed.
-  const inspectorFixed=[...document.querySelectorAll('.inspect-q')].filter(q=>
-    q.dataset.answer==='NO'&&q.dataset.resolution==='FIXED_BY_INSPECTOR'&&q.dataset.issueId
-  );
-  const reportedFixed=[...(window._relayInspectorFixedIssueIds||new Set())];
-  if(inspectorFixed.length||reportedFixed.length){
-    b.disabled=true;b.textContent='FINALIZING FIXES…';
-    try{
-      const issueIds=[...new Set([...inspectorFixed.map(q=>q.dataset.issueId),...reportedFixed])];
-      for(const issueId of issueIds){
-        const resolved=await apiPost({
-          action:'resolveInspectionIssue',
-          issueId:issueId,
-          inspector:currentUser.name,
-          resolution:'FIXED_BY_INSPECTOR'
-        },30000);
-        if(!resolved.ok)throw new Error(resolved.reason||resolved.error||'Inspector correction could not be finalized');
-      }
-      inspectorFixed.forEach(q=>q.dataset.resolution='FIXED_BY_INSPECTOR');
-    }catch(err){
-      alert('Could not finalize inspector correction: '+err.message);
-      b.disabled=false;b.textContent=old;
-      return;
-    }
-  }
-
-  const unresolvedOnScreen=[...document.querySelectorAll('.inspect-q')].filter(q=>q.dataset.answer==='NO'&&!q.dataset.resolution);
-  if(unresolvedOnScreen.length){
-    const names=unresolvedOnScreen.map(q=>q.querySelector('strong')?.textContent?.replace(/\?$/,'')||'Inspection item').join('\n');
-    alert('Choose I FIXED IT or HK NEEDS TO FIX before passing:\n'+names);
-    return;
-  }
+  // RELAY rule: the inspector owns the final room decision. Housekeeping
+  // deficiencies remain recorded for HK analytics, but they never block PASS.
+  // "I FIXED IT" and "HK NEEDS TO FIX" remain useful reporting/routing choices.
   b.disabled=true;b.textContent='PASSING…';
   try{
-    const result=await apiPost({action:'passInspection',propertyId:'CO534',businessDate:housekeepingBusinessDate(),room:activeInspectionRoom,inspector:currentUser.name},90000);
-    if(!result.ok){
-      if(result.reason==='UNRESOLVED_HK_ISSUES'){
-        const names=(result.issues||[]).map(i=>i.deficiencyLabel+' ('+i.status+')').join('\n');
-        throw new Error('Housekeeping still has unresolved inspection items:\n'+names);
-      }
-      throw new Error(result.reason||result.error||'Pass blocked');
-    }
+    const result=await apiPost({
+      action:'passInspection',propertyId:'CO534',businessDate:housekeepingBusinessDate(),
+      room:activeInspectionRoom,inspector:currentUser.name,inspectorOverrideHousekeeping:true
+    },90000);
+    if(!result.ok)throw new Error(result.reason||result.error||'Pass failed');
     if(result.roomStatus==='HOLD_MAINTENANCE'){
-      alert('✓ HOUSEKEEPING PASSED\n\n⛔ ROOM  '+activeInspectionRoom+' — HOLD FOR MAINTENANCE\n\nA blocking maintenance issue must be resolved before the room becomes Ready.');
+      alert('✓ HOUSEKEEPING PASSED\n\n⛔ ROOM '+activeInspectionRoom+' — HOLD FOR MAINTENANCE\n\nThe inspector passed housekeeping. A blocking maintenance issue still holds the room.');
     }else{
-      alert('✓ HOUSEKEEPING PASSED\n\nROOM '+activeInspectionRoom+' — READY');
+      alert('✓ INSPECTION PASSED\n\nROOM '+activeInspectionRoom+' — READY');
     }
     window._relayInspectorFixedIssueIds=new Set();inspectionDetail.hidden=true;inspectionQueueEl.hidden=false;document.getElementById('inspectionStatus').hidden=false;await loadInspectionQueue();
   }catch(err){alert(err.message);b.disabled=false;b.textContent=old}
