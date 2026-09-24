@@ -92,7 +92,7 @@ function show(view){
   if(view==='Lost & Found') loadLostFound_();
   if(view==='Inspections') loadInspectionQueue();
   if(view==='Maintenance'){loadMaintenanceBoard();loadSideWorkBoard_();}
-  if(view==='Reports'){const isFD=(currentUser?.roles||[]).includes('FRONT DESK');const isRyland=/ryland/i.test(String(currentUser?.name||currentUser?.displayName||currentUser?.userName||''));document.getElementById('dailyOperationsReport').hidden=true;if(isFD&&!isRyland){document.getElementById('reportLibrary').hidden=true;document.getElementById('dailyOperationsReport').hidden=false;loadDailyOperationsReport_();}else{document.getElementById('reportLibrary').hidden=false;}}
+  if(view==='Reports'){const isFD=(currentUser?.roles||[]).includes('FRONT DESK');const isRyland=/ryland/i.test(String(currentUser?.name||currentUser?.displayName||currentUser?.userName||''));document.getElementById('dailyOperationsReport').hidden=true;if(isFD&&!isRyland){document.getElementById('reportLibrary').hidden=true;document.getElementById('dailyOperationsReport').hidden=false;document.getElementById('backToReports').hidden=true;loadDailyOperationsReport_();}else{document.getElementById('reportLibrary').hidden=false;document.getElementById('backToReports').hidden=false;}}
   if(view==='Users') loadUsersAdmin();
   if(view==='Checklists'){openChecklistHub();loadOpenShiftNotes_();}
   document.querySelectorAll('.nav').forEach(b=>b.classList.toggle('active',b.dataset.view===view)); drawer.hidden=true;
