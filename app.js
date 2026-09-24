@@ -754,8 +754,32 @@ async function scanMaintenanceQr_(maintenanceId,room,button){
 function closeMaintenanceQr_(){if(maintenanceQrStream){maintenanceQrStream.getTracks().forEach(t=>t.stop());maintenanceQrStream=null}const p=document.getElementById('maintenanceQrPanel');if(p){p.hidden=true;p.style.removeProperty('display')}}
 document.getElementById('closeMaintenanceQr')?.addEventListener('click',closeMaintenanceQr_);
 
+async function relayViewPhoto_(photoRef){
+  const ref=String(photoRef||'').trim();
+  if(!ref)return;
+  let overlay=document.getElementById('relayPhotoViewer');
+  if(!overlay){
+    overlay=document.createElement('div');
+    overlay.id='relayPhotoViewer';
+    overlay.style.cssText='position:fixed;inset:0;z-index:99999;background:rgba(0,18,30,.96);display:none;align-items:center;justify-content:center;padding:18px';
+    overlay.innerHTML='<button type="button" aria-label="Close photo" style="position:absolute;top:18px;right:18px;z-index:2;border:0;border-radius:999px;width:48px;height:48px;font-size:28px;background:#fff;color:#062235">×</button><div style="width:100%;height:100%;display:grid;place-items:center"><p style="color:#fff;font:700 18px Arial">Loading photo…</p></div>';
+    document.body.appendChild(overlay);
+    overlay.addEventListener('click',e=>{if(e.target===overlay||e.target.closest('button')){overlay.style.display='none';overlay.querySelector('div').innerHTML='<p style="color:#fff;font:700 18px Arial">Loading photo…</p>'}});
+  }
+  overlay.style.display='flex';
+  const box=overlay.querySelector('div');
+  box.innerHTML='<p style="color:#fff;font:700 18px Arial">Loading photo…</p>';
+  try{
+    const result=await apiPost({action:'getInspectionPhoto',photoRef:ref});
+    if(!result.ok||!result.dataUrl)throw new Error(result.reason||result.error||'Photo unavailable');
+    box.innerHTML='<img alt="Maintenance photo" src="'+result.dataUrl+'" style="max-width:100%;max-height:calc(100vh - 36px);object-fit:contain;border-radius:12px">';
+  }catch(err){
+    box.innerHTML='<p style="color:#fff;font:700 18px Arial;text-align:center">Could not load photo.<br><span style="font-weight:400">'+String(err.message||err)+'</span></p>';
+  }
+}
+
 document.getElementById('maintenanceQueue').addEventListener('click',async e=>{
- const p=e.target.closest('.maint-photo');if(p){window.open('https://drive.google.com/open?id='+p.dataset.photo,'_blank');return}
+ const p=e.target.closest('.maint-photo');if(p){e.preventDefault();e.stopPropagation();relayViewPhoto_(p.dataset.photo);return}
  const start=e.target.closest('.maint-start-work');if(start){if(String(start.dataset.session||'').trim())return;const location=String(start.dataset.room||'').trim();const panel=document.getElementById('maintenanceQrPanel');if(panel){panel.hidden=false;panel.style.setProperty('display','grid','important');document.body.appendChild(panel)}requestAnimationFrame(()=>scanMaintenanceQr_(start.dataset.id,location,start));return}
  const b=e.target.closest('.maint-resolve');if(!b)return;
  pendingMaintenanceResolve=b.dataset.id;
@@ -1156,7 +1180,7 @@ document.addEventListener('click',function(e){
   document.getElementById('maintenanceResolvePanel').scrollIntoView({block:'start'});return;
  }
  const photo=e.target.closest('.maint-photo');
- if(photo){e.preventDefault();e.stopImmediatePropagation();window.open('https://drive.google.com/open?id='+photo.dataset.photo,'_blank');return}
+ if(photo){e.preventDefault();e.stopImmediatePropagation();relayViewPhoto_(photo.dataset.photo);return}
 },true);
 
 /* RELAY critical controls v2 */
