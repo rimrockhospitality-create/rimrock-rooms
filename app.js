@@ -1519,6 +1519,20 @@ async function loadWeeklyOpsReport_(){
       metric('Side duties assigned',side.length),metric('Side duties complete',sideDone),
       metric('Side duties outstanding',Math.max(0,side.length-sideDone))
     ].join('');
+    // Performance layer: keep Housekeeper output/quality and Inspector acceptance separate.
+    const cleanByHk=new Map();
+    clean.forEach(s=>{const name=String(s.housekeeper||'').trim();if(!name)return;const x=cleanByHk.get(name)||{rooms:new Set(),minutes:0,sessions:0};x.rooms.add(String(s.room||''));x.sessions++;const mins=Number(s.minutes||s.durationMinutes||s.cleaningMinutes||0);if(Number.isFinite(mins))x.minutes+=mins;cleanByHk.set(name,x)});
+    const issuesByHk=new Map();
+    issues.forEach(i=>{const name=String(i.housekeeper||'').trim();if(!name)return;const x=issuesByHk.get(name)||{misses:0,fixed:0,rework:0};x.misses++;const st=String(i.status||'').toUpperCase();if(st==='FIXED_BY_INSPECTOR')x.fixed++;if(['REWORK_REQUIRED','REWORK_IN_PROGRESS','REWORK_COMPLETE'].includes(st))x.rework++;issuesByHk.set(name,x)});
+    const hkNames=[...new Set([...assignments.map(a=>a.housekeeper),...cleanByHk.keys(),...issuesByHk.keys()].filter(Boolean))].sort();
+    const hkBody=document.getElementById('wrHousekeeperPerformance');
+    if(hkBody)hkBody.innerHTML=hkNames.length?hkNames.map(name=>{const a=assignments.filter(x=>x.housekeeper===name).length,c=cleanByHk.get(name)||{rooms:new Set(),minutes:0},q=issuesByHk.get(name)||{misses:0,fixed:0,rework:0},rooms=c.rooms.size,avg=rooms&&c.minutes?Math.round(c.minutes/rooms):'—';return '<tr><td><strong>'+name+'</strong></td><td>'+a+'</td><td>'+rooms+'</td><td>'+avg+'</td><td>'+q.misses+'</td><td>'+q.fixed+'</td><td>'+q.rework+'</td></tr>'}).join(''):'<tr><td colspan="7">No housekeeping performance activity recorded for this business day.</td></tr>';
+
+    const inspectorMap=new Map();
+    ins.forEach(x=>{const name=String(x.inspector||x.capturedBy||'').trim();if(!name)return;const z=inspectorMap.get(name)||{rooms:0,passed:0,minutes:0,issues:0,fixed:0,rework:0};z.rooms++;if(String(x.status||'').toUpperCase().includes('PASS'))z.passed++;const mins=Number(x.minutes||x.durationMinutes||x.inspectionMinutes||0);if(Number.isFinite(mins))z.minutes+=mins;inspectorMap.set(name,z)});
+    issues.forEach(i=>{const name=String(i.inspector||i.capturedBy||i.resolvedBy||'').trim();if(!name||!inspectorMap.has(name))return;const z=inspectorMap.get(name);z.issues++;const st=String(i.status||'').toUpperCase();if(st==='FIXED_BY_INSPECTOR')z.fixed++;if(['REWORK_REQUIRED','REWORK_IN_PROGRESS','REWORK_COMPLETE'].includes(st))z.rework++});
+    const inspectorBody=document.getElementById('wrInspectorPerformance');
+    if(inspectorBody)inspectorBody.innerHTML=inspectorMap.size?[...inspectorMap.entries()].sort((a,b)=>a[0].localeCompare(b[0])).map(([name,z])=>'<tr><td><strong>'+name+'</strong></td><td>'+z.rooms+'</td><td>'+z.passed+'</td><td>'+(z.rooms&&z.minutes?Math.round(z.minutes/z.rooms):'—')+'</td><td>'+z.issues+'</td><td>'+z.fixed+'</td><td>'+z.rework+'</td></tr>').join(''):'<tr><td colspan="7">No inspector performance activity recorded for this business day.</td></tr>';
     set('weeklyOpsState','LIVE RELAY DATA');
     set('wrInsight',assignments.length||clean.length||ins.length||maint.length||side.length?'Operational activity is loaded. ADP labor above can now be read alongside RELAY output and quality.':'Production database is clean; operational metrics will populate automatically as tomorrow’s RELAY activity is recorded.');
   }catch(err){set('weeklyOpsState','RELAY DATA UNAVAILABLE');set('wrInsight','Could not load operational data: '+err.message)}
