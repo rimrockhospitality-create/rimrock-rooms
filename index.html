@@ -12,7 +12,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="theme-color" content="#073b63">
   <title>RELAY Operations | CO534</title>
-  <link rel="stylesheet" href="styles.css?v=20260924-dailyreport3">
+  <link rel="stylesheet" href="styles.css?v=20260924-propertywalk">
   <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/jspdf-autotable@3.8.4/dist/jspdf.plugin.autotable.min.js"></script>
@@ -335,7 +335,8 @@
         <button id="backToChecklists" type="button">← ALL CHECKLISTS</button>
         <div class="detail-head"><div><small id="detailEyebrow">FRONT DESK • AM</small><h2 id="detailTitle">AM Shift</h2><p id="detailSubtitle"></p></div><div class="progress-ring"><strong id="detailPercent">0%</strong><span>COMPLETE</span></div></div>
         <div id="checklistTasks" class="checklist-tasks"></div>
-        <div class="detail-actions"><button id="addChecklistNote" type="button">＋ SHIFT NOTE</button><button id="completeShift" type="button">COMPLETE SHIFT</button></div>
+        <div class="detail-actions"><button id="addPropertyWalkPhoto" type="button" hidden>＋ PROPERTY WALK PHOTO</button><button id="addChecklistNote" type="button">＋ SHIFT NOTE</button><button id="completeShift" type="button">COMPLETE SHIFT</button></div>
+<section id="propertyWalkPhotoPanel" class="shift-note-panel property-walk-photo-panel" hidden><button id="closePropertyWalkPhoto" class="qr-close" type="button">×</button><small>MAINTENANCE • PROPERTY WALK</small><h2>Add Property Walk Photo</h2><p>Capture a meaningful property condition, completed work, or area worth documenting. These photos can appear automatically in the Daily Operations Report.</p><label>Area / Location<input id="propertyWalkArea" type="text" placeholder="Pet Relief Area, Lobby, Parking Lot…"></label><label>Caption<textarea id="propertyWalkCaption" rows="2" placeholder="What does this photo show?"></textarea></label><label>Photo<input id="propertyWalkPhoto" type="file" accept="image/*" capture="environment"></label><button id="savePropertyWalkPhoto" type="button">SAVE PROPERTY WALK PHOTO</button><p id="propertyWalkPhotoMessage"></p></section>
       </div>
       <section id="exceptionPanel" class="shift-note-panel" hidden><button id="closeException" class="qr-close" type="button">×</button><small>CHECKLIST EXCEPTION</small><h2 id="exceptionTitle">Task Exception</h2><div class="note-types exception-types"><button type="button" data-exception-type="NA">✓ N/A</button><button type="button" data-exception-type="ISSUE">⚠ ISSUE</button><button type="button" data-exception-type="FOLLOW_UP">↻ FOLLOW-UP</button></div><label>Reason / Note<textarea id="exceptionNote" rows="3" placeholder="Why is this task an exception?"></textarea></label><button id="saveException" type="button">SAVE EXCEPTION</button><p id="exceptionMessage"></p></section>
       <section id="resolveShiftNotePanel" class="shift-note-panel handoff-detail-panel" hidden><button id="closeResolveShiftNote" class="qr-close" type="button">×</button><small>SHIFT HANDOFF • ACTIVITY</small><h2 id="resolveShiftNoteTitle">Follow-Up Detail</h2><div class="handoff-original"><small>ORIGINAL ITEM</small><strong id="resolveShiftNoteIssue"></strong></div><div id="shiftNoteTimeline" class="shift-note-timeline"></div><input id="resolveShiftNoteId" type="hidden"><div class="handoff-update-box"><label>Add Update<textarea id="resolveShiftNoteUpdate" rows="3" placeholder="Example: Called at 8:00 AM. No answer; left voicemail and will try again this afternoon."></textarea></label><button id="addShiftNoteUpdate" type="button">＋ ADD UPDATE • KEEP OPEN</button></div><div class="handoff-resolve-box"><label>Final Resolution<textarea id="resolveShiftNoteText" rows="3" placeholder="What finally resolved this item?"></textarea></label><button id="confirmResolveShiftNote" type="button">✓ RESOLVE ITEM</button></div><p id="resolveShiftNoteMessage"></p></section>
@@ -449,6 +450,6 @@
   </div>
 </div>
 <script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.js"></script>
-<script src="app.js?v=20260924-dailyreport3"></script>
+<script src="app.js?v=20260924-propertywalk"></script>
 </body>
 </html>
