@@ -26,7 +26,7 @@ const RELAY_VIEW_CACHE_MS=15000;
 function relayCached_(key){const x=relayViewCache.get(key);return x&&Date.now()-x.at<RELAY_VIEW_CACHE_MS?x.value:null}
 function relayCacheSet_(key,value){relayViewCache.set(key,{at:Date.now(),value});return value}
 function relayCacheClear_(prefix=''){for(const k of [...relayViewCache.keys()])if(!prefix||k.startsWith(prefix))relayViewCache.delete(k)}
-const RELAY_READ_ACTIONS=new Set(['authLogin','authLogout','authSession','getAssignableHousekeepers','getBusinessDay','getInspectionPhoto','getMaintenanceBoard','getLostFound','getShiftNoteDetail','getShiftOperations','getToday','getWorkBoard','adminListUsers']);
+const RELAY_READ_ACTIONS=new Set(['authLogin','authLogout','authSession','getAssignableHousekeepers','getBusinessDay','getInspectionPhoto','getMaintenanceBoard','getPmBoard','getMaintenanceReport','getLostFound','getShiftNoteDetail','getShiftOperations','getToday','getWorkBoard','adminListUsers']);
 const RELAY_WRITE_AFFECTS={
  syncChoice:['hk:','inspection:','dashboard:'],startRoom:['hk:','dashboard:'],readyRoom:['hk:','inspection:','dashboard:'],
  startInspection:['inspection:'],saveInspectionIssue:['inspection:','hk:','maintenance:','dashboard:'],resolveInspectionIssue:['inspection:','hk:','dashboard:'],resolveReinspection:['inspection:','hk:','dashboard:'],passInspection:['inspection:','hk:','dashboard:'],
@@ -94,6 +94,7 @@ function show(view){
   if(view==='Inspections') loadInspectionQueue();
   if(view==='Maintenance'){loadMaintenanceBoard();loadSideWorkBoard_();}
   if(view==='Reports'){const isFD=(currentUser?.roles||[]).includes('FRONT DESK');const isRyland=/ryland/i.test(String(currentUser?.name||currentUser?.displayName||currentUser?.userName||''));document.getElementById('dailyOperationsReport').hidden=true;if(isFD&&!isRyland){document.getElementById('reportLibrary').hidden=true;document.getElementById('dailyOperationsReport').hidden=false;document.getElementById('backToReports').hidden=true;loadDailyOperationsReport_();}else{document.getElementById('reportLibrary').hidden=false;document.getElementById('backToReports').hidden=false;}}
+  if(view==='Preventive Maintenance'||view==='PM')loadPmBoard_();
   if(view==='Users') loadUsersAdmin();
   if(view==='Checklists'){openChecklistHub();loadOpenShiftNotes_();}
   document.querySelectorAll('.nav').forEach(b=>b.classList.toggle('active',b.dataset.view===view)); drawer.hidden=true;
@@ -701,7 +702,8 @@ async function loadMaintenanceBoard(){
   status.textContent='Loading maintenance…';queue.innerHTML='';
   try{
     const key='maintenance:'+housekeepingBusinessDate();let state=relayCached_(key);
-    if(!state){const isMaintOnly=(currentUser?.roles||[]).includes('MAINTENANCE')&&!(currentUser?.roles||[]).some(r=>['ADMIN','INSPECTOR','FRONT DESK'].includes(r));if(isMaintOnly){const targeted=await apiPost({action:'getMaintenanceBoard',sessionId:localStorage.getItem('relaySessionId'),businessDate:housekeepingBusinessDate(),worker:currentUser.name},20000).catch(()=>null);state=targeted?.ok?targeted:await apiPost({action:'getToday',businessDate:housekeepingBusinessDate()},45000)}else state=await apiPost({action:'getToday',businessDate:housekeepingBusinessDate()},45000);relayCacheSet_(key,state)}
+    if(!state){state=await apiPost({action:'getMaintenanceBoard',sessionId:localStorage.getItem('relaySessionId'),businessDate:housekeepingBusinessDate(),worker:currentUser.name},45000);if(!state.ok)throw new Error(state.reason||state.error||'Maintenance unavailable');relayCacheSet_(key,state)}
+    document.getElementById('maintenancePmShortcut').hidden=!(currentUser.roles||[]).some(r=>['ADMIN','INSPECTOR','MAINTENANCE'].includes(r));
     const items=state.maintenanceIssues||[];
     const p1=items.filter(x=>x.status==='OPEN'&&x.priority==='P1_GUEST_IMPACT'),p2=items.filter(x=>x.status==='OPEN'&&x.priority==='P2_ROOM_BLOCKING'),p3=items.filter(x=>x.status==='OPEN'&&x.priority==='P3_ROUTINE');
     document.getElementById('maintP1').textContent=p1.length;document.getElementById('maintP2').textContent=p2.length;document.getElementById('maintP3').textContent=p3.length;
@@ -1214,6 +1216,7 @@ window.rrRefreshCurrent=async function(){
   if(!housekeepingView.hidden)await loadHousekeepingBoard();
   else if(!inspectionView.hidden)await loadInspectionQueue();
   else if(!maintenanceView.hidden)await loadMaintenanceBoard();
+  else if(!document.getElementById('pmView').hidden)await loadPmBoard_();
   else if(!checklistsView.hidden){renderChecklist();await loadOpenShiftNotes_()}
   else await refreshDashboardOps();
  }catch(err){console.error('RELAY refresh failed',err);alert('Refresh failed: '+err.message)}
@@ -1264,20 +1267,6 @@ const ROOM_PM_TASKS=[
  ['Moisture / Pest / Ceiling','Check water staining, moisture, odors and pest evidence.'],
  ['Final Room Condition','Confirm room is safe, functional and ready; create work orders for unresolved items.']
 ];
-let pmRoom='',pmState={};
-function renderPmTasks(){
- const box=document.getElementById('pmTasks'),state=pmState[pmRoom]||(pmState[pmRoom]={});
- box.innerHTML=ROOM_PM_TASKS.map((t,i)=>'<article class="pm-task '+(state[i]?.status==='PASS'||state[i]?.status==='CORRECTED'?'done':'')+'"><button type="button" class="pm-task-check" data-pm-i="'+i+'">'+(state[i]?'✓':'')+'</button><div><h4>'+(i+1)+'. '+t[0]+'</h4><p>'+t[1]+'</p></div><select data-pm-status="'+i+'"><option value="">STATUS…</option><option value="PASS">✓ PASS</option><option value="CORRECTED">🔧 CORRECTED DURING PM</option><option value="WORK_ORDER">⚠ WORK ORDER NEEDED</option><option value="NA">N/A</option></select></article>').join('');
- const done=Object.keys(state).length,pct=Math.round(done/ROOM_PM_TASKS.length*100);document.getElementById('pmPercent').textContent=pct+'%';
-}
-document.addEventListener('click',e=>{
- const row=e.target.closest('.pm-room-row');if(row){pmRoom=row.dataset.pmRoom;document.getElementById('pmCalendar').hidden=true;document.getElementById('pmRoomDetail').hidden=false;document.getElementById('pmRoomTitle').textContent='Room '+pmRoom;renderPmTasks();return}
- const back=e.target.closest('#pmBack');if(back){document.getElementById('pmRoomDetail').hidden=true;document.getElementById('pmCalendar').hidden=false;return}
-},true);
-document.getElementById('pmTasks').addEventListener('change',e=>{if(!e.target.matches('[data-pm-status]'))return;const i=e.target.dataset.pmStatus,s=pmState[pmRoom]||(pmState[pmRoom]={});if(e.target.value)s[i]={status:e.target.value};else delete s[i];renderPmTasks()});
-document.getElementById('pmAddIssue').addEventListener('click',()=>{document.getElementById('maintLocationType').value='GUEST_ROOM';document.getElementById('maintRoomNumber').value=pmRoom;document.getElementById('maintRoomWrap').hidden=false;document.getElementById('maintenanceLogPanel').hidden=false;document.getElementById('pmView').hidden=true});
-document.getElementById('pmComplete').addEventListener('click',async()=>{const state=pmState[pmRoom]||{},done=Object.keys(state).length;if(done<ROOM_PM_TASKS.length){alert('Complete or mark N/A on all '+ROOM_PM_TASKS.length+' PM items first.');return}const btn=document.getElementById('pmComplete');btn.disabled=true;const prior=btn.textContent;btn.textContent='SAVING PM…';try{const items=ROOM_PM_TASKS.map((t,i)=>({index:i,name:t[0],status:state[i]?.status||''})),r=await apiPost({action:'savePmCompletion',sessionId:localStorage.getItem('relaySessionId'),businessDate:housekeepingBusinessDate(),room:pmRoom,items},45000);if(!r.ok)throw new Error(r.reason==='PM_ALREADY_COMPLETE'?'This room PM is already complete for this business day.':(r.reason||'Unable to save PM completion'));alert('✓ Room '+pmRoom+' PM saved to RELAY history.');delete pmState[pmRoom];document.getElementById('pmRoomDetail').hidden=true;document.getElementById('pmCalendar').hidden=false;relayCacheClear_();}catch(err){alert('PM could not be saved: '+err.message)}finally{btn.disabled=false;btn.textContent=prior}});
-
 let relayAdminUsers=[];
 async function loadUsersAdmin(){
  const box=document.getElementById('usersList');box.innerHTML='<div class="users-loading">Loading users…</div>';
@@ -1562,11 +1551,11 @@ async function loadDailyOperationsReport_(){
  const date=await loadRelayBusinessDay_(),set=(id,v)=>{const e=document.getElementById(id);if(e)e.textContent=v};
  set('dorDate',date||'—');set('dorGenerated','Report Generated: '+new Date().toLocaleTimeString([],{hour:'numeric',minute:'2-digit'}));
  const sid=localStorage.getItem('relaySessionId');
- const [today,work,lf,...shiftResults]=await Promise.all([apiPost({action:'getToday',businessDate:date},45000),apiPost({action:'getWorkBoard'},45000),apiPost({action:'getLostFound',sessionId:sid},45000),...['AM','PM','AUDIT'].map(sh=>apiPost({action:'getShiftOperations',sessionId:sid,businessDate:date,shift:sh},45000))]);
+ const [today,work,lf,maintenanceReport,...shiftResults]=await Promise.all([apiPost({action:'getToday',businessDate:date},45000),apiPost({action:'getWorkBoard'},45000),apiPost({action:'getLostFound',sessionId:sid},45000),apiPost({action:'getMaintenanceReport',sessionId:sid,businessDate:date},45000),apiPost({action:'getShiftOperations',sessionId:sid,businessDate:date},45000)]);
  const dorDedupeNotes_=rows=>[...new Map(rows.map(x=>[String(x.noteId||x.note_id||x.id||[x.businessDate||x.business_date||'',x.shift||'',x.noteType||x.note_type||'',x.issueInformation||x.issue_information||x.note||'',x.enteredAt||x.entered_at||x.createdAt||x.created_at||''].join('|')),x])).values()];
  const shift={ok:shiftResults.some(r=>r&&r.ok),shiftNotes:dorDedupeNotes_(shiftResults.flatMap(r=>r&&r.ok?[...(r.shiftNotes||[]),...(r.notes||[])]:[])),openNotes:dorDedupeNotes_(shiftResults.flatMap(r=>r&&r.ok?(r.openNotes||[]):[]))};
  if(!today.ok){document.getElementById('dorSummary').innerHTML='<p>Could not load daily operations.</p>';return}
- const assignments=today.assignments||[],clean=today.cleaningSessions||[],ins=today.inspections||[],issues=today.inspectionIssues||[],maintRaw=today.maintenanceIssues||today.maintenance||[],maint=maintRaw.filter(x=>{const bd=x.businessDate||x.business_date||'';return !bd||dorDateKey_(bd)===dorDateKey_(date)}),syncs=today.choiceSyncs||today.syncs||[],roomPhotos=today.roomPhotos||today.photos||[],propertyWalkPhotos=today.propertyWalkPhotos||[];
+ const assignments=today.assignments||[],clean=today.cleaningSessions||[],ins=today.inspections||[],issues=today.inspectionIssues||[],maintRaw=maintenanceReport.ok?maintenanceReport.maintenance:[],maint=maintRaw,syncs=today.choiceSyncs||today.syncs||[],roomPhotos=today.roomPhotos||today.photos||[],propertyWalkPhotos=today.propertyWalkPhotos||[];
  const perf=today.hotelPerformance||today.hotel_performance||today.performance||today.choicePerformance||today.choice_performance||{};
  const dorPick_=(...vals)=>vals.find(v=>v!==undefined&&v!==null&&String(v).trim()!=='');
  const dorNum_=v=>{if(v===undefined||v===null||String(v).trim()==='')return '—';const n=Number(String(v).replace(/[$,% ,]/g,''));return Number.isFinite(n)?n:'—'};
@@ -1584,7 +1573,9 @@ async function loadDailyOperationsReport_(){
  document.getElementById('dorHousekeeping').innerHTML=Object.keys(hk).length?'<table><thead><tr><th>ASSOCIATE</th><th>ROOMS</th><th>ACTIVE CLEANING</th><th>AVG / ROOM</th><th>DEFICIENCIES</th></tr></thead><tbody>'+Object.entries(hk).map(([n,x])=>'<tr><td>'+dorEsc_(n)+'</td><td>'+x.rooms.size+'</td><td>'+(x.timed?Math.round(x.min)+' min':'—')+'</td><td>'+(x.timed&&x.rooms.size?Math.round(x.min/x.rooms.size)+' min':'—')+'</td><td>'+issues.filter(i=>String(i.housekeeper||i.housekeeper_name||'')===n).length+'</td></tr>').join('')+'</tbody></table>':'<p>No housekeeping production recorded.</p>';
  const issueState=x=>String(x.resolution||x.status||'').toUpperCase(),fixed=issues.filter(x=>issueState(x).includes('FIXED_BY_INSPECTOR')||issueState(x)==='FIXED').length,rework=issues.filter(x=>issueState(x).includes('REWORK')||issueState(x).includes('HOUSEKEEPER')).length;
  document.getElementById('dorInspection').innerHTML=[dorMetric_('Rooms Inspected',ins.length),dorMetric_('Rooms Passed',passed),dorMetric_('Deficiencies Found',issues.length),dorMetric_('Inspector Fixed',fixed),dorMetric_('Sent Back to HK',rework),dorMetric_('Photos Taken',issues.filter(x=>x.photoRef).length)].join('');
- document.getElementById('dorMaintenance').innerHTML=[dorMetric_('Issues Logged',maint.length),dorMetric_('Resolved',maintResolved.length),dorMetric_('Still Open',maintOpen.length)].join('');
+ document.getElementById('dorMaintenance').innerHTML=[dorMetric_('Issues Logged',maint.filter(x=>dorDateKey_(x.business_date)===dorDateKey_(date)).length),dorMetric_('Resolved',maintResolved.length),dorMetric_('Still Open',maintOpen.length),dorMetric_('PM Completed',(maintenanceReport.pmCompletions||[]).length),dorMetric_('PM Active Min',(maintenanceReport.pmCompletions||[]).reduce((n,x)=>n+(x.activeMinutes||0),0).toFixed(2)),dorMetric_('Repair Active Min',(maintenanceReport.work||[]).reduce((n,x)=>n+x.activeMinutes,0).toFixed(2))].join('');
+ if(!maintenanceReport.ok)document.getElementById('dorMaintenance').textContent='Maintenance / PM data unavailable.';
+ const checklistRows=shiftResults.flatMap(r=>r.ok?r.checklistActivity||[]:[]),latestChecklist=new Map();checklistRows.forEach(x=>latestChecklist.set(x.shift+':'+x.taskIndex,x));const maintenanceChecklist=[...latestChecklist.values()].filter(x=>x.shift==='MAINTENANCE');if(maintenanceChecklist.length)document.getElementById('dorMaintenance').insertAdjacentHTML('beforeend','<span class="dor-pm-checklist">Maintenance checklist: '+maintenanceChecklist.filter(x=>x.status==='COMPLETE').length+'/'+maintenanceChecklist.length+'</span>');
  const sideAll=work.ok?(work.sideWork||[]):[],side=sideAll.filter(x=>!x.businessDate||dorDateKey_(x.businessDate)===date),shiftAll=shift.ok?[...(shift.shiftNotes||[]),...(shift.notes||[]),...(shift.openNotes||[])]:[],shiftNotes=[...new Map(shiftAll.map(x=>[String(x.noteId||x.note_id||x.id||JSON.stringify(x)),x])).values()],openNotes=(shift.ok?(shift.openNotes||[]):[]).length?(shift.openNotes||[]):shiftNotes.filter(x=>!['RESOLVED','CLOSED','COMPLETE'].includes(String(x.status||'OPEN').toUpperCase())&&['ISSUE','FOLLOWUP','FOLLOW_UP'].includes(String(x.noteType||x.note_type||'').toUpperCase()));
  const noteTime=x=>x.createdAt||x.created_at||x.noteAt||x.note_at||x.enteredAt||x.entered_at||x.timestamp||x.updatedAt||x.updated_at||'',noteText=x=>x.issueInformation||x.issue_information||x.note||x.text||x.message||x.description||x.issue||'',noteShift=x=>String(x.shift||x.shiftName||x.shift_name||x.noteType||x.note_type||x.type||'PASS-ON').replace(/_/g,' '),noteBy=x=>x.enteredBy||x.entered_by||x.createdBy||x.created_by||x.author||x.user||x.actor||'';const reportDateKey=dorDateKey_(date),dailyNotes=shiftNotes.filter(x=>{const bd=x.businessDate||x.business_date||'';return !bd||dorDateKey_(bd)===reportDateKey}).sort((a,b)=>new Date(noteTime(a))-new Date(noteTime(b)));document.getElementById('dorFrontDesk').innerHTML=(dailyNotes.length?dailyNotes.slice(-5).map(x=>'<div class="dor3-passon-note"><b>'+dorEsc_(noteShift(x))+'</b><span>'+dorEsc_(noteText(x)||'Shift note recorded')+'</span><small>'+dorEsc_(noteBy(x))+(noteTime(x)?' • '+dorTime_(noteTime(x)):'')+'</small></div>').join(''):'<div class="dor3-passon-empty">No Front Desk pass-on notes recorded today.</div>')+'<div class="dor3-fd-foot">'+side.filter(x=>String(x.status).toUpperCase()==='COMPLETE').length+' side work complete • '+side.filter(x=>String(x.status).toUpperCase()!=='COMPLETE').length+' outstanding • '+openNotes.length+' open follow-up'+(openNotes.length===1?'':'s')+'</div>';
  const lfItems=lf.ok?(lf.items||[]):[],lfStatus=x=>String(x.status||'').toUpperCase().replace(/[^A-Z]+/g,'_'),activeBd=date===relayBusinessDate,logged=lfItems.filter(x=>dorDateKey_(x.foundAt)===date||(activeBd&&new Date(x.foundAt)>new Date(date+'T00:00:00')&&new Date(x.foundAt)<=new Date())),due=lfItems.filter(x=>dorDateKey_(x.dispositionDate)===date&&!['RETURNED','RETURNED_PICKED_UP','SHIPPED','DISPOSED','DISPOSED_DONATED'].includes(lfStatus(x)));
@@ -1616,13 +1607,14 @@ async function loadWeeklyOpsReport_(){
   try{
     const date=await loadRelayBusinessDay_();
     set('weeklyOpsPeriod',date?'RELAY business day '+date:'Current RELAY business day');
-    const [today,work]=await Promise.all([
+    const [today,work,maintenanceReport]=await Promise.all([
       apiPost({action:'getToday',businessDate:date},45000),
-      apiPost({action:'getWorkBoard'},45000)
+      apiPost({action:'getWorkBoard'},45000),
+      apiPost({action:'getMaintenanceReport',sessionId:localStorage.getItem('relaySessionId'),businessDate:date},45000)
     ]);
     if(!today.ok)throw new Error(today.error||today.reason||'Could not load RELAY operations');
     const assignments=today.assignments||[],clean=today.cleaningSessions||[],ins=today.inspections||[],
-          issues=today.inspectionIssues||[],maint=today.maintenance||today.maintenanceIssues||[],
+          issues=today.inspectionIssues||[],maint=maintenanceReport.ok?maintenanceReport.maintenance:[],
           side=work.ok?(work.sideWork||[]):[];
     const completedClean=clean.filter(x=>['COMPLETE','READY_FOR_INSPECTION'].includes(String(x.status||'').toUpperCase())).length;
     const passed=ins.filter(x=>String(x.status||'').toUpperCase().includes('PASS')).length;
@@ -1636,7 +1628,8 @@ async function loadWeeklyOpsReport_(){
       metric('Inspection passes',passed),metric('Inspection failures',failed),metric('Open rework',rework)
     ].join('');
     document.getElementById('wrOperations').innerHTML=[
-      metric('Maintenance logged',maint.length),metric('Maintenance open',maintOpen),
+      metric('PM completed',(maintenanceReport.pmCompletions||[]).length),metric('PM active minutes',(maintenanceReport.pmCompletions||[]).reduce((n,x)=>n+(x.activeMinutes||0),0).toFixed(2)),
+      metric('Maintenance logged',maint.filter(x=>dorDateKey_(x.business_date)===dorDateKey_(date)).length),metric('Maintenance open',maintOpen),
       metric('Side duties assigned',side.length),metric('Side duties complete',sideDone),
       metric('Side duties outstanding',Math.max(0,side.length-sideDone))
     ].join('');
