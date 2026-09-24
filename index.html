@@ -399,9 +399,9 @@
     <section id="pmView" class="pm-view" hidden>
       <div class="pm-hero"><div><small>PREVENTIVE MAINTENANCE</small><h1>Room PM Command Center</h1><p>Calendar-driven room care • fix it before the guest finds it.</p></div><div class="pm-cycle"><span>ROOM CYCLE</span><strong>12 WEEKS</strong><small>114 rooms • ~10/week</small></div></div>
       <div id="pmKpis" class="pm-kpis"></div>
-      <div class="pm-tabs"><button class="active" data-pm-tab="calendar">CALENDAR</button><button data-pm-tab="due">DUE ROOMS</button><button data-pm-tab="history">HISTORY</button></div>
+      <div class="pm-tabs"><button class="active" data-pm-tab="rooms">CHOOSE ROOM</button><button data-pm-tab="calendar">CALENDAR</button><button data-pm-tab="due">DUE ROOMS</button><button data-pm-tab="history">HISTORY</button></div>
       <div id="pmCalendar" class="pm-panel"><p>Loading saved PM schedule…</p></div>
-      <div id="pmRoomDetail" class="pm-room-detail" hidden><button id="pmBack" type="button">← PM CALENDAR</button><div class="pm-detail-head"><div><small>GUEST ROOM PM</small><h2 id="pmRoomTitle">Room 208</h2><p>Complete the checklist and route unresolved repairs.</p></div><div class="progress-ring"><strong id="pmPercent">0%</strong><span>COMPLETE</span></div></div><p id="pmSaveStatus" role="status"></p><div id="pmTasks" class="pm-tasks"></div><div class="detail-actions"><button id="pmSaveDraft" type="button">SAVE CHECKLIST</button><button id="pmPause" type="button">PAUSE PM</button><button id="pmComplete" type="button">COMPLETE ROOM PM</button></div></div>
+      <div id="pmRoomDetail" class="pm-room-detail" hidden><button id="pmBack" type="button">← PM ROOMS</button><div class="pm-detail-head"><div><small>GUEST ROOM PM</small><h2 id="pmRoomTitle">Room 208</h2><p>Complete the checklist and route unresolved repairs.</p></div><div class="progress-ring"><strong id="pmPercent">0%</strong><span>COMPLETE</span></div></div><p id="pmSaveStatus" role="status"></p><div id="pmTasks" class="pm-tasks"></div><div class="detail-actions"><button id="pmSaveDraft" type="button">SAVE CHECKLIST</button><button id="pmPause" type="button">PAUSE PM</button><button id="pmComplete" type="button">COMPLETE ROOM PM</button></div></div>
     </section>
     <section id="usersView" class="users-view" hidden>
       <div class="users-hero"><div><small>ADMINISTRATION</small><h1>Users</h1><p>People, access and permissions for RELAY.</p></div><button id="addUserBtn" type="button">+ ADD USER</button></div>
@@ -444,6 +444,6 @@
 </div>
 <script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.js"></script>
 <script src="app.js?v=20260924-pm-integration"></script>
-<script src="pm.js?v=20260924-pm-feedback"></script>
+<script src="pm.js?v=20260924-pm-picker"></script>
 </body>
 </html>

@@ -519,3 +519,5 @@ input::placeholder,textarea::placeholder{color:#7d98aa!important;opacity:1}
 .pm-day{min-height:90px;padding:8px;border:1px solid #dce6eb;display:flex;flex-direction:column;gap:4px}.pm-day.today{background:#e2f5fb}.pm-day button{padding:6px;border:0;border-radius:5px;color:#07536b;background:#edf5f8}.pm-task textarea{display:block;width:100%;min-height:65px}.pm-task label{display:block;margin-top:8px}.pm-room-row small{display:block}.pm-calendar-grid{grid-template-columns:repeat(7,minmax(0,1fr))}@media(max-width:600px){.pm-day{padding:3px;min-height:70px}.pm-day button{font-size:11px;padding:4px 1px}.pm-task{grid-template-columns:20px 1fr}.pm-task>select{grid-column:2}}
 
 .dor3-maint .dor-pm-checklist{grid-column:1/-1;font-size:7px;color:#294b5e;line-height:1.2}.dor3-maint-box .dor3-maint>div{padding:4px}
+
+.pm-picker-controls{display:flex;flex-wrap:wrap;gap:16px;margin:16px 0}.pm-picker-controls label{display:grid;gap:6px}.pm-picker-controls input,.pm-picker-controls select{padding:10px;max-width:100%}.pm-room-row:disabled{opacity:.6;cursor:default}

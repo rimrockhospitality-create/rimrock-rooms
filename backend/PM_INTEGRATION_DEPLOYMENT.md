@@ -1,3 +1,17 @@
+# Flexible PM room selection — September 24, 2026
+
+## This update
+
+Deploy the updated private `RELAY_CO534_PM_INTEGRATION.txt` as a new version of the existing Apps Script web app. Its health version is `PM-PICKER-20260924`. Then release the coordinated frontend branch. The saved rotation is already initialized: **do not restart or rebuild it**.
+
+The new default CHOOSE ROOM tab exposes all 114 rooms, room-number search, vacant/due/in-progress filters, last PM, next deadline and imported Choice status/date. Active work comes first, then vacant due rooms, other vacant rooms, other due rooms and remaining rooms. Completed-today rooms are disabled. VAC/OCC hints reflect the latest eligible ROOM_STATE import; an older import is labeled and excluded from the current-day vacant filter. Staff confirm access before entry. Availability does not change deadlines or block early work.
+
+Date-only spreadsheet cells now use the spreadsheet timezone, while actual event timestamps retain hotel timezone semantics. No stored schedule dates are rewritten. Early completion keeps the established completion business date + 84 days rule.
+
+Backend and actual-frontend DOM tests pass for date boundaries, imported availability and stale/missing rooms, 114-room selection, filtering/search, calendar retention, future-due completion and existing session/repair/report behavior. Physical device acceptance is pending deployment.
+
+---
+
 # Room PM and Maintenance integration — September 24, 2026
 
 Prepared from Ryan Kelly's supplied backend and frontend main commit b845cf0.
@@ -5,7 +19,7 @@ Prepared from Ryan Kelly's supplied backend and frontend main commit b845cf0.
 ## Deploy in order
 
 1. Copy all of the privately delivered `RELAY_CO534_PM_INTEGRATION.txt` into the existing Apps Script backend, replacing its current main code. This is a full replacement, not an additional script alongside the old functions. Keep the current spreadsheet and deployment URL.
-2. Save and update the existing web-app deployment to a new version. The health response identifies `PM-20260924`.
+2. Save and update the existing web-app deployment to a new version. The health response identifies `PM-PICKER-20260924`.
 3. Merge the coordinated frontend branch and allow GitHub Pages to publish. Avoid using PM between steps 2 and 3: the new completion endpoint requires a server PM session.
 4. In Ryan's account, open Preventive Maintenance and select **START ROOM ROTATION** once. It creates the saved 114-room schedule over 84 days, starting on the current RELAY business date. Existing completed rooms use their last recorded completion plus 84 days. Running this again does not reset the calendar or history.
 5. In Bradley's account, open Maintenance → **OPEN PM SCHEDULE**. Select a due room, scan its QR, complete checklist answers, enter a work-order note and priority where needed, pause, refresh/reopen, resume, then complete once.
