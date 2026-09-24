@@ -12,7 +12,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="theme-color" content="#073b63">
   <title>RELAY Operations | CO534</title>
-  <link rel="stylesheet" href="styles.css?v=20260924-dailybrief2">
+  <link rel="stylesheet" href="styles.css?v=20260924-dailyreport3">
   <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/jspdf-autotable@3.8.4/dist/jspdf.plugin.autotable.min.js"></script>
@@ -114,27 +114,21 @@
       <div id="reportLibrary">
         <button id="openDailyOperationsReport" class="report-launch-card" type="button"><div><small>DAILY OPERATIONS</small><h2>Daily Operations Report</h2><p>One-minute record of what happened at the hotel today.</p></div><span>OPEN REPORT →</span></button>
       </div>
-      <section id="dailyOperationsReport" class="daily-report dor-v2" hidden>
+      <section id="dailyOperationsReport" class="daily-report dor-v3" hidden>
 <div class="dor-actions"><button id="backToReports" type="button">← REPORTS</button><button id="printDailyReport" type="button">PRINT / SAVE PDF</button></div>
-<div class="dor-sheet">
-<header class="dor-hero"><div><div class="dor-brand">RELAY <span>ROOM OPERATIONS</span></div><h1>DAILY OPERATIONS BRIEF</h1><p>Everhome Suites Denver Airport <b>•</b> CO534</p></div><div class="dor-datebox"><span>BUSINESS DATE</span><strong id="dorDate">—</strong><em id="dorStatus">DAY IN PROGRESS</em></div></header>
-<div class="dor-fresh"><span>CHOICE DATA FRESHNESS</span><b id="dorSyncLine">No sync recorded</b></div>
-<section class="dor-pulse"><div class="dor-section-title">HOTEL PULSE</div><div id="dorSummary" class="dor-pulse-grid"></div></section>
-<div class="dor-photo-strip"><div class="dor-section-title">TODAY AT THE PROPERTY</div><div id="dorPhotos" class="dor-photos"></div></div>
-<div class="dor-main-grid">
-<div class="dor-left">
-<section class="dor-card dor-performance"><div class="dor-section-title">ROOMS + QUALITY</div><div id="dorHousekeeping" class="dor-table"></div><div id="dorInspection" class="dor-mini-grid"></div></section>
-</div>
-<section class="dor-card dor-attention"><div class="dor-section-title">NEEDS ATTENTION</div><div id="dorExceptions"></div></section>
-</div>
-<div class="dor-bottom-grid">
-<section class="dor-card"><div class="dor-section-title">MAINTENANCE</div><div id="dorMaintenance" class="dor-mini-grid"></div></section>
-<section class="dor-card"><div class="dor-section-title">FRONT DESK</div><div id="dorFrontDesk" class="dor-compact"></div></section>
-<section class="dor-card"><div class="dor-section-title">LOST + FOUND</div><div id="dorLostFound" class="dor-compact"></div></section>
-</div>
-<section class="dor-day"><div class="dor-section-title">DAY IN REVIEW</div><div id="dorTimeline" class="dor-timeline"></div></section>
-<footer><span>Prepared automatically by <b>RELAY</b> • Room Operations</span><span id="dorFooterFresh">Operational record</span></footer>
-</div></section><section id="weeklyOpsReport" class="weekly-ops-report" hidden>
+<article class="dor-page">
+<header class="dor3-header"><div class="dor3-logo">RELAY<small>ROOM OPERATIONS</small></div><div class="dor3-title"><h1>Daily Operations Report</h1><p>Everhome Suites Denver Airport<br><b>CO534</b> &nbsp;|&nbsp; 114 Rooms</p></div><div class="dor3-date"><small>▣ &nbsp; BUSINESS DATE</small><strong id="dorDate">—</strong></div><div class="dor3-close"><b>✓</b><span id="dorStatus">DAY IN PROGRESS</span></div></header>
+<div class="dor3-sync"><b>↻ &nbsp; Choice Report Syncs:</b> <span id="dorSyncLine">No sync recorded</span><em id="dorGenerated">Report Generated</em></div>
+<section class="dor3-section"><div class="dor3-heading">▣ &nbsp; HOTEL PULSE <small>Key operational metrics for the day.</small></div><div id="dorSummary" class="dor3-pulse"></div></section>
+<section class="dor3-section"><div class="dor3-heading">▣ &nbsp; TODAY AT THE PROPERTY <small>Recent photos from inspections, maintenance, and property walk.</small></div><div id="dorPhotos" class="dor3-photos"></div></section>
+<div class="dor3-mid"><div>
+<section class="dor3-box"><div class="dor3-heading">♟ &nbsp; HOUSEKEEPING PERFORMANCE <small>Production and quality by associate.</small></div><div id="dorHousekeeping" class="dor3-table"></div></section>
+<section class="dor3-box dor3-inspection"><div class="dor3-heading">▤ &nbsp; INSPECTION &amp; QUALITY <small>Results from today's room inspections.</small></div><div id="dorInspection" class="dor3-inspect"></div></section>
+</div><section class="dor3-box dor3-attention"><div class="dor3-heading">● &nbsp; NEEDS ATTENTION <small>Open items that require follow-up.</small></div><div id="dorExceptions"></div></section></div>
+<div class="dor3-bottom"><section class="dor3-box"><div class="dor3-heading">⚒ &nbsp; MAINTENANCE <small>Issues logged and status.</small></div><div id="dorMaintenance" class="dor3-maint"></div></section><section class="dor3-box"><div class="dor3-heading">♟ &nbsp; FRONT DESK <small>Guest activity and notes.</small></div><div id="dorFrontDesk" class="dor3-copy"></div></section><section class="dor3-box"><div class="dor3-heading">▣ &nbsp; LOST &amp; FOUND <small>Items logged today.</small></div><div id="dorLostFound" class="dor3-copy"></div></section></div>
+<section class="dor3-review"><div class="dor3-heading">◷ &nbsp; DAY IN REVIEW <small>Key events throughout the day.</small></div><div id="dorTimeline" class="dor3-timeline"></div></section>
+<footer class="dor3-footer"><b>RELAY</b><span>ROOM OPERATIONS</span><i>Everhome Suites Denver Airport &nbsp; | &nbsp; CO534 &nbsp; | &nbsp; 114 Rooms</i><em>Prepared automatically by RELAY</em></footer>
+</article></section><section id="weeklyOpsReport" class="weekly-ops-report" hidden>
         <div class="weekly-report-head"><div><small>WEEKLY OPERATIONS</small><h2>Labor + RELAY Activity</h2><p id="weeklyOpsPeriod">Current RELAY business day</p></div><span id="weeklyOpsState">LIVE RELAY DATA</span></div>
         <div class="weekly-report-kpis">
           <div><small>ROOM ASSIGNMENTS</small><strong id="wrRooms">0</strong></div>
@@ -455,6 +449,6 @@
   </div>
 </div>
 <script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.js"></script>
-<script src="app.js?v=20260924-dailybrief2"></script>
+<script src="app.js?v=20260924-dailyreport3"></script>
 </body>
 </html>
