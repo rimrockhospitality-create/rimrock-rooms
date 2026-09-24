@@ -11,7 +11,7 @@ const QR_TEST_ID='CO534-RM-122';
 const ROLE_VIEWS={
   ADMIN:['Home','Checklists','Housekeeping','Inspections','Maintenance','Preventive Maintenance','Reports','Property Settings','Users','Settings'],
   INSPECTOR:['Home','Checklists','Housekeeping','Inspections','Maintenance','Preventive Maintenance','Reports'],
-  'FRONT DESK':['Home','Checklists','Housekeeping','Maintenance','Lost & Found'],
+  'FRONT DESK':['Home','Checklists','Housekeeping','Maintenance','Lost & Found','Reports'],
   HOUSEKEEPER:['Housekeeping'],
   MAINTENANCE:['Maintenance','Preventive Maintenance','Checklists']
 };
@@ -92,7 +92,7 @@ function show(view){
   if(view==='Lost & Found') loadLostFound_();
   if(view==='Inspections') loadInspectionQueue();
   if(view==='Maintenance'){loadMaintenanceBoard();loadSideWorkBoard_();}
-  if(view==='Reports'){document.getElementById('reportLibrary').hidden=false;document.getElementById('dailyOperationsReport').hidden=true;}
+  if(view==='Reports'){const isFD=(currentUser?.roles||[]).includes('FRONT DESK');const isRyland=/ryland/i.test(String(currentUser?.name||currentUser?.displayName||currentUser?.userName||''));document.getElementById('dailyOperationsReport').hidden=true;if(isFD&&!isRyland){document.getElementById('reportLibrary').hidden=true;document.getElementById('dailyOperationsReport').hidden=false;loadDailyOperationsReport_();}else{document.getElementById('reportLibrary').hidden=false;}}
   if(view==='Users') loadUsersAdmin();
   if(view==='Checklists'){openChecklistHub();loadOpenShiftNotes_();}
   document.querySelectorAll('.nav').forEach(b=>b.classList.toggle('active',b.dataset.view===view)); drawer.hidden=true;
