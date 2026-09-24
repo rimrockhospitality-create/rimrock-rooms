@@ -486,3 +486,14 @@ input::placeholder,textarea::placeholder{color:#7d98aa!important;opacity:1}
 .property-walk-photo-panel{z-index:90}.property-walk-photo-panel>p{color:#587283;font-size:13px;line-height:1.45}.property-walk-photo-panel label{display:block;margin:14px 0 6px;font-size:11px;font-weight:900;letter-spacing:.04em;color:#16394d}.property-walk-photo-panel input,.property-walk-photo-panel textarea{display:block;width:100%;margin-top:6px;padding:12px;border:1px solid #cad8df;border-radius:8px;background:#fff;color:#09283e}.property-walk-photo-panel #savePropertyWalkPhoto{width:100%;margin-top:14px}
 /* Daily report: Front Desk pass-on is the operational narrative */
 .dor3-bottom-reorg{grid-template-columns:.82fr 1.75fr .58fr!important}.dor3-bottom-reorg .dor3-box{height:142px!important}.dor3-passon-box{border-color:#bdd8e8!important;background:#fbfdfe!important}.dor3-passon{height:103px;overflow:hidden;display:flex;flex-direction:column;gap:3px}.dor3-passon-note{display:grid;grid-template-columns:52px 1fr auto;gap:5px;align-items:start;padding:3px 4px;border-bottom:1px solid #e5edf1;font-size:6.4px!important;line-height:1.25}.dor3-passon-note>b{color:#0874b9!important;text-transform:uppercase;font-size:5.8px!important}.dor3-passon-note>span{color:#183b50!important}.dor3-passon-note>small{color:#718895!important;font-size:5.3px!important;white-space:nowrap}.dor3-passon-empty{height:70px;display:grid;place-items:center;color:#78909c;font-size:7px}.dor3-fd-foot{margin-top:auto;padding:4px;background:#eef5f8;border-radius:4px;color:#4b6979;font-size:5.7px;font-weight:800}.dor3-lf-box .dor3-copy{font-size:6px!important;line-height:1.3}.dor3-lf-box .dor3-copy b{font-size:8px!important}.dor3-maint-box .dor3-maint strong{font-size:14px!important}
+
+/* Daily report photo gallery adapts to the number of real photos */
+#dorPhotos[data-count="1"]{grid-template-columns:minmax(0,1fr)!important;max-width:100%!important}
+#dorPhotos[data-count="1"] .dor-photo{width:100%!important;height:138px!important}
+#dorPhotos[data-count="1"] .dor-photo img{width:100%!important;height:100%!important;object-fit:cover!important}
+#dorPhotos[data-count="2"]{grid-template-columns:repeat(2,minmax(0,1fr))!important}
+#dorPhotos[data-count="2"] .dor-photo{height:138px!important}
+#dorPhotos[data-count="3"]{grid-template-columns:repeat(3,minmax(0,1fr))!important}
+#dorPhotos[data-count="3"] .dor-photo{height:138px!important}
+#dorPhotos[data-count="4"]{grid-template-columns:repeat(4,minmax(0,1fr))!important}
+#dorPhotos[data-count="4"] .dor-photo{height:138px!important}
