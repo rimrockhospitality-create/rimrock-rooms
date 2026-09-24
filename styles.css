@@ -502,3 +502,15 @@ input::placeholder,textarea::placeholder{color:#7d98aa!important;opacity:1}
 #dorPhotos[data-count="1"]{display:grid!important;grid-template-columns:minmax(0,360px)!important;justify-content:start!important;max-width:none!important}
 #dorPhotos[data-count="1"] .dor-photo{width:100%!important;height:138px!important;max-width:360px!important}
 #dorPhotos[data-count="1"] .dor-photo img{width:100%!important;height:100%!important;object-fit:cover!important;object-position:center!important}
+
+/* Daily Operations Report — Hotel Performance executive strip */
+.dor3-performance-section{padding-top:7px!important;padding-bottom:2px!important}
+.dor3-performance-primary,.dor3-performance-movement{display:grid;gap:6px}
+.dor3-performance-primary{grid-template-columns:repeat(5,1fr)}
+.dor3-performance-movement{grid-template-columns:repeat(4,1fr);margin-top:5px}
+.dor3-performance-primary>div,.dor3-performance-movement>div{border:1px solid #dbe6ec;border-radius:7px;background:#f8fbfc;padding:6px 8px;min-height:42px}
+.dor3-performance-primary strong,.dor3-performance-movement strong{display:block;color:#09283e!important;font-size:15px!important;line-height:1.05}
+.dor3-performance-primary small,.dor3-performance-movement small{display:block;color:#315366!important;font-size:5.8px!important;font-weight:900;margin-top:4px;letter-spacing:.02em}
+.dor3-performance-movement>div{background:#eef6fa;min-height:36px;padding-top:5px;padding-bottom:5px}
+.dor3-performance-movement strong{font-size:13px!important}
+.dor3-performance-section+.dor3-section{padding-top:5px!important}
