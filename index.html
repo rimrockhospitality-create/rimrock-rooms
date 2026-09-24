@@ -115,7 +115,7 @@
         <button id="openDailyOperationsReport" class="report-launch-card" type="button"><div><small>DAILY OPERATIONS</small><h2>Daily Operations Report</h2><p>One-minute record of what happened at the hotel today.</p></div><span>OPEN REPORT →</span></button>
       </div>
       <section id="dailyOperationsReport" class="daily-report dor-v3" hidden>
-<div class="dor-actions"><button id="backToReports" type="button">← REPORTS</button><button id="printDailyReport" type="button">PRINT / SAVE PDF</button></div>
+<div class="dor-actions"><button id="backToReports" type="button">← REPORTS</button><button id="openNightAuditImport" type="button">IMPORT NIGHT AUDIT</button><button id="printDailyReport" type="button">PRINT / SAVE PDF</button></div><div id="nightAuditImportPanel" class="night-audit-panel" hidden><div class="night-audit-head"><div><small>CHOICE NIGHT AUDIT</small><h2>Import Hotel Performance</h2><p>Drop the completed Choice Night Audit PDF here. RELAY reads only Hotel Statistics.</p></div><button id="closeNightAuditImport" type="button">×</button></div><label class="night-audit-drop"><input id="nightAuditPdf" type="file" accept="application/pdf,.pdf"><strong>Drop Night Audit PDF here</strong><span>or choose a PDF</span></label><div id="nightAuditStatus" class="night-audit-status"></div><div id="nightAuditPreview" class="night-audit-preview" hidden></div><button id="importNightAudit" class="night-audit-import" type="button" disabled>IMPORT AUDIT</button></div>
 <article class="dor-page">
 <header class="dor3-header"><div class="dor3-logo">RELAY<small>ROOM OPERATIONS</small></div><div class="dor3-title"><h1>Daily Operations Report</h1><p>Everhome Suites Denver Airport<br><b>CO534</b> &nbsp;|&nbsp; 114 Rooms</p></div><div class="dor3-date"><small>▣ &nbsp; BUSINESS DATE</small><strong id="dorDate">—</strong></div><div class="dor3-close"><b>✓</b><span id="dorStatus">DAY IN PROGRESS</span></div></header>
 <div class="dor3-sync"><b>↻ &nbsp; Choice Report Syncs:</b> <span id="dorSyncLine">No sync recorded</span><em id="dorGenerated">Report Generated</em></div>
@@ -443,7 +443,7 @@
   </div>
 </div>
 <script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.js"></script>
-<script src="app.js?v=20260925-maint-diag"></script>
+<script src="app.js?v=20260925-night-audit"></script>
 <script src="pm.js?v=20260924-pm-picker"></script>
 </body>
 </html>
