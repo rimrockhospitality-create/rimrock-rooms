@@ -497,3 +497,8 @@ input::placeholder,textarea::placeholder{color:#7d98aa!important;opacity:1}
 #dorPhotos[data-count="3"] .dor-photo{height:138px!important}
 #dorPhotos[data-count="4"]{grid-template-columns:repeat(4,minmax(0,1fr))!important}
 #dorPhotos[data-count="4"] .dor-photo{height:138px!important}
+
+/* Daily report photo sizing: feature the image without turning one photo into a banner */
+#dorPhotos[data-count="1"]{display:grid!important;grid-template-columns:minmax(0,360px)!important;justify-content:start!important;max-width:none!important}
+#dorPhotos[data-count="1"] .dor-photo{width:100%!important;height:138px!important;max-width:360px!important}
+#dorPhotos[data-count="1"] .dor-photo img{width:100%!important;height:100%!important;object-fit:cover!important;object-position:center!important}
