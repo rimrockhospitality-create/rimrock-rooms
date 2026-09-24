@@ -92,7 +92,7 @@ function show(view){
   if(view==='Lost & Found') loadLostFound_();
   if(view==='Inspections') loadInspectionQueue();
   if(view==='Maintenance'){loadMaintenanceBoard();loadSideWorkBoard_();}
-  if(view==='Reports') loadWeeklyOpsReport_();
+  if(view==='Reports'){document.getElementById('reportLibrary').hidden=false;document.getElementById('dailyOperationsReport').hidden=true;}
   if(view==='Users') loadUsersAdmin();
   if(view==='Checklists'){openChecklistHub();loadOpenShiftNotes_();}
   document.querySelectorAll('.nav').forEach(b=>b.classList.toggle('active',b.dataset.view===view)); drawer.hidden=true;
@@ -1519,6 +1519,41 @@ document.addEventListener('click',async e=>{
  }
 });
 
+
+
+function dorEsc_(v){return String(v??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]))}
+function dorMetric_(label,value){return '<div><small>'+label+'</small><strong>'+value+'</strong></div>'}
+function dorTime_(v){if(!v)return '—';const d=new Date(v);return isNaN(d)?'—':d.toLocaleTimeString([],{hour:'numeric',minute:'2-digit'})}
+function dorDateKey_(v){if(!v)return '';const d=new Date(v);if(isNaN(d))return String(v).slice(0,10);return [d.getFullYear(),String(d.getMonth()+1).padStart(2,'0'),String(d.getDate()).padStart(2,'0')].join('-')}
+async function loadDailyOperationsReport_(){
+ const date=await loadRelayBusinessDay_(),set=(id,v)=>{const e=document.getElementById(id);if(e)e.textContent=v};
+ set('dorDate',date||'—');
+ const sid=localStorage.getItem('relaySessionId');
+ const [today,work,lf,shift]=await Promise.all([apiPost({action:'getToday',businessDate:date},45000),apiPost({action:'getWorkBoard'},45000),apiPost({action:'getLostFound',sessionId:sid},45000),apiPost({action:'getShiftOperations',sessionId:sid,businessDate:date,shift:''},45000)]);
+ if(!today.ok){document.getElementById('dorSummary').innerHTML='<p>Could not load daily operations.</p>';return}
+ const assignments=today.assignments||[],clean=today.cleaningSessions||[],ins=today.inspections||[],issues=today.inspectionIssues||[],maint=today.maintenance||today.maintenanceIssues||[],syncs=today.choiceSyncs||today.syncs||[];
+ const complete=clean.filter(x=>['COMPLETE','READY_FOR_INSPECTION'].includes(String(x.status||'').toUpperCase())).length,passed=ins.filter(x=>String(x.status||'').toUpperCase().includes('PASS')).length;
+ const maintOpen=maint.filter(x=>!['RESOLVED','COMPLETE','CLOSED'].includes(String(x.status||'').toUpperCase())),holds=maintOpen.filter(x=>x.blocking===true||String(x.blocking).toUpperCase()==='TRUE');
+ document.getElementById('dorSummary').innerHTML=[dorMetric_('Rooms Assigned',assignments.length),dorMetric_('Rooms Cleaned',complete),dorMetric_('Rooms Passed',passed),dorMetric_('Outstanding',Math.max(0,assignments.length-passed)),dorMetric_('Maintenance Holds',holds.length),dorMetric_('Room Readiness',assignments.length?Math.round(passed/assignments.length*100)+'%':'—')].join('');
+ const syncSorted=syncs.slice().sort((a,b)=>new Date(a.syncedAt||a.createdAt||a.timestamp)-new Date(b.syncedAt||b.createdAt||b.timestamp));
+ set('dorSyncCount',syncSorted.length||'—');set('dorFirstSync',syncSorted.length?dorTime_(syncSorted[0].syncedAt||syncSorted[0].createdAt||syncSorted[0].timestamp):'—');set('dorLastSync',syncSorted.length?dorTime_(syncSorted.at(-1).syncedAt||syncSorted.at(-1).createdAt||syncSorted.at(-1).timestamp):'—');set('dorLastSyncBy',syncSorted.length?(syncSorted.at(-1).syncedBy||syncSorted.at(-1).user||'—'):'—');
+ const hk={};clean.forEach(x=>{const n=x.housekeeper||'Unassigned';hk[n]??={rooms:0,min:0};hk[n].rooms++;const a=new Date(x.startedAt||x.startTime),b=new Date(x.completedAt||x.endTime);if(!isNaN(a)&&!isNaN(b))hk[n].min+=Math.max(0,(b-a)/60000)});
+ document.getElementById('dorHousekeeping').innerHTML=Object.keys(hk).length?'<table><thead><tr><th>Housekeeper</th><th>Rooms</th><th>Active Cleaning</th><th>Avg / Room</th><th>Deficiencies</th></tr></thead><tbody>'+Object.entries(hk).map(([n,x])=>'<tr><td>'+dorEsc_(n)+'</td><td>'+x.rooms+'</td><td>'+Math.round(x.min)+' min</td><td>'+(x.rooms?Math.round(x.min/x.rooms):0)+' min</td><td>'+issues.filter(i=>String(i.housekeeper||'')===n).length+'</td></tr>').join('')+'</tbody></table>':'<p>No housekeeping production recorded.</p>';
+ const fixed=issues.filter(x=>String(x.status||'').includes('FIXED')).length,rework=issues.filter(x=>String(x.status||'').includes('REWORK')).length;
+ document.getElementById('dorInspection').innerHTML=[dorMetric_('Rooms Inspected',ins.length),dorMetric_('Rooms Passed',passed),dorMetric_('Deficiencies Found',issues.length),dorMetric_('Inspector Fixed',fixed),dorMetric_('Sent Back to HK',rework),dorMetric_('Photos',issues.filter(x=>x.photoRef).length)].join('');
+ document.getElementById('dorMaintenance').innerHTML=[dorMetric_('Issues Logged',maint.length),dorMetric_('Still Open',maintOpen.length),dorMetric_('Blocking / Holds',holds.length),dorMetric_('Resolved',maint.length-maintOpen.length)].join('');
+ const side=work.ok?(work.sideWork||[]):[],openNotes=shift.ok?(shift.openNotes||shift.shiftNotes||[]):[];
+ document.getElementById('dorFrontDesk').innerHTML='<p><strong>Side work:</strong> '+side.filter(x=>String(x.status).toUpperCase()==='COMPLETE').length+' complete • '+side.filter(x=>String(x.status).toUpperCase()!=='COMPLETE').length+' outstanding</p><p><strong>Open follow-ups / shift notes:</strong> '+openNotes.length+'</p>';
+ const lfItems=lf.ok?(lf.items||[]):[],logged=lfItems.filter(x=>dorDateKey_(x.foundAt)===date),due=lfItems.filter(x=>dorDateKey_(x.dispositionDate)===date&&!['RETURNED','SHIPPED','DISPOSED'].includes(String(x.status||'').toUpperCase()));
+ document.getElementById('dorLostFound').innerHTML=(!logged.length&&!due.length)?'<p>No Lost & Found activity today.</p>':logged.map(x=>'<p><strong>LOGGED '+dorEsc_(x.id)+'</strong> • '+dorEsc_(x.location)+' • '+dorEsc_(x.description)+' • '+dorEsc_(x.storage)+'</p>').concat(due.map(x=>'<p class="dor-alert"><strong>ACTION REQUIRED '+dorEsc_(x.id)+'</strong> • '+dorEsc_(x.description)+' • '+dorEsc_(x.storage)+'</p>')).join('');
+ const ex=[];if(Math.max(0,assignments.length-passed))ex.push(Math.max(0,assignments.length-passed)+' assigned room(s) not passed');if(maintOpen.length)ex.push(maintOpen.length+' maintenance issue(s) still open');if(side.filter(x=>String(x.status).toUpperCase()!=='COMPLETE').length)ex.push(side.filter(x=>String(x.status).toUpperCase()!=='COMPLETE').length+' side-work item(s) outstanding');if(openNotes.length)ex.push(openNotes.length+' open shift follow-up(s)');if(due.length)ex.push(due.length+' Lost & Found item(s) due for disposition');
+ document.getElementById('dorExceptions').innerHTML=ex.length?ex.map(x=>'<p>⚠ '+dorEsc_(x)+'</p>').join(''):'<p>No management exceptions identified.</p>';
+ const events=[];syncSorted.forEach(x=>events.push([x.syncedAt||x.createdAt||x.timestamp,'Choice report synced'+(x.syncedBy?' by '+x.syncedBy:'')]));clean.filter(x=>x.completedAt||x.endTime).forEach(x=>events.push([x.completedAt||x.endTime,'Room '+(x.room||'')+' cleaning completed'+(x.housekeeper?' by '+x.housekeeper:'')]));ins.forEach(x=>events.push([x.completedAt||x.inspectedAt||x.updatedAt,'Room '+(x.room||'')+' inspection '+(x.status||'recorded')]));logged.forEach(x=>events.push([x.foundAt,'Lost & Found '+x.id+' logged']));
+ events.sort((a,b)=>new Date(a[0])-new Date(b[0]));document.getElementById('dorTimeline').innerHTML=events.length?events.map(e=>'<p><strong>'+dorTime_(e[0])+'</strong> • '+dorEsc_(e[1])+'</p>').join(''):'<p>No timeline activity recorded.</p>';
+}
+document.getElementById('openDailyOperationsReport')?.addEventListener('click',()=>{document.getElementById('reportLibrary').hidden=true;document.getElementById('dailyOperationsReport').hidden=false;loadDailyOperationsReport_()});
+document.getElementById('backToReports')?.addEventListener('click',()=>{document.getElementById('dailyOperationsReport').hidden=true;document.getElementById('reportLibrary').hidden=false});
+document.getElementById('printDailyReport')?.addEventListener('click',()=>window.print());
 
 async function loadWeeklyOpsReport_(){
   const host=document.getElementById('weeklyOpsReport'); if(!host||!currentUser)return;
