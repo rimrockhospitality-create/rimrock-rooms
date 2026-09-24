@@ -1,0 +1,9 @@
+{
+  "name": "relay-room-operations",
+  "private": true,
+  "scripts": {
+    "test": "node tests/pm-dom.test.cjs",
+    "test:backend": "node tests/pm-integration.test.cjs"
+  },
+  "devDependencies": {"jsdom": "30.1.1"}
+}
