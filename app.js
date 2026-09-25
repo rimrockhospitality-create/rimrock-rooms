@@ -985,7 +985,18 @@ const CHECKLISTS={
 };
 let activeChecklist='',taskState={},activeNoteType='';
 function openChecklistHub(){
- document.getElementById('checklistDetail').hidden=true;document.querySelector('.checklist-layout').hidden=false;document.querySelector('.checklist-kpis').hidden=false;document.querySelector('.checklist-hero').hidden=false;syncChecklistProgress();loadOpenShiftNotes_();
+ const maintenanceOnly=!!(currentUser&&currentUser.roles&&currentUser.roles.includes('MAINTENANCE')&&!currentUser.roles.includes('ADMIN'));
+ document.getElementById('checklistDetail').hidden=true;
+ document.querySelector('.checklist-layout').hidden=false;document.querySelector('.checklist-kpis').hidden=false;document.querySelector('.checklist-hero').hidden=false;
+ // Maintenance associates only need their own daily checklist. Admin/other authorized roles retain the full hub.
+ document.querySelectorAll('.shift-card,.maintenance-check-card,[data-shift-open]').forEach(el=>{
+   const shift=el.dataset.shift||el.dataset.shiftOpen||'';
+   if(maintenanceOnly)el.hidden=shift!=='MAINTENANCE';
+   else el.hidden=false;
+ });
+ const kpis=[...document.querySelectorAll('.checklist-kpis article')];
+ if(maintenanceOnly)kpis.forEach((el,i)=>el.hidden=i!==3);else kpis.forEach(el=>el.hidden=false);
+ syncChecklistProgress();loadOpenShiftNotes_();
 }
 function openChecklist(name){
  activeChecklist=name;const list=CHECKLISTS[name]||[];document.querySelector('.checklist-layout').hidden=true;document.querySelector('.checklist-kpis').hidden=true;document.querySelector('.checklist-hero').hidden=true;document.getElementById('checklistDetail').hidden=false;
