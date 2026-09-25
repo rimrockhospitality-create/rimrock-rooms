@@ -1929,7 +1929,7 @@ function relayNightAuditPreviewHtml_(x){
 (function(){
  const report=document.getElementById('maintenancePerformanceReport'),library=document.getElementById('reportLibrary'),open=document.getElementById('openMaintenancePerformanceReport');
  if(!report||!open)return;
- let mprRows_=[];
+ let mprRows_=[],mprFilterBoard_=null;
  const esc=v=>String(v??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
  const num=v=>{const n=Number(v);return Number.isFinite(n)?n:0};
  const mins=v=>{const n=num(v);return n?Math.round(n):0};
@@ -1993,16 +1993,16 @@ function relayNightAuditPreviewHtml_(x){
      const pmRows=pm.history||maint.pmCompletions||[];
      const side=(work.sideWork||[]).filter(isComplete);
      const filterRows=filter.history||[];
-     mprRows_=categoryRows_(maintenance,pmRows,side,filterRows);
+     mprRows_=categoryRows_(maintenance,pmRows,side,filterRows);mprFilterBoard_=filter.ok?filter:null;
      // Checklist timing is not yet exposed by a dedicated historical endpoint. Do not fabricate it.
-     render_(filter.ok?filter:null);
+     render_(mprFilterBoard_);
    }catch(err){document.getElementById('mprTaskBody').innerHTML='<tr><td colspan="8" class="mpr-empty">Could not load report: '+esc(err.message)+'</td></tr>'}
  }
  open.addEventListener('click',()=>{library.hidden=true;document.querySelectorAll('#reportsView>section').forEach(x=>x.hidden=true);report.hidden=false;load_()});
  document.getElementById('backFromMaintenanceReport')?.addEventListener('click',()=>{report.hidden=true;library.hidden=false});
  document.getElementById('printMaintenanceReport')?.addEventListener('click',()=>window.print());
  document.getElementById('mprRange')?.addEventListener('change',load_);
- document.getElementById('mprCategory')?.addEventListener('change',()=>render_(window.__mprFilterBoard||null));
+ document.getElementById('mprCategory')?.addEventListener('change',()=>render_(mprFilterBoard_));
  document.getElementById('mprFilterReport')?.addEventListener('click',()=>alert('Filter PM monthly report is the next dedicated report build. The maintenance report already includes Filter PM workload and status.'));
  document.getElementById('mprWarrantyReport')?.addEventListener('click',()=>alert('Warranty Items Report is queued next. Warranty-tagged maintenance items will feed it automatically once the warranty checkbox workflow is wired.'));
  document.querySelectorAll('[data-view="Reports"]').forEach(b=>b.addEventListener('click',()=>{report.hidden=true}));
