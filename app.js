@@ -786,14 +786,16 @@ document.getElementById('maintenanceQueue').addEventListener('click',async e=>{
  const b=e.target.closest('.maint-resolve');if(!b)return;
  pendingMaintenanceResolve=b.dataset.id;
  document.getElementById('maintenanceResolveTitle').textContent='Resolve '+(b.closest('.maint-card')?.querySelector('.maint-room')?.textContent||'Maintenance');
- document.getElementById('maintenanceResolvePhoto').value='';document.getElementById('maintenanceResolveNote').value='';document.getElementById('maintenanceResolveMessage').textContent='';
+ document.getElementById('maintenanceResolvePhoto').value='';document.getElementById('maintenanceResolveNote').value='';document.getElementById('maintenanceResolveMessage').textContent='';document.getElementById('maintenanceWarrantyItem').checked=false;document.getElementById('maintenanceWarrantyFields').hidden=true;document.getElementById('maintenanceWarrantyType').value='';document.getElementById('maintenanceWarrantyManufacturer').value='';document.getElementById('maintenanceWarrantyModel').value='';document.getElementById('maintenanceWarrantyNumber').value='';document.getElementById('maintenanceWarrantyNotes').value='';
  document.getElementById('maintenanceResolvePanel').hidden=false;
 });
 let pendingMaintenanceResolve='';
 document.getElementById('closeMaintenanceResolve').addEventListener('click',()=>{pendingMaintenanceResolve='';document.getElementById('maintenanceResolvePanel').hidden=true});
 document.getElementById('confirmMaintenanceResolve').addEventListener('click',async()=>{
  const b=document.getElementById('confirmMaintenanceResolve'),file=document.getElementById('maintenanceResolvePhoto').files[0],note=document.getElementById('maintenanceResolveNote').value.trim(),msg=document.getElementById('maintenanceResolveMessage');
+ const warrantyItem=document.getElementById('maintenanceWarrantyItem').checked,warrantyItemType=document.getElementById('maintenanceWarrantyType').value.trim(),warrantyManufacturer=document.getElementById('maintenanceWarrantyManufacturer').value.trim(),warrantyModel=document.getElementById('maintenanceWarrantyModel').value.trim(),warrantyItemNumber=document.getElementById('maintenanceWarrantyNumber').value.trim(),warrantyNotes=document.getElementById('maintenanceWarrantyNotes').value.trim();
  if(!pendingMaintenanceResolve)return;
+ if(warrantyItem&&!warrantyItemType){msg.textContent='Choose the warranty Item / Asset Type first.';document.getElementById('maintenanceWarrantyType').focus();return}
  b.disabled=true;b.textContent='RESOLVING…';
  try{
    let photoBase64='',photoMimeType='';if(file){photoBase64=await fileToDataUrl(file);photoMimeType=file.type||'image/jpeg'}
@@ -801,12 +803,13 @@ document.getElementById('confirmMaintenanceResolve').addEventListener('click',as
    const startBtn=card?.querySelector('.maint-start-work'),workSessionId=String(startBtn?.dataset.session||'').trim();
    // A maintenance tech who started work must complete the same timed work session.
    // Inspectors/managers resolving without a maintenance session continue to use the direct resolve path.
+   const warrantyData={warrantyItem:warrantyItem,warrantyItemType:warrantyItemType,warrantyManufacturer:warrantyManufacturer,warrantyModel:warrantyModel,warrantyItemNumber:warrantyItemNumber,warrantyNotes:warrantyNotes};
    const payload=workSessionId
-    ?{action:'completeMaintenanceWork',workSessionId:workSessionId,worker:currentUser.name,resolutionNote:note,photoBase64:photoBase64,photoMimeType:photoMimeType}
-    :{action:'resolveMaintenanceIssue',maintenanceId:pendingMaintenanceResolve,resolvedBy:currentUser.name,resolutionNote:note,photoBase64:photoBase64,photoMimeType:photoMimeType};
+    ?{action:'completeMaintenanceWork',workSessionId:workSessionId,worker:currentUser.name,resolutionNote:note,photoBase64:photoBase64,photoMimeType:photoMimeType,...warrantyData}
+    :{action:'resolveMaintenanceIssue',maintenanceId:pendingMaintenanceResolve,resolvedBy:currentUser.name,resolutionNote:note,photoBase64:photoBase64,photoMimeType:photoMimeType,...warrantyData};
    const r=await apiPost(payload,45000);
    if(!r.ok)throw new Error(r.reason||r.error||'Resolve failed');
-   const savedPhoto=r.completionPhotoRef||r.resolution?.completionPhotoRef||'';msg.textContent='✓ Maintenance resolved'+(savedPhoto?' • photo saved':'');
+   const savedPhoto=r.completionPhotoRef||r.resolution?.completionPhotoRef||'';msg.textContent='✓ Maintenance resolved'+(savedPhoto?' • photo saved':'')+(r.warrantyItem||r.resolution?.warrantyItem?' • WARRANTY FOLLOW-UP CREATED':'');
    // Successful resolve is already authoritative. Update the visible board immediately instead of
    // blocking the technician on another full Sheets read.
    relayCacheClear_('maintenance:');
@@ -1177,7 +1180,7 @@ document.addEventListener('click',function(e){
   pendingMaintenanceResolve=resolve.dataset.id;
   const card=resolve.closest('.maint-card');
   document.getElementById('maintenanceResolveTitle').textContent='Resolve '+(card?.querySelector('.maint-room')?.textContent||'Maintenance');
-  document.getElementById('maintenanceResolvePhoto').value='';document.getElementById('maintenanceResolveNote').value='';document.getElementById('maintenanceResolveMessage').textContent='';
+  document.getElementById('maintenanceResolvePhoto').value='';document.getElementById('maintenanceResolveNote').value='';document.getElementById('maintenanceResolveMessage').textContent='';document.getElementById('maintenanceWarrantyItem').checked=false;document.getElementById('maintenanceWarrantyFields').hidden=true;document.getElementById('maintenanceWarrantyType').value='';document.getElementById('maintenanceWarrantyManufacturer').value='';document.getElementById('maintenanceWarrantyModel').value='';document.getElementById('maintenanceWarrantyNumber').value='';document.getElementById('maintenanceWarrantyNotes').value='';
   document.getElementById('maintenanceResolvePanel').hidden=false;
   document.getElementById('maintenanceResolvePanel').scrollIntoView({block:'start'});return;
  }
@@ -1420,7 +1423,7 @@ document.getElementById('inspectionMaintenanceSummary')?.addEventListener('click
  const b=e.target.closest('.inspection-maint-resolve');if(!b)return;
  pendingMaintenanceResolve=b.dataset.id;
  document.getElementById('maintenanceResolveTitle').textContent='Resolve Maintenance • Room '+activeInspectionRoom;
- document.getElementById('maintenanceResolvePhoto').value='';document.getElementById('maintenanceResolveNote').value='';document.getElementById('maintenanceResolveMessage').textContent='';
+ document.getElementById('maintenanceResolvePhoto').value='';document.getElementById('maintenanceResolveNote').value='';document.getElementById('maintenanceResolveMessage').textContent='';document.getElementById('maintenanceWarrantyItem').checked=false;document.getElementById('maintenanceWarrantyFields').hidden=true;document.getElementById('maintenanceWarrantyType').value='';document.getElementById('maintenanceWarrantyManufacturer').value='';document.getElementById('maintenanceWarrantyModel').value='';document.getElementById('maintenanceWarrantyNumber').value='';document.getElementById('maintenanceWarrantyNotes').value='';
  document.getElementById('maintenanceResolvePanel').hidden=false;
 });
 
@@ -1982,20 +1985,23 @@ function relayNightAuditPreviewHtml_(x){
    const sid=localStorage.getItem('relaySessionId'),range=document.getElementById('mprRange').value;
    document.getElementById('mprTaskBody').innerHTML='<tr><td colspan="8" class="mpr-empty">Loading RELAY maintenance activity…</td></tr>';
    try{
-     const [date,maint,pm,work,filter]=await Promise.all([
+     const [date,maint,pm,work,filter,warrantyReport]=await Promise.all([
        loadRelayBusinessDay_(),
        apiPost({action:'getMaintenanceReport',sessionId:sid},45000).catch(()=>({ok:false})),
        apiPost({action:'getPmBoard',sessionId:sid},45000).catch(()=>({ok:false})),
        apiPost({action:'getWorkBoard'},45000).catch(()=>({ok:false})),
-       apiPost({action:'getFilterPmBoard',sessionId:sid},45000).catch(()=>({ok:false}))
+       apiPost({action:'getFilterPmBoard',sessionId:sid},45000).catch(()=>({ok:false})),
+       apiPost({action:'getWarrantyReport',sessionId:sid},45000).catch(()=>({ok:false,items:[]}))
      ]);
      const maintenance=maint.maintenance||maint.issues||maint.maintenanceIssues||maint.tickets||[];
      const pmRows=pm.history||maint.pmCompletions||[];
      const side=(work.sideWork||[]).filter(isComplete);
      const filterRows=filter.history||[];
+     const warrantyItems=warrantyReport.items||[],warrantyByMaintenance=new Map(warrantyItems.map(x=>[String(x.maintenanceId),x]));maintenance.forEach(x=>{const w=warrantyByMaintenance.get(String(x.maintenance_id));if(w){x.warrantyItem=true;x.warrantyStatus=w.status;x.warrantyId=w.warrantyId}});
      mprRows_=categoryRows_(maintenance,pmRows,side,filterRows);mprFilterBoard_=filter.ok?filter:null;
      // Checklist timing is not yet exposed by a dedicated historical endpoint. Do not fabricate it.
      render_(mprFilterBoard_);
+     if(warrantyReport.ok){const items=warrantyReport.items||[],count=s=>items.filter(x=>String(x.status||'').toUpperCase()===s).length;document.getElementById('mprWarrantyStatus').innerHTML=[['New / Not Emailed',count('NEW_NOT_EMAILED')],['Email to Profillment',count('EMAIL_TO_PROFILLMENT')],['Submitted',count('SUBMITTED')],['Replacement Pending',count('REPLACEMENT_PENDING')],['Received / Installed',items.filter(x=>['RECEIVED','INSTALLED','CLOSED'].includes(String(x.status||'').toUpperCase())).length]].map(x=>'<div class="mpr-warranty-row"><span>'+x[0]+'</span><b>'+x[1]+'</b></div>').join('')}
    }catch(err){document.getElementById('mprTaskBody').innerHTML='<tr><td colspan="8" class="mpr-empty">Could not load report: '+esc(err.message)+'</td></tr>'}
  }
  open.addEventListener('click',()=>{library.hidden=true;document.querySelectorAll('#reportsView>section').forEach(x=>x.hidden=true);report.hidden=false;load_()});
@@ -2007,3 +2013,6 @@ function relayNightAuditPreviewHtml_(x){
  document.getElementById('mprWarrantyReport')?.addEventListener('click',()=>alert('Warranty Items Report is queued next. Warranty-tagged maintenance items will feed it automatically once the warranty checkbox workflow is wired.'));
  document.querySelectorAll('[data-view="Reports"]').forEach(b=>b.addEventListener('click',()=>{report.hidden=true}));
 })();
+
+/* RELAY Warranty Item toggle */
+document.getElementById('maintenanceWarrantyItem')?.addEventListener('change',e=>{const f=document.getElementById('maintenanceWarrantyFields');if(f)f.hidden=!e.target.checked});
