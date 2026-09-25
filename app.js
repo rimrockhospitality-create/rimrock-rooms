@@ -93,7 +93,7 @@ function show(view){
   if(view==='Lost & Found') loadLostFound_();
   if(view==='Inspections') loadInspectionQueue();
   if(view==='Maintenance'){loadMaintenanceBoard();loadSideWorkBoard_();}
-  if(view==='Reports'){document.getElementById('dailyOperationsReport').hidden=true;document.getElementById('reportLibrary').hidden=false;document.getElementById('backToReports').hidden=false;}
+  if(view==='Reports'){document.getElementById('dailyOperationsReport').hidden=true;document.getElementById('housekeeperPerformanceReport').hidden=true;document.getElementById('weeklyOpsReport').hidden=true;document.getElementById('reportLibrary').hidden=false;document.getElementById('backToReports').hidden=false;}
   if(view==='Preventive Maintenance'||view==='PM')loadPmBoard_();
   if(view==='Users') loadUsersAdmin();
   if(view==='Checklists'){openChecklistHub();loadOpenShiftNotes_();}
@@ -1598,6 +1598,83 @@ document.getElementById('savePropertyWalkPhoto')?.addEventListener('click',async
  try{const photoBase64=await relayFileDataUrl_(file);const sessionId=localStorage.getItem('relaySessionId')||'';const r=await apiPost({action:'savePropertyWalkPhoto',sessionId,propertyId:'CO534',businessDate:housekeepingBusinessDate(),area,caption,category:'PROPERTY_WALK',photoBase64,photoMimeType:file.type||'image/jpeg'},45000);if(!r.ok)throw new Error(r.reason||r.error||'Save failed');msg.textContent='✓ Property walk photo saved. It is now available to the Daily Operations Report.';document.getElementById('propertyWalkArea').value='';document.getElementById('propertyWalkCaption').value='';document.getElementById('propertyWalkPhoto').value='';setTimeout(()=>document.getElementById('propertyWalkPhotoPanel').hidden=true,1200)}catch(e){msg.textContent='Could not save: '+e.message}finally{btn.disabled=false;btn.textContent='SAVE PROPERTY WALK PHOTO'}
 });
 
+
+
+
+/* RELAY individual Housekeeper Performance Report */
+const HKPR_HOURS_KEY='relay.hkpr.actualHours.v1';
+function hkprDate_(d){const x=new Date(d);return [x.getFullYear(),String(x.getMonth()+1).padStart(2,'0'),String(x.getDate()).padStart(2,'0')].join('-')}
+function hkprRange_(){const v=document.getElementById('hkprRange')?.value||'30',end=new Date();let days=v==='TODAY'?1:Number(v||30);const start=new Date(end);start.setDate(end.getDate()-days+1);return {start:hkprDate_(start),end:hkprDate_(end),days}}
+function hkprName_(v){return String(v||'').trim().toLowerCase()}
+function hkprMinutes_(x){for(const k of ['activeMinutes','active_minutes','minutes','durationMinutes','cleaningMinutes','duration_minutes']){const n=Number(x?.[k]);if(Number.isFinite(n)&&n>0)return n}const s=x?.startedAt||x?.started_at||x?.startAt||x?.start_at,e=x?.completedAt||x?.completed_at||x?.endedAt||x?.ended_at||x?.readyAt||x?.ready_at;if(s&&e){const n=(new Date(e)-new Date(s))/60000;if(Number.isFinite(n)&&n>0)return n}return 0}
+function hkprIssueState_(x){return String(x?.resolution||x?.status||'').toUpperCase()}
+function hkprIssueLabel_(x){return x?.deficiency_label||x?.deficiencyLabel||x?.description||x?.note||'Inspection issue'}
+function hkprIssueId_(x){return String(x?.issue_id||x?.issueId||x?.id||'')}
+function hkprPhotoRef_(x){return x?.photoRef||x?.photo_ref||''}
+function hkprBusinessDate_(x){return dorDateKey_(x?.businessDate||x?.business_date||x?.date||x?.createdAt||x?.created_at||'')}
+function hkprInRange_(x,r){const d=hkprBusinessDate_(x);return !d||(d>=r.start&&d<=r.end)}
+function hkprFmtMin_(n){n=Math.round(Number(n)||0);if(n<60)return n+'m';return Math.floor(n/60)+'h '+String(n%60).padStart(2,'0')+'m'}
+function hkprTable_(heads,rows){return '<table><thead><tr>'+heads.map(x=>'<th>'+dorEsc_(x)+'</th>').join('')+'</tr></thead><tbody>'+(rows.length?rows.map(r=>'<tr>'+r.map(x=>'<td>'+x+'</td>').join('')+'</tr>').join(''):'<tr><td colspan="'+heads.length+'">No activity recorded.</td></tr>')+'</tbody></table>'}
+function hkprHoursKey_(name,r){return name+'|'+r.start+'|'+r.end}
+function hkprHoursLoad_(name,r){try{return Number(JSON.parse(localStorage.getItem(HKPR_HOURS_KEY)||'{}')[hkprHoursKey_(name,r)]||0)}catch(_){return 0}}
+function hkprHoursSave_(name,r,hours){let x={};try{x=JSON.parse(localStorage.getItem(HKPR_HOURS_KEY)||'{}')}catch(_){}x[hkprHoursKey_(name,r)]=Number(hours)||0;localStorage.setItem(HKPR_HOURS_KEY,JSON.stringify(x))}
+function hkprSpark_(host,values,pass){if(!host)return;const vals=values.map(x=>Number(x)||0),max=Math.max(...vals,1),min=pass?0:Math.min(...vals,0);host.innerHTML='<div class="hkpr-spark '+(pass?'pass':'')+'>'+vals.map((v,i)=>'<i style="height:'+Math.max(8,Math.round(((v-min)/(max-min||1))*52))+'px"><span>W'+(i+1)+'</span></i>').join('')+'</div>'}
+async function hkprLoadDays_(r){
+ const dates=[];for(let d=new Date(r.start+'T12:00:00');d<=new Date(r.end+'T12:00:00');d.setDate(d.getDate()+1))dates.push(hkprDate_(d));
+ const chunks=[];for(let i=0;i<dates.length;i+=5)chunks.push(dates.slice(i,i+5));
+ const states=[],works=[];
+ for(const chunk of chunks){const pair=await Promise.all(chunk.flatMap(date=>[
+   apiPost({action:'getToday',businessDate:date},45000).catch(()=>({ok:false,businessDate:date})),
+   apiPost({action:'getWorkBoard',businessDate:date},45000).catch(()=>({ok:false,businessDate:date}))
+ ]));for(let i=0;i<chunk.length;i++){states.push({...pair[i*2],_date:chunk[i]});works.push({...pair[i*2+1],_date:chunk[i]})}}
+ return {states,works}
+}
+async function loadHousekeeperPerformanceReport_(){
+ const status=document.getElementById('hkprStatus'),select=document.getElementById('hkprHousekeeper');if(!status||!select)return;
+ status.textContent='LOADING';
+ const r=hkprRange_(),sid=localStorage.getItem('relaySessionId')||'';
+ try{
+  const users=await apiPost({action:'getAssignableHousekeepers',sessionId:sid},45000);
+  const active=(users.housekeepers||[]).filter(x=>x.active!==false),old=select.value;
+  select.innerHTML=active.length?active.map(x=>'<option value="'+dorEsc_(x.name)+'">'+dorEsc_(x.name)+'</option>').join(''):'<option value="">No active housekeepers</option>';
+  if(active.some(x=>x.name===old))select.value=old;
+  const name=select.value;if(!name){status.textContent='NO ACTIVE STAFF';return}
+  status.textContent='ACTIVE';document.getElementById('hkprGenerated').textContent='Generated '+new Date().toLocaleString();
+  const {states,works}=await hkprLoadDays_(r),allClean=[],allIns=[],allIssues=[],allSide=[],allSideSessions=[];
+  states.filter(x=>x.ok).forEach(x=>{(x.cleaningSessions||[]).forEach(y=>allClean.push({...y,_date:x._date}));(x.inspections||[]).forEach(y=>allIns.push({...y,_date:x._date}));(x.inspectionIssues||[]).forEach(y=>allIssues.push({...y,_date:x._date}))});
+  works.filter(x=>x.ok).forEach(x=>{(x.sideWork||[]).forEach(y=>allSide.push({...y,_date:x._date}));(x.sideWorkSessions||[]).forEach(y=>allSideSessions.push({...y,_date:x._date}))});
+  const mine=x=>hkprName_(x.housekeeper||x.housekeeper_name||x.assignedTo||x.assigned_to||x.worker)===hkprName_(name);
+  const clean=allClean.filter(mine),ins=allIns.filter(mine),issues=allIssues.filter(mine),side=allSide.filter(mine),sideSessions=allSideSessions.filter(mine);
+  const finished=clean.filter(x=>['COMPLETE','READY_FOR_INSPECTION'].includes(String(x.status||'').toUpperCase())),rooms=new Set(finished.map(x=>String(x.room||'')).filter(Boolean)),cleanMinutes=finished.reduce((n,x)=>n+hkprMinutes_(x),0),avg=rooms.size&&cleanMinutes?cleanMinutes/rooms.size:0;
+  const issueRooms=new Set(issues.map(x=>String(x.room||'')).filter(Boolean)),inspectedRooms=new Set(ins.map(x=>String(x.room||'')).filter(Boolean)),firstPassRooms=new Set([...inspectedRooms].filter(room=>!issues.some(i=>String(i.room||'')===room))),firstRate=inspectedRooms.size?Math.round(firstPassRooms.size/inspectedRooms.size*100):0;
+  const hkCorrections=issues.filter(x=>{const st=hkprIssueState_(x);return st.includes('REWORK')||st.includes('HOUSEKEEPER')||st==='FIXED_BY_INSPECTOR'}),rwRooms=new Set(hkCorrections.map(x=>String(x.room||'')).filter(Boolean));
+  const reworkMinutes=hkCorrections.reduce((n,x)=>n+Number(x.reworkMinutes||x.rework_minutes||x.correctionMinutes||x.correction_minutes||0),0);
+  document.getElementById('hkprRooms').textContent=rooms.size;document.getElementById('hkprAvg').textContent=avg?Math.round(avg)+'m':'—';document.getElementById('hkprFirstPass').textContent=inspectedRooms.size?firstRate+'%':'—';document.getElementById('hkprPassDetail').textContent=inspectedRooms.size?firstPassRooms.size+' of '+inspectedRooms.size+' rooms':'No inspections';
+  document.getElementById('hkprReworkRooms').textContent=rwRooms.size;document.getElementById('hkprReworkDetail').textContent=hkCorrections.length+' corrections • '+hkprFmtMin_(reworkMinutes);
+  document.getElementById('hkprQuality').innerHTML=hkprTable_(['Measure','Result'],[['Rooms inspected',inspectedRooms.size],['Passed first inspection',firstPassRooms.size+' ('+firstRate+'%)'],['Required correction',issueRooms.size]]);
+  const groups=new Map();issues.forEach(x=>{const k=hkprIssueLabel_(x);groups.set(k,(groups.get(k)||0)+1)});document.getElementById('hkprFailures').innerHTML=hkprTable_(['Issue','Occurrences'],[...groups.entries()].sort((a,b)=>b[1]-a[1]).slice(0,6).map(([k,v])=>[dorEsc_(k),v]));
+  const recent=[...issues].sort((a,b)=>new Date(b.createdAt||b.created_at||b._date)-new Date(a.createdAt||a.created_at||a._date)).slice(0,4),photoHost=document.getElementById('hkprPhotos');
+  photoHost.innerHTML=recent.length?recent.map((x,i)=>'<article class="hkpr-photo"><div class="hkpr-photo-img" data-ref="'+dorEsc_(hkprPhotoRef_(x))+'">PHOTO</div><div><strong>Room '+dorEsc_(x.room||'—')+' • '+dorEsc_(hkprIssueLabel_(x))+'</strong><span>'+dorEsc_(x.note||x.description||'Inspection correction')+'</span><small>'+dorEsc_(x._date||hkprBusinessDate_(x))+' • '+dorEsc_(hkprIssueState_(x).replaceAll('_',' ')||'RECORDED')+'</small></div></article>').join(''):'<p>No inspection issues recorded for this period.</p>';
+  for(const el of photoHost.querySelectorAll('[data-ref]')){if(!el.dataset.ref)continue;try{const p=await apiPost({action:'getInspectionPhoto',photoRef:el.dataset.ref},45000);if(p.ok&&p.dataUrl)el.innerHTML='<img src="'+p.dataUrl+'" alt="Inspection issue">'}catch(_){}}
+  document.getElementById('hkprRwRooms').textContent=rwRooms.size;document.getElementById('hkprCorrections').textContent=hkCorrections.length;document.getElementById('hkprRwAvg').textContent=hkCorrections.length&&reworkMinutes?hkprFmtMin_(reworkMinutes/hkCorrections.length):'—';document.getElementById('hkprRwTime').textContent=hkprFmtMin_(reworkMinutes);
+  document.getElementById('hkprReworkList').innerHTML=hkprTable_(['Issue','Corrections'],[...new Map(hkCorrections.map(x=>[hkprIssueLabel_(x),0])).keys()].map(k=>[dorEsc_(k),hkCorrections.filter(x=>hkprIssueLabel_(x)===k).length]));
+  const sideByTask=new Map(),sessionByTask=new Map();sideSessions.forEach(x=>{const id=String(x.taskId||x.task_id||'');if(!id)return;sessionByTask.set(id,(sessionByTask.get(id)||0)+hkprMinutes_(x))});
+  side.forEach(x=>{const task=String(x.task||x.title||'Side Work').trim(),key=task.toLowerCase().replace(/\s+/g,' '),z=sideByTask.get(key)||{task,assigned:0,done:0,minutes:0};z.assigned++;if(String(x.status||'').toUpperCase()==='COMPLETE')z.done++;z.minutes+=sessionByTask.get(String(x.taskId||x.task_id||''))||hkprMinutes_(x);sideByTask.set(key,z)});
+  const sideRows=[...sideByTask.values()],sideAssigned=sideRows.reduce((n,x)=>n+x.assigned,0),sideDone=sideRows.reduce((n,x)=>n+x.done,0),sideMinutes=sideRows.reduce((n,x)=>n+x.minutes,0);
+  document.getElementById('hkprSideSummary').innerHTML=[['Assigned',sideAssigned],['Completed',sideDone],['Completion',sideAssigned?Math.round(sideDone/sideAssigned*100)+'%':'—'],['Total Time',hkprFmtMin_(sideMinutes)]].map(x=>'<div><strong>'+x[1]+'</strong><small>'+x[0]+'</small></div>').join('');
+  document.getElementById('hkprSideWork').innerHTML=hkprTable_(['Side Work','Assigned','Completed','Time'],sideRows.map(x=>[dorEsc_(x.task),x.assigned,x.done,hkprFmtMin_(x.minutes)]));
+  const tracked=cleanMinutes+sideMinutes+reworkMinutes,hours=hkprHoursLoad_(name,r);document.getElementById('hkprActualHours').value=hours||'';
+  document.getElementById('hkprEfficiency').innerHTML=[['Actual Hours Worked',hours?hours.toFixed(2)+' hrs':'Not entered'],['Room Cleaning Time',hkprFmtMin_(cleanMinutes)],['Side Work Time',hkprFmtMin_(sideMinutes)],['Rework Time',hkprFmtMin_(reworkMinutes)],['Total RELAY Tracked Time',hkprFmtMin_(tracked)]].map(x=>'<div><span>'+x[0]+'</span><strong>'+x[1]+'</strong></div>').join('');
+  const coverage=hours?Math.min(100,Math.round((tracked/60)/hours*100)):0;document.getElementById('hkprCoverage').textContent=hours?coverage+'%':'Enter actual hours';document.getElementById('hkprCoverageBar').style.width=coverage+'%';
+  const weekBuckets=[0,0,0,0],weekClean=[[],[],[],[]];issues.forEach(x=>{const d=x._date||hkprBusinessDate_(x),idx=Math.min(3,Math.max(0,Math.floor((new Date(d+'T12:00:00')-new Date(r.start+'T12:00:00'))/(7*86400000))));weekBuckets[idx]++});finished.forEach(x=>{const d=x._date||hkprBusinessDate_(x),idx=Math.min(3,Math.max(0,Math.floor((new Date(d+'T12:00:00')-new Date(r.start+'T12:00:00'))/(7*86400000))));const m=hkprMinutes_(x);if(m)weekClean[idx].push(m)});const weeklyIns=[0,0,0,0];ins.forEach(x=>{const d=x._date||hkprBusinessDate_(x),idx=Math.min(3,Math.max(0,Math.floor((new Date(d+'T12:00:00')-new Date(r.start+'T12:00:00'))/(7*86400000))));weeklyIns[idx]++});hkprSpark_(document.getElementById('hkprPassTrend'),weeklyIns.map((n,i)=>n?Math.max(0,Math.round((n-weekBuckets[i])/n*100)):0),true);hkprSpark_(document.getElementById('hkprCleanTrend'),weekClean.map(x=>x.length?x.reduce((a,b)=>a+b,0)/x.length:0),false);
+ }catch(err){status.textContent='DATA UNAVAILABLE';document.getElementById('hkprPhotos').innerHTML='<p>Could not load report: '+dorEsc_(err.message)+'</p>'}
+}
+document.getElementById('openHousekeeperPerformanceReport')?.addEventListener('click',()=>{document.getElementById('reportLibrary').hidden=true;document.getElementById('dailyOperationsReport').hidden=true;document.getElementById('weeklyOpsReport').hidden=true;document.getElementById('housekeeperPerformanceReport').hidden=false;loadHousekeeperPerformanceReport_()});
+document.getElementById('backFromHousekeeperReport')?.addEventListener('click',()=>{document.getElementById('housekeeperPerformanceReport').hidden=true;document.getElementById('reportLibrary').hidden=false});
+document.getElementById('printHousekeeperReport')?.addEventListener('click',()=>window.print());
+document.getElementById('hkprHousekeeper')?.addEventListener('change',loadHousekeeperPerformanceReport_);
+document.getElementById('hkprRange')?.addEventListener('change',loadHousekeeperPerformanceReport_);
+document.getElementById('hkprSaveHours')?.addEventListener('click',()=>{const name=document.getElementById('hkprHousekeeper').value,r=hkprRange_(),h=Number(document.getElementById('hkprActualHours').value);if(!name||!Number.isFinite(h)||h<0){alert('Enter the actual ADP hours for this housekeeper and period.');return}hkprHoursSave_(name,r,h);loadHousekeeperPerformanceReport_()});
 
 async function loadWeeklyOpsReport_(){
   const host=document.getElementById('weeklyOpsReport'); if(!host||!currentUser)return;
