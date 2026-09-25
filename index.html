@@ -115,7 +115,19 @@
         <button id="openDailyOperationsReport" class="report-launch-card" type="button"><div><small>DAILY OPERATIONS</small><h2>Daily Operations Report</h2><p>One-minute record of what happened at the hotel today.</p></div><span>OPEN REPORT →</span></button>
         <button id="openHousekeeperPerformanceReport" class="report-launch-card" type="button"><div><small>PEOPLE • PERFORMANCE</small><h2>Housekeeper Performance Report</h2><p>Individual room quality, rework, side work, and tracked-time performance.</p></div><span>OPEN REPORT →</span></button>
         <button id="openInspectorPerformanceReport" class="report-launch-card" type="button"><div><small>ROOM ACCEPTANCE</small><h2>Inspector Performance Report</h2><p>Inspection pace, issue discovery, resolution, and final room acceptance.</p></div><span>OPEN REPORT →</span></button>
+        <button id="openMaintenancePerformanceReport" class="report-launch-card" type="button"><div><small>ENGINEERING • PERFORMANCE</small><h2>Maintenance Performance Report</h2><p>Workload, tracked time, preventive care, Filter PM, and warranty visibility.</p></div><span>OPEN REPORT →</span></button>
       </div>
+      <section id="maintenancePerformanceReport" class="mpr" hidden>
+        <div class="mpr-actions"><button id="backFromMaintenanceReport" type="button">← REPORTS</button><button id="printMaintenanceReport" type="button">PRINT / SAVE PDF</button></div>
+        <article class="mpr-page">
+          <header class="mpr-header"><div><b>RELAY</b><small>ROOM OPERATIONS</small></div><div><strong>Maintenance Performance Report</strong><span>Workload • Time Tracking • Productivity • Asset Care • Warranty Tracking</span></div><label>Date Range<select id="mprRange"><option value="TODAY">Today</option><option value="7">Last 7 Days</option><option value="30" selected>Last 30 Days</option></select></label></header>
+          <section id="mprKpis" class="mpr-kpis"></section>
+          <section class="mpr-charts"><div class="mpr-card"><h2>TIME BY CATEGORY</h2><div id="mprTimeBars"></div></div><div class="mpr-card"><h2>TIME DISTRIBUTION</h2><div id="mprDistribution"></div></div><div class="mpr-card"><h2>AVG. TIME PER TASK</h2><div id="mprAverages"></div></div></section>
+          <section class="mpr-card mpr-tasks"><div class="mpr-card-head"><h2>RECENT MAINTENANCE TASKS</h2><select id="mprCategory"><option value="ALL">All Categories</option><option>Reactive Maintenance</option><option>Preventive Maintenance</option><option>Checklists</option><option>Side Duties</option><option>Filter PM</option></select></div><div class="mpr-table"><table><thead><tr><th>Date</th><th>Category</th><th>Task / Description</th><th>Location / Unit</th><th>Time Spent</th><th>Warranty Item</th><th>Status</th><th>Completed By</th></tr></thead><tbody id="mprTaskBody"></tbody></table></div></section>
+          <section class="mpr-bottom"><div class="mpr-card"><div class="mpr-card-head"><h2>FILTER PM STATUS</h2><button id="mprFilterReport" type="button">FULL FILTER PM REPORT →</button></div><div id="mprFilterStatus" class="mpr-table"></div></div><div class="mpr-card"><div class="mpr-card-head"><h2>WARRANTY ITEMS</h2><button id="mprWarrantyReport" type="button">WARRANTY REPORT →</button></div><div id="mprWarrantyStatus"></div></div><div class="mpr-card"><h2>REPORT INSIGHTS</h2><div id="mprInsights"></div></div></section>
+          <footer>RELAY • ROOM OPERATIONS <span>Everhome Suites Denver Airport • CO534</span></footer>
+        </article>
+      </section>
       <section id="inspectorPerformanceReport" class="ipr" hidden>
         <div class="ipr-actions"><button id="backFromInspectorReport" type="button">← REPORTS</button><button id="printInspectorReport" type="button">PRINT / SAVE PDF</button></div>
         <article class="ipr-page">
