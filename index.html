@@ -12,7 +12,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="theme-color" content="#073b63">
   <title>RELAY Operations | CO534</title>
-  <link rel="stylesheet" href="styles.css?v=20260924-hkperf">
+  <link rel="stylesheet" href="styles.css?v=20260924-inspectorperf">
   <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/jspdf-autotable@3.8.4/dist/jspdf.plugin.autotable.min.js"></script>
@@ -114,7 +114,26 @@
       <div id="reportLibrary">
         <button id="openDailyOperationsReport" class="report-launch-card" type="button"><div><small>DAILY OPERATIONS</small><h2>Daily Operations Report</h2><p>One-minute record of what happened at the hotel today.</p></div><span>OPEN REPORT →</span></button>
         <button id="openHousekeeperPerformanceReport" class="report-launch-card" type="button"><div><small>PEOPLE • PERFORMANCE</small><h2>Housekeeper Performance Report</h2><p>Individual room quality, rework, side work, and tracked-time performance.</p></div><span>OPEN REPORT →</span></button>
+        <button id="openInspectorPerformanceReport" class="report-launch-card" type="button"><div><small>ROOM ACCEPTANCE</small><h2>Inspector Performance Report</h2><p>Inspection pace, issue discovery, resolution, and final room acceptance.</p></div><span>OPEN REPORT →</span></button>
       </div>
+      <section id="inspectorPerformanceReport" class="ipr" hidden>
+        <div class="ipr-actions"><button id="backFromInspectorReport" type="button">← REPORTS</button><button id="printInspectorReport" type="button">PRINT / SAVE PDF</button></div>
+        <article class="ipr-page">
+          <header class="ipr-header"><div><b>RELAY</b><small>ROOM OPERATIONS</small></div><div><strong>Everhome Suites Denver Airport</strong><span>Inspector Performance Report</span></div><div><small>PROPERTY</small><b>CO534</b><small id="iprGenerated">Generated —</small></div></header>
+          <div class="ipr-filters"><label>Inspector<select id="iprInspector"><option>Loading…</option></select></label><label>Date Range<select id="iprRange"><option value="TODAY">Today</option><option value="7">Last 7 Days</option><option value="30" selected>Last 30 Days</option></select></label><div><small>STATUS</small><strong id="iprStatus">ACTIVE</strong></div></div>
+          <section class="ipr-section"><div class="ipr-summary"><div><small>ROOMS INSPECTED</small><strong id="iprRooms">—</strong></div><div><small>AVG INSPECTION TIME</small><strong id="iprAvg">—</strong><span id="iprAvgDetail">Fastest — • Slowest —</span></div><div><small>FIRST-PASS RATE</small><strong id="iprFirstPass">—</strong><span id="iprPassDetail">—</span></div><div><small>ROOMS WITH ISSUES</small><strong id="iprIssueRooms">—</strong><span id="iprIssueRoomDetail">—</span></div><div><small>FINAL ROOM ACCEPTANCE</small><strong id="iprAcceptance">—</strong><span id="iprAcceptanceDetail">—</span></div></div></section>
+          <div class="ipr-main">
+            <section class="ipr-card"><h2>ISSUE RESOLUTION</h2><div class="ipr-resolution"><div><small>TOTAL ISSUES FOUND</small><strong id="iprIssues">—</strong></div><div><small>SENT TO HOUSEKEEPER</small><strong id="iprSentBack">—</strong><span id="iprSentBackPct">—</span></div><div><small>FIXED BY INSPECTOR</small><strong id="iprFixed">—</strong><span id="iprFixedPct">—</span></div></div></section>
+            <section class="ipr-card"><h2>ISSUE TYPES FOUND</h2><div id="iprTypes" class="ipr-table"></div></section>
+            <section class="ipr-card"><h2>INSPECTION TIME ANALYSIS</h2><div id="iprTimeAnalysis" class="ipr-table"></div></section>
+          </div>
+          <div class="ipr-bottom">
+            <section class="ipr-card"><h2>RECENT INSPECTION ISSUES</h2><div id="iprPhotos" class="ipr-photo-list"></div></section>
+            <section class="ipr-card"><h2>INSPECTION TRENDS <small>WEEKLY</small></h2><div class="ipr-trend"><small>FIRST-PASS INSPECTION RATE</small><div id="iprPassTrend"></div><small>AVERAGE INSPECTION TIME</small><div id="iprTimeTrend"></div></div></section>
+          </div>
+          <footer>RELAY • ROOM OPERATIONS <span>Everhome Suites Denver Airport • CO534</span></footer>
+        </article>
+      </section>
       <section id="housekeeperPerformanceReport" class="hkpr" hidden>
         <div class="hkpr-actions"><button id="backFromHousekeeperReport" type="button">← REPORTS</button><button id="printHousekeeperReport" type="button">PRINT / SAVE PDF</button></div>
         <article class="hkpr-page">
