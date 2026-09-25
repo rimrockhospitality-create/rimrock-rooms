@@ -12,7 +12,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="theme-color" content="#073b63">
   <title>RELAY Operations | CO534</title>
-  <link rel="stylesheet" href="styles.css?v=20260925-warrantyreadable">
+  <link rel="stylesheet" href="styles.css?v=20260925-warrantyreport">
   <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/jspdf-autotable@3.8.4/dist/jspdf.plugin.autotable.min.js"></script>
@@ -116,7 +116,19 @@
         <button id="openHousekeeperPerformanceReport" class="report-launch-card" type="button"><div><small>PEOPLE • PERFORMANCE</small><h2>Housekeeper Performance Report</h2><p>Individual room quality, rework, side work, and tracked-time performance.</p></div><span>OPEN REPORT →</span></button>
         <button id="openInspectorPerformanceReport" class="report-launch-card" type="button"><div><small>ROOM ACCEPTANCE</small><h2>Inspector Performance Report</h2><p>Inspection pace, issue discovery, resolution, and final room acceptance.</p></div><span>OPEN REPORT →</span></button>
         <button id="openMaintenancePerformanceReport" class="report-launch-card" type="button"><div><small>ENGINEERING • PERFORMANCE</small><h2>Maintenance Performance Report</h2><p>Workload, tracked time, preventive care, Filter PM, and warranty visibility.</p></div><span>OPEN REPORT →</span></button>
+        <button id="openWarrantyReport" class="report-launch-card" type="button"><div><small>ASSET PROTECTION • WARRANTY</small><h2>Warranty Items Report</h2><p>Brad’s warranty follow-through from discovery through replacement and installation.</p></div><span>OPEN REPORT →</span></button>
       </div>
+      <section id="warrantyReport" class="wrr" hidden>
+        <div class="wrr-actions"><button id="backFromWarrantyReport" type="button">← REPORTS</button><button id="printWarrantyReport" type="button">PRINT / SAVE PDF</button></div>
+        <article class="wrr-page">
+          <header class="wrr-header"><div><b>RELAY</b><small>ROOM OPERATIONS</small></div><div><strong>Warranty Items Report</strong><span>Brad’s warranty follow-through • Profillment • replacement tracking</span></div><div><small>PROPERTY</small><b>CO534</b></div></header>
+          <section id="wrrKpis" class="wrr-kpis"></section>
+          <div class="wrr-toolbar"><label>Status<select id="wrrStatus"><option value="OPEN">Open Warranty Items</option><option value="ALL">All Warranty Items</option><option value="NEW_NOT_EMAILED">New / Not Emailed</option><option value="EMAIL_TO_PROFILLMENT">Email to Profillment</option><option value="SUBMITTED">Submitted</option><option value="REPLACEMENT_PENDING">Replacement Pending</option><option value="RECEIVED">Received</option><option value="INSTALLED">Installed</option><option value="CLOSED">Closed</option></select></label><label>Search<input id="wrrSearch" placeholder="Room, item, manufacturer, serial #…"></label></div>
+          <section class="wrr-card"><div class="wrr-card-head"><div><h2>WARRANTY QUEUE</h2><p>Every item stays visible until the replacement is installed and closed.</p></div><span id="wrrCount"></span></div><div id="wrrList" class="wrr-list"><div class="wrr-empty">Loading warranty items…</div></div></section>
+          <footer>RELAY • ROOM OPERATIONS <span>Everhome Suites Denver Airport • CO534</span></footer>
+        </article>
+        <section id="warrantyDetailPanel" class="wrr-detail" hidden><button id="closeWarrantyDetail" class="qr-close" type="button">×</button><small>WARRANTY FOLLOW-THROUGH</small><h2 id="wrrDetailTitle">Warranty Item</h2><div id="wrrDetailBody"></div><label>Status<select id="wrrDetailStatus"><option value="NEW_NOT_EMAILED">New / Not Emailed</option><option value="EMAIL_TO_PROFILLMENT">Email to Profillment</option><option value="SUBMITTED">Submitted</option><option value="REPLACEMENT_PENDING">Replacement Pending</option><option value="RECEIVED">Received</option><option value="INSTALLED">Installed</option><option value="CLOSED">Closed</option></select></label><label>Profillment Reference <small>(optional)</small><input id="wrrReference" placeholder="Claim / replacement / reference #"></label><label>Follow-Up Notes <small>(optional)</small><textarea id="wrrNotes" rows="3" placeholder="Add replacement, delivery, or installation notes"></textarea></label><button id="wrrSave" type="button">SAVE WARRANTY UPDATE</button><p id="wrrMessage"></p></section>
+      </section>
       <section id="maintenancePerformanceReport" class="mpr" hidden>
         <div class="mpr-actions"><button id="backFromMaintenanceReport" type="button">← REPORTS</button><button id="printMaintenanceReport" type="button">PRINT / SAVE PDF</button></div>
         <article class="mpr-page">
@@ -505,7 +517,7 @@
   </div>
 </div>
 <script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.js"></script>
-<script src="app.js?v=20260925-warranty"></script>
+<script src="app.js?v=20260925-warrantyreport"></script>
 <script src="pm.js?v=20260924-pm-picker"></script>
 </body>
 </html>
