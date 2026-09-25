@@ -12,7 +12,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="theme-color" content="#073b63">
   <title>RELAY Operations | CO534</title>
-  <link rel="stylesheet" href="styles.css?v=20260924-passon">
+  <link rel="stylesheet" href="styles.css?v=20260924-hkperf">
   <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/jspdf-autotable@3.8.4/dist/jspdf.plugin.autotable.min.js"></script>
@@ -113,7 +113,27 @@
       <div class="reports-head"><div><small>RELAY • ROOM OPERATIONS</small><h1>Reports</h1><p>Permanent operating records by business date.</p></div></div>
       <div id="reportLibrary">
         <button id="openDailyOperationsReport" class="report-launch-card" type="button"><div><small>DAILY OPERATIONS</small><h2>Daily Operations Report</h2><p>One-minute record of what happened at the hotel today.</p></div><span>OPEN REPORT →</span></button>
+        <button id="openHousekeeperPerformanceReport" class="report-launch-card" type="button"><div><small>PEOPLE • PERFORMANCE</small><h2>Housekeeper Performance Report</h2><p>Individual room quality, rework, side work, and tracked-time performance.</p></div><span>OPEN REPORT →</span></button>
       </div>
+      <section id="housekeeperPerformanceReport" class="hkpr" hidden>
+        <div class="hkpr-actions"><button id="backFromHousekeeperReport" type="button">← REPORTS</button><button id="printHousekeeperReport" type="button">PRINT / SAVE PDF</button></div>
+        <article class="hkpr-page">
+          <header class="hkpr-header"><div><b>RELAY</b><small>ROOM OPERATIONS</small></div><div><strong>Everhome Suites Denver Airport</strong><span>Housekeeper Performance Report</span></div><div><small>PROPERTY</small><b>CO534</b><small id="hkprGenerated">Generated —</small></div></header>
+          <div class="hkpr-filters"><label>Housekeeper<select id="hkprHousekeeper"><option>Loading…</option></select></label><label>Date Range<select id="hkprRange"><option value="TODAY">Today</option><option value="7">Last 7 Days</option><option value="30" selected>Last 30 Days</option></select></label><div><small>STATUS</small><strong id="hkprStatus">ACTIVE</strong></div></div>
+          <section class="hkpr-section"><h2>PERFORMANCE SUMMARY <small>ROOMS</small></h2><div class="hkpr-summary"><div><small>ROOMS CLEANED</small><strong id="hkprRooms">—</strong></div><div><small>AVG CLEAN TIME</small><strong id="hkprAvg">—</strong><span id="hkprAvgDetail">Recorded room sessions</span></div><div><small>FIRST-PASS RATE</small><strong id="hkprFirstPass">—</strong><span id="hkprPassDetail">—</span></div><div><small>REWORK</small><strong id="hkprReworkRooms">—</strong><span id="hkprReworkDetail">—</span></div></div></section>
+          <div class="hkpr-main">
+            <section class="hkpr-card"><h2>QUALITY / INSPECTIONS</h2><div id="hkprQuality" class="hkpr-table"></div><h3>MOST COMMON INSPECTION FAILURES</h3><div id="hkprFailures" class="hkpr-table"></div></section>
+            <section class="hkpr-card"><h2>RECENT INSPECTION ISSUES</h2><div id="hkprPhotos" class="hkpr-photo-list"></div></section>
+            <section class="hkpr-card"><h2>REWORK DETAILS</h2><div class="hkpr-rework-kpis"><div><strong id="hkprRwRooms">—</strong><small>ROOMS REQUIRED REWORK</small></div><div><strong id="hkprCorrections">—</strong><small>TOTAL CORRECTIONS ("I FIXED IT")</small></div><div><strong id="hkprRwAvg">—</strong><small>AVG CORRECTION TIME</small></div><div><strong id="hkprRwTime">—</strong><small>TOTAL REWORK TIME</small></div></div><div id="hkprReworkList" class="hkpr-table"></div></section>
+          </div>
+          <div class="hkpr-bottom">
+            <section class="hkpr-card"><h2>HOUSEKEEPING EFFICIENCY</h2><div id="hkprEfficiency" class="hkpr-efficiency"></div><div class="hkpr-accounted"><small>RELAY TIME ACCOUNTED FOR</small><strong id="hkprCoverage">Enter actual hours</strong><div><i id="hkprCoverageBar"></i></div></div><label class="hkpr-hours">Actual Hours Worked <input id="hkprActualHours" inputmode="decimal" placeholder="Enter from ADP"><button id="hkprSaveHours" type="button">SAVE</button></label></section>
+            <section class="hkpr-card"><h2>SIDE WORK</h2><div id="hkprSideSummary" class="hkpr-side-summary"></div><div id="hkprSideWork" class="hkpr-table"></div></section>
+            <section class="hkpr-card"><h2>PERFORMANCE TREND</h2><div class="hkpr-trend"><small>FIRST-PASS INSPECTION RATE</small><div id="hkprPassTrend"></div><small>AVERAGE CLEANING TIME</small><div id="hkprCleanTrend"></div></div></section>
+          </div>
+          <footer>RELAY • ROOM OPERATIONS <span>Everhome Suites Denver Airport • CO534</span></footer>
+        </article>
+      </section>
       <section id="dailyOperationsReport" class="daily-report dor-v3" hidden>
 <div class="dor-actions"><button id="backToReports" type="button">← REPORTS</button><button id="openNightAuditImport" type="button">IMPORT NIGHT AUDIT</button><button id="printDailyReport" type="button">PRINT / SAVE PDF</button></div><div id="nightAuditImportPanel" class="night-audit-panel" hidden><div class="night-audit-head"><div><small>CHOICE NIGHT AUDIT</small><h2>Import Hotel Performance</h2><p>Drop the completed Choice Night Audit PDF here. RELAY reads only Hotel Statistics.</p></div><button id="closeNightAuditImport" type="button">×</button></div><label class="night-audit-drop"><input id="nightAuditPdf" type="file" accept="application/pdf,.pdf"><strong>Drop Night Audit PDF here</strong><span>or choose a PDF</span></label><div id="nightAuditStatus" class="night-audit-status"></div><div id="nightAuditPreview" class="night-audit-preview" hidden></div><button id="importNightAudit" class="night-audit-import" type="button" disabled>IMPORT AUDIT</button></div>
 <article class="dor-page">
