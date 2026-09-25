@@ -2016,3 +2016,46 @@ function relayNightAuditPreviewHtml_(x){
 
 /* RELAY Warranty Item toggle */
 document.getElementById('maintenanceWarrantyItem')?.addEventListener('change',e=>{const f=document.getElementById('maintenanceWarrantyFields');if(f)f.hidden=!e.target.checked});
+
+/* RELAY Warranty Items Report — live queue */
+(function(){
+ const report=document.getElementById('warrantyReport'),library=document.getElementById('reportLibrary'),open=document.getElementById('openWarrantyReport');
+ if(!report||!open)return;
+ let items=[],selected=null;
+ const esc=v=>String(v??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
+ const label=s=>({'NEW_NOT_EMAILED':'New / Not Emailed','EMAIL_TO_PROFILLMENT':'Email to Profillment','SUBMITTED':'Submitted','REPLACEMENT_PENDING':'Replacement Pending','RECEIVED':'Received','INSTALLED':'Installed','CLOSED':'Closed'}[String(s||'').toUpperCase()]||String(s||'—').replaceAll('_',' '));
+ const openStatus=s=>!['CLOSED','INSTALLED'].includes(String(s||'').toUpperCase());
+ function render(){
+   const filter=document.getElementById('wrrStatus').value,q=document.getElementById('wrrSearch').value.trim().toLowerCase();
+   const shown=items.filter(x=>(filter==='ALL'||(filter==='OPEN'&&openStatus(x.status))||x.status===filter)&&(!q||[x.roomLocation,x.itemType,x.manufacturer,x.model,x.itemSerialNumber,x.failureDescription,x.reportedBy,x.createdBy].join(' ').toLowerCase().includes(q)));
+   const count=s=>items.filter(x=>String(x.status).toUpperCase()===s).length;
+   document.getElementById('wrrKpis').innerHTML=[
+    ['NEW / NOT EMAILED',count('NEW_NOT_EMAILED'),'Needs submission','new'],
+    ['SUBMITTED',count('SUBMITTED')+count('EMAIL_TO_PROFILLMENT'),'Sent / in process','sent'],
+    ['REPLACEMENT PENDING',count('REPLACEMENT_PENDING'),'Awaiting replacement','pending'],
+    ['RECEIVED / INSTALLED',count('RECEIVED')+count('INSTALLED'),'Replacement on property','received'],
+    ['CLOSED',count('CLOSED'),'Completed claims','closed']
+   ].map(x=>'<div class="wrr-kpi '+x[3]+'"><small>'+x[0]+'</small><strong>'+x[1]+'</strong><span>'+x[2]+'</span></div>').join('');
+   document.getElementById('wrrCount').textContent=shown.length+' item'+(shown.length===1?'':'s');
+   document.getElementById('wrrList').innerHTML=shown.length?shown.map(x=>'<article class="wrr-item '+(x.status==='NEW_NOT_EMAILED'?'new':x.status==='REPLACEMENT_PENDING'?'pending':['INSTALLED','CLOSED'].includes(x.status)?'closed':'')+'" data-warranty-id="'+esc(x.warrantyId)+'"><div><small>ROOM / LOCATION</small><strong>'+esc(x.roomLocation||'—')+'</strong><span>'+esc(x.businessDate||'')+'</span></div><div><small>ITEM</small><strong>'+esc(x.itemType||'—')+'</strong><span>'+esc([x.manufacturer,x.model].filter(Boolean).join(' • ')||'—')+'</span></div><div><small>ITEM / SERIAL #</small><strong>'+esc(x.itemSerialNumber||'Not provided')+'</strong><span>Reported by '+esc(x.reportedBy||'—')+'</span></div><div><small>FAILURE</small><strong>'+esc(x.failureDescription||'—')+'</strong><span>'+esc(x.notes||'')+'</span></div><div><small>STATUS</small><span class="wrr-status">'+esc(label(x.status))+'</span><span>'+esc(x.createdBy||'')+'</span></div></article>').join(''):'<div class="wrr-empty">No warranty items match this view.</div>';
+ }
+ async function load(){
+   document.getElementById('wrrList').innerHTML='<div class="wrr-empty">Loading warranty items…</div>';
+   try{const r=await apiPost({action:'getWarrantyReport',sessionId:localStorage.getItem('relaySessionId')},45000);if(!r.ok)throw new Error(r.reason||r.error||'Warranty report unavailable');items=r.items||[];render()}catch(e){document.getElementById('wrrList').innerHTML='<div class="wrr-empty">Could not load warranty items: '+esc(e.message)+'</div>'}
+ }
+ function detail(x){
+   selected=x;document.getElementById('wrrDetailTitle').textContent=(x.roomLocation?'Room '+x.roomLocation+' • ':'')+(x.itemType||'Warranty Item');
+   const email=['Everhome Suites Denver Airport — CO534','Warranty replacement request','',x.roomLocation?'Room / Location: '+x.roomLocation:'',x.itemType?'Item: '+x.itemType:'',x.manufacturer?'Manufacturer: '+x.manufacturer:'',x.model?'Model: '+x.model:'',x.itemSerialNumber?'Item / Serial #: '+x.itemSerialNumber:'','Failure: '+(x.failureDescription||'—'),'Reported: '+(x.businessDate||'—'),'Reported by: '+(x.reportedBy||x.createdBy||'—'),x.notes?'Notes: '+x.notes:''].filter(Boolean).join('\n');
+   document.getElementById('wrrDetailBody').innerHTML='<div class="wrr-detail-grid"><div><small>ROOM / LOCATION</small><strong>'+esc(x.roomLocation||'—')+'</strong></div><div><small>ITEM</small><strong>'+esc(x.itemType||'—')+'</strong></div><div><small>MANUFACTURER / MODEL</small><strong>'+esc([x.manufacturer,x.model].filter(Boolean).join(' • ')||'—')+'</strong></div><div><small>ITEM / SERIAL #</small><strong>'+esc(x.itemSerialNumber||'Not provided')+'</strong></div></div><div class="wrr-failure"><b>FAILURE / ORIGINAL MAINTENANCE</b><br>'+esc(x.failureDescription||'—')+'</div><div class="wrr-email"><b>EMAIL-READY PROFILLMENT SUBMISSION</b><pre>'+esc(email)+'</pre></div>';
+   document.getElementById('wrrDetailStatus').value=x.status||'NEW_NOT_EMAILED';document.getElementById('wrrReference').value=x.profillmentReference||'';document.getElementById('wrrNotes').value=x.notes||'';document.getElementById('wrrMessage').textContent='';document.getElementById('warrantyDetailPanel').hidden=false;
+ }
+ open.addEventListener('click',()=>{library.hidden=true;document.querySelectorAll('#reportsView>section').forEach(x=>x.hidden=true);report.hidden=false;load()});
+ document.getElementById('backFromWarrantyReport').addEventListener('click',()=>{report.hidden=true;library.hidden=false});
+ document.getElementById('printWarrantyReport').addEventListener('click',()=>window.print());
+ document.getElementById('wrrStatus').addEventListener('change',render);document.getElementById('wrrSearch').addEventListener('input',render);
+ document.getElementById('wrrList').addEventListener('click',e=>{const card=e.target.closest('.wrr-item');if(!card)return;const x=items.find(i=>String(i.warrantyId)===String(card.dataset.warrantyId));if(x)detail(x)});
+ document.getElementById('closeWarrantyDetail').addEventListener('click',()=>{selected=null;document.getElementById('warrantyDetailPanel').hidden=true});
+ document.getElementById('wrrSave').addEventListener('click',async()=>{if(!selected)return;const b=document.getElementById('wrrSave'),msg=document.getElementById('wrrMessage');b.disabled=true;b.textContent='SAVING…';try{const r=await apiPost({action:'updateWarrantyItem',sessionId:localStorage.getItem('relaySessionId'),warrantyId:selected.warrantyId,status:document.getElementById('wrrDetailStatus').value,profillmentReference:document.getElementById('wrrReference').value.trim(),notes:document.getElementById('wrrNotes').value.trim(),updatedBy:currentUser?.name||''},45000);if(!r.ok)throw new Error(r.reason||r.error||'Update failed');msg.textContent='✓ Warranty follow-up saved';await load();selected=items.find(i=>String(i.warrantyId)===String(selected.warrantyId))||selected;setTimeout(()=>{document.getElementById('warrantyDetailPanel').hidden=true},500)}catch(e){msg.textContent='Could not save: '+e.message}finally{b.disabled=false;b.textContent='SAVE WARRANTY UPDATE'}});
+ document.getElementById('mprWarrantyReport')?.addEventListener('click',()=>{document.getElementById('maintenancePerformanceReport').hidden=true;report.hidden=false;load()});
+ document.querySelectorAll('[data-view="Reports"]').forEach(b=>b.addEventListener('click',()=>{report.hidden=true}));
+})();
