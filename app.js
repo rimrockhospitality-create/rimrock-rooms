@@ -988,14 +988,29 @@ function openChecklistHub(){
  const maintenanceOnly=!!(currentUser&&currentUser.roles&&currentUser.roles.includes('MAINTENANCE')&&!currentUser.roles.includes('ADMIN'));
  document.getElementById('checklistDetail').hidden=true;
  document.querySelector('.checklist-layout').hidden=false;document.querySelector('.checklist-kpis').hidden=false;document.querySelector('.checklist-hero').hidden=false;
- // Maintenance associates only need their own daily checklist. Admin/other authorized roles retain the full hub.
- document.querySelectorAll('.shift-card,.maintenance-check-card,[data-shift-open]').forEach(el=>{
-   const shift=el.dataset.shift||el.dataset.shiftOpen||'';
-   if(maintenanceOnly)el.hidden=shift!=='MAINTENANCE';
-   else el.hidden=false;
- });
+ const main=document.querySelector('.checklist-main');
+ const fdTitle=main?.querySelector('.section-title:not(.maint-title)');
+ const shiftGrid=main?.querySelector('.shift-grid');
+ const maintTitle=main?.querySelector('.maint-title');
+ const maintCard=main?.querySelector('.maintenance-check-card');
+ const handoff=document.querySelector('.handoff-rail');
  const kpis=[...document.querySelectorAll('.checklist-kpis article')];
- if(maintenanceOnly)kpis.forEach((el,i)=>el.hidden=i!==3);else kpis.forEach(el=>el.hidden=false);
+ if(maintenanceOnly){
+   // Brad / Maintenance: show only engineering checklist content; hide the entire FD checklist section.
+   if(fdTitle)fdTitle.style.display='none';
+   if(shiftGrid)shiftGrid.style.display='none';
+   if(maintTitle)maintTitle.style.display='';
+   if(maintCard)maintCard.style.display='';
+   if(handoff)handoff.style.display='none';
+   kpis.forEach((el,i)=>el.style.display=i===3?'':'none');
+ }else{
+   if(fdTitle)fdTitle.style.display='';
+   if(shiftGrid)shiftGrid.style.display='';
+   if(maintTitle)maintTitle.style.display='';
+   if(maintCard)maintCard.style.display='';
+   if(handoff)handoff.style.display='';
+   kpis.forEach(el=>el.style.display='');
+ }
  syncChecklistProgress();loadOpenShiftNotes_();
 }
 function openChecklist(name){
