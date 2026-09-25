@@ -1924,3 +1924,86 @@ function relayNightAuditPreviewHtml_(x){
    }catch(err){status.textContent='Import failed: '+err.message;save.disabled=false;save.textContent='IMPORT AUDIT'}
  });
 })();
+
+/* RELAY Maintenance Performance Report — locked build */
+(function(){
+ const report=document.getElementById('maintenancePerformanceReport'),library=document.getElementById('reportLibrary'),open=document.getElementById('openMaintenancePerformanceReport');
+ if(!report||!open)return;
+ let mprRows_=[];
+ const esc=v=>String(v??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
+ const num=v=>{const n=Number(v);return Number.isFinite(n)?n:0};
+ const mins=v=>{const n=num(v);return n?Math.round(n):0};
+ const duration=m=>{m=Math.max(0,Math.round(num(m)));return m>=60?Math.floor(m/60)+'h '+String(m%60).padStart(2,'0')+'m':m+'m'};
+ const dateKey=v=>dorDateKey_(v);
+ const inRange=(v,days)=>{const k=dateKey(v);if(!k)return false;if(days==='TODAY')return k===dateKey(new Date());const d=new Date(k+'T12:00:00'),cut=new Date();cut.setHours(0,0,0,0);cut.setDate(cut.getDate()-(Number(days)-1));return d>=cut};
+ const taskMinutes=x=>mins(x.activeMinutes??x.active_minutes??x.minutes??x.durationMinutes??x.duration_minutes??x.timeSpentMinutes??x.time_spent_minutes);
+ const completedBy=x=>x.completedBy||x.completed_by||x.worker||x.assignedTo||x.assigned_to||'—';
+ const location=x=>x.room?('Room '+x.room):(x.location||x.assetName||x.asset_name||'—');
+ const taskText=x=>x.description||x.issue||x.task||x.title||x.assetName||x.asset_name||'Maintenance task';
+ const isComplete=x=>['COMPLETE','COMPLETED','RESOLVED','CLOSED'].includes(String(x.status||'').toUpperCase())||!!(x.completedAt||x.completed_at);
+ const warranty=x=>x.warrantyItem===true||String(x.warrantyItem??x.warranty_item??x.isWarranty??x.is_warranty??'').toUpperCase()==='TRUE'||String(x.status||'').toUpperCase().includes('WARRANTY');
+ function categoryRows_(maint,pm,side,filter){
+   const out=[];
+   maint.forEach(x=>out.push({...x,_category:'Reactive Maintenance',_date:x.businessDate||x.business_date||x.completedAt||x.completed_at||x.createdAt||x.created_at}));
+   pm.forEach(x=>out.push({...x,_category:'Preventive Maintenance',_date:x.businessDate||x.business_date||x.completedAt||x.completed_at,_task:'Guest Room PM'}));
+   side.forEach(x=>out.push({...x,_category:'Side Duties',_date:x.businessDate||x.business_date||x.completedAt||x.completed_at}));
+   filter.forEach(x=>out.push({...x,_category:'Filter PM',_date:x.businessDate||x.business_date||x.completedAt||x.completed_at,_task:(x.assetName||x.asset_name||'Filter')+' — Filter PM'}));
+   return out;
+ }
+ function render_(filterBoard){
+   const range=document.getElementById('mprRange').value,cat=document.getElementById('mprCategory').value;
+   const rows=mprRows_.filter(x=>inRange(x._date,range)&&isComplete(x));
+   const cats=['Reactive Maintenance','Preventive Maintenance','Checklists','Side Duties','Filter PM'];
+   const stats={};cats.forEach(c=>stats[c]={count:0,minutes:0});
+   rows.forEach(x=>{if(!stats[x._category])return;stats[x._category].count++;stats[x._category].minutes+=taskMinutes(x)});
+   const totalCount=rows.length,totalMinutes=Object.values(stats).reduce((s,x)=>s+x.minutes,0);
+   const meta=[['Reactive Maintenance','reactive'],['Preventive Maintenance','pm'],['Checklists','checklist'],['Side Duties','side'],['Filter PM','filter']];
+   document.getElementById('mprKpis').innerHTML=meta.map(([c,cl])=>'<div class="mpr-kpi '+cl+'"><small>'+c.toUpperCase()+'</small><strong>'+stats[c].count+'</strong><span>Tasks Completed<br><b>'+duration(stats[c].minutes)+'</b> Total Time</span></div>').join('')+'<div class="mpr-kpi total"><small>TOTAL MAINTENANCE</small><strong>'+totalCount+'</strong><span>Tasks Completed<br><b>'+duration(totalMinutes)+'</b> Total Time</span></div>';
+   const max=Math.max(1,...meta.map(([c])=>stats[c].minutes));
+   document.getElementById('mprTimeBars').innerHTML=meta.map(([c])=>'<div class="mpr-bar-row"><span>'+c+'</span><div class="mpr-bar-track"><i style="width:'+Math.round(stats[c].minutes/max*100)+'%"></i></div><b>'+duration(stats[c].minutes)+'</b></div>').join('');
+   document.getElementById('mprDistribution').innerHTML=meta.map(([c])=>'<div class="mpr-dist-row"><span>'+c+'</span><b>'+(totalMinutes?Math.round(stats[c].minutes/totalMinutes*100):0)+'%</b></div>').join('');
+   document.getElementById('mprAverages').innerHTML=meta.map(([c])=>'<div class="mpr-avg-row"><span>'+c+'</span><b>'+(stats[c].count?Math.round(stats[c].minutes/stats[c].count):0)+' min</b></div>').join('');
+   const visible=rows.filter(x=>cat==='ALL'||x._category===cat).sort((x,y)=>String(y._date).localeCompare(String(x._date))).slice(0,50);
+   document.getElementById('mprTaskBody').innerHTML=visible.length?visible.map(x=>'<tr><td>'+esc(dateKey(x._date)||'—')+'</td><td>'+esc(x._category)+'</td><td>'+esc(x._task||taskText(x))+'</td><td>'+esc(location(x))+'</td><td>'+duration(taskMinutes(x))+'</td><td>'+(warranty(x)?'☑':'☐')+'</td><td><span class="mpr-pill '+(warranty(x)?'mpr-warranty':'')+'">'+esc(warranty(x)?'Warranty':(x.status||'Completed'))+'</span></td><td>'+esc(completedBy(x))+'</td></tr>').join(''):'<tr><td colspan="8" class="mpr-empty">No completed maintenance activity in this range.</td></tr>';
+   const schedule=filterBoard?.schedule||[],history=filterBoard?.history||[];
+   document.getElementById('mprFilterStatus').innerHTML=schedule.length?'<table><thead><tr><th>Unit / Location</th><th>Last Completed</th><th>Next Due</th><th>Status</th></tr></thead><tbody>'+schedule.map(s=>{const h=history.filter(x=>String(x.assetId)===String(s.assetId)).sort((a,b)=>String(b.completedAt).localeCompare(String(a.completedAt)))[0],today=dateKey(new Date()),status=s.dueDate<today?'Overdue':'On Track';return '<tr><td>'+esc(s.assetName)+'</td><td>'+esc(h?.businessDate||'—')+'</td><td>'+esc(s.dueDate||'—')+'</td><td><span class="mpr-pill">'+status+'</span></td></tr>'}).join('')+'</tbody></table>':'<div class="mpr-empty">Filter PM schedule will populate from the four filter assets.</div>';
+   const warr=rows.filter(warranty),groups=[['New / Not Emailed',warr.filter(x=>!x.warrantyStatus&&!x.warranty_status).length],['Email to Profillment',warr.filter(x=>String(x.warrantyStatus||x.warranty_status).toUpperCase().includes('EMAIL')).length],['Submitted',warr.filter(x=>String(x.warrantyStatus||x.warranty_status).toUpperCase()==='SUBMITTED').length],['Replacement Pending',warr.filter(x=>String(x.warrantyStatus||x.warranty_status).toUpperCase().includes('PENDING')).length],['Received / Installed',warr.filter(x=>/RECEIVED|INSTALLED|CLOSED/.test(String(x.warrantyStatus||x.warranty_status).toUpperCase())).length]];
+   document.getElementById('mprWarrantyStatus').innerHTML=groups.map(x=>'<div class="mpr-warranty-row"><span>'+x[0]+'</span><b>'+x[1]+'</b></div>').join('');
+   const largest=meta.map(([c])=>[c,stats[c].minutes]).sort((a,b)=>b[1]-a[1])[0];
+   document.getElementById('mprInsights').innerHTML=[
+     'Total tracked maintenance time: <b>'+duration(totalMinutes)+'</b> across <b>'+totalCount+'</b> completed tasks.',
+     largest&&largest[1]?'<b>'+largest[0]+'</b> accounts for '+Math.round(largest[1]/totalMinutes*100)+'% of tracked maintenance time.':'Tracked category time will populate as work is completed.',
+     'Filter PM completed in range: <b>'+stats['Filter PM'].count+'</b>.',
+     warr.length?'<b>'+warr.length+'</b> warranty item'+(warr.length===1?'':'s')+' flagged for follow-through.':'No warranty items are flagged in this range.',
+     'Filter PM remains available as a separate monthly compliance report; warranty items remain available as a separate Brad follow-through report.'
+   ].map(x=>'<div class="mpr-insight">• '+x+'</div>').join('');
+ }
+ async function load_(){
+   const sid=localStorage.getItem('relaySessionId'),range=document.getElementById('mprRange').value;
+   document.getElementById('mprTaskBody').innerHTML='<tr><td colspan="8" class="mpr-empty">Loading RELAY maintenance activity…</td></tr>';
+   try{
+     const [date,maint,pm,work,filter]=await Promise.all([
+       loadRelayBusinessDay_(),
+       apiPost({action:'getMaintenanceReport',sessionId:sid},45000).catch(()=>({ok:false})),
+       apiPost({action:'getPmBoard',sessionId:sid},45000).catch(()=>({ok:false})),
+       apiPost({action:'getWorkBoard'},45000).catch(()=>({ok:false})),
+       apiPost({action:'getFilterPmBoard',sessionId:sid},45000).catch(()=>({ok:false}))
+     ]);
+     const maintenance=maint.maintenance||maint.issues||maint.maintenanceIssues||maint.tickets||[];
+     const pmRows=pm.history||maint.pmCompletions||[];
+     const side=(work.sideWork||[]).filter(isComplete);
+     const filterRows=filter.history||[];
+     mprRows_=categoryRows_(maintenance,pmRows,side,filterRows);
+     // Checklist timing is not yet exposed by a dedicated historical endpoint. Do not fabricate it.
+     render_(filter.ok?filter:null);
+   }catch(err){document.getElementById('mprTaskBody').innerHTML='<tr><td colspan="8" class="mpr-empty">Could not load report: '+esc(err.message)+'</td></tr>'}
+ }
+ open.addEventListener('click',()=>{library.hidden=true;document.querySelectorAll('#reportsView>section').forEach(x=>x.hidden=true);report.hidden=false;load_()});
+ document.getElementById('backFromMaintenanceReport')?.addEventListener('click',()=>{report.hidden=true;library.hidden=false});
+ document.getElementById('printMaintenanceReport')?.addEventListener('click',()=>window.print());
+ document.getElementById('mprRange')?.addEventListener('change',load_);
+ document.getElementById('mprCategory')?.addEventListener('change',()=>render_(window.__mprFilterBoard||null));
+ document.getElementById('mprFilterReport')?.addEventListener('click',()=>alert('Filter PM monthly report is the next dedicated report build. The maintenance report already includes Filter PM workload and status.'));
+ document.getElementById('mprWarrantyReport')?.addEventListener('click',()=>alert('Warranty Items Report is queued next. Warranty-tagged maintenance items will feed it automatically once the warranty checkbox workflow is wired.'));
+ document.querySelectorAll('[data-view="Reports"]').forEach(b=>b.addEventListener('click',()=>{report.hidden=true}));
+})();
