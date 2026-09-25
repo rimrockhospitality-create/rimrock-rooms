@@ -12,7 +12,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="theme-color" content="#073b63">
   <title>RELAY Operations | CO534</title>
-  <link rel="stylesheet" href="styles.css?v=20260925-warrantyreport">
+  <link rel="stylesheet" href="styles.css?v=20260925-roompmreport">
   <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/jspdf-autotable@3.8.4/dist/jspdf.plugin.autotable.min.js"></script>
@@ -116,8 +116,30 @@
         <button id="openHousekeeperPerformanceReport" class="report-launch-card" type="button"><div><small>PEOPLE • PERFORMANCE</small><h2>Housekeeper Performance Report</h2><p>Individual room quality, rework, side work, and tracked-time performance.</p></div><span>OPEN REPORT →</span></button>
         <button id="openInspectorPerformanceReport" class="report-launch-card" type="button"><div><small>ROOM ACCEPTANCE</small><h2>Inspector Performance Report</h2><p>Inspection pace, issue discovery, resolution, and final room acceptance.</p></div><span>OPEN REPORT →</span></button>
         <button id="openMaintenancePerformanceReport" class="report-launch-card" type="button"><div><small>ENGINEERING • PERFORMANCE</small><h2>Maintenance Performance Report</h2><p>Workload, tracked time, preventive care, Filter PM, and warranty visibility.</p></div><span>OPEN REPORT →</span></button>
+        <button id="openRoomPmReport" class="report-launch-card" type="button"><div><small>ASSET CARE • ROOM PM</small><h2>Preventive Maintenance Report</h2><p>114-room PM rotation health, completion history, deficiencies, time, and upcoming rooms.</p></div><span>OPEN REPORT →</span></button>
         <button id="openWarrantyReport" class="report-launch-card" type="button"><div><small>ASSET PROTECTION • WARRANTY</small><h2>Warranty Items Report</h2><p>Brad’s warranty follow-through from discovery through replacement and installation.</p></div><span>OPEN REPORT →</span></button>
       </div>
+      <section id="roomPmReport" class="pmr" hidden>
+        <div class="pmr-actions"><button id="backFromRoomPmReport" type="button">← REPORTS</button><button id="printRoomPmReport" type="button">PRINT / SAVE PDF</button></div>
+        <article class="pmr-page">
+          <header class="pmr-header"><div><b>RELAY</b><small>ROOM OPERATIONS</small></div><div><strong>Preventive Maintenance Report</strong><span>Room Rotation Health • Completion • Deficiencies • Asset Protection</span></div><label>Date Range<select id="pmrRange"><option value="7">Last 7 Days</option><option value="30" selected>Last 30 Days</option><option value="84">Current 84-Day Cycle</option><option value="ALL">All History</option></select></label></header>
+          <section id="pmrKpis" class="pmr-kpis"></section>
+          <section class="pmr-grid">
+            <div class="pmr-card pmr-health"><div class="pmr-card-head"><div><h2>PM ROTATION HEALTH</h2><p>Current status of the 114-room rotation.</p></div><strong id="pmrHealthPct">—</strong></div><div class="pmr-health-track"><i id="pmrHealthBar"></i></div><div id="pmrHealthLegend" class="pmr-health-legend"></div></div>
+            <div class="pmr-card"><h2>TIME ANALYSIS</h2><div id="pmrTime"></div></div>
+          </section>
+          <section class="pmr-grid">
+            <div class="pmr-card"><div class="pmr-card-head"><div><h2>UPCOMING PM SCHEDULE</h2><p>Due dates guide the work; Brad still chooses rooms based on access.</p></div></div><div id="pmrUpcoming" class="pmr-list"></div></div>
+            <div class="pmr-card"><h2>DEFICIENCIES FOUND DURING PM</h2><div id="pmrDeficiencies"></div></div>
+          </section>
+          <section class="pmr-card pmr-history"><div class="pmr-card-head"><div><h2>COMPLETED PM HISTORY</h2><p>Permanent proof of completed room care and tracked active time.</p></div><span id="pmrHistoryCount"></span></div><div class="pmr-table"><table><thead><tr><th>Date</th><th>Room</th><th>Completed By</th><th>Active Time</th><th>Deficiencies / Work Orders</th><th>Next Due</th></tr></thead><tbody id="pmrHistoryBody"></tbody></table></div></section>
+          <section class="pmr-grid">
+            <div class="pmr-card"><h2>PM CHECKLIST COMPLETION</h2><div id="pmrChecklist"></div></div>
+            <div class="pmr-card pmr-flow"><h2>PM → MAINTENANCE → WARRANTY</h2><div id="pmrFlow"></div></div>
+          </section>
+          <footer>RELAY • ROOM OPERATIONS <span>Everhome Suites Denver Airport • CO534 • 84-Day Room PM Cycle</span></footer>
+        </article>
+      </section>
       <section id="warrantyReport" class="wrr" hidden>
         <div class="wrr-actions"><button id="backFromWarrantyReport" type="button">← REPORTS</button><button id="printWarrantyReport" type="button">PRINT / SAVE PDF</button></div>
         <article class="wrr-page">
@@ -517,7 +539,7 @@
   </div>
 </div>
 <script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.js"></script>
-<script src="app.js?v=20260925-maintchecklists2"></script>
+<script src="app.js?v=20260925-roompmreport"></script>
 <script src="pm.js?v=20260924-pm-picker"></script>
 </body>
 </html>
