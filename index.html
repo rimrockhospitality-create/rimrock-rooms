@@ -12,7 +12,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="theme-color" content="#073b63">
   <title>RELAY Operations | CO534</title>
-  <link rel="stylesheet" href="styles.css?v=20260925-maintperf">
+  <link rel="stylesheet" href="styles.css?v=20260925-warranty">
   <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/jspdf-autotable@3.8.4/dist/jspdf.plugin.autotable.min.js"></script>
@@ -415,6 +415,17 @@
         <small>COMPLETE WORK ORDER</small><h2 id="maintenanceResolveTitle">Resolve Maintenance</h2>
         <label>📷 Repair / completion photo <small>(optional)</small><input id="maintenanceResolvePhoto" type="file" accept="image/*" capture="environment"></label>
         <label>Completion note <small>(optional)</small><textarea id="maintenanceResolveNote" rows="3" placeholder="What was repaired?"></textarea></label>
+        <label class="warranty-toggle"><input id="maintenanceWarrantyItem" type="checkbox"> <span><b>WARRANTY ITEM</b><small>Check this if the failed item may be covered by the hotel's first-year warranty.</small></span></label>
+        <div id="maintenanceWarrantyFields" class="warranty-fields" hidden>
+          <div class="warranty-grid">
+            <label>Item / Asset Type <small>(required)</small><select id="maintenanceWarrantyType"><option value="">Choose…</option><option>TV</option><option>PTAC</option><option>Bed Frame</option><option>Mattress / Box Spring</option><option>Door / Hardware</option><option>Appliance</option><option>Furniture</option><option>Plumbing Fixture</option><option>Lighting / Electrical</option><option>Other</option></select></label>
+            <label>Manufacturer <small>(optional)</small><input id="maintenanceWarrantyManufacturer" placeholder="Manufacturer"></label>
+            <label>Model <small>(optional)</small><input id="maintenanceWarrantyModel" placeholder="Model number"></label>
+            <label>Item / Serial # <small>(if available)</small><input id="maintenanceWarrantyNumber" placeholder="Item or serial number"></label>
+          </div>
+          <label>Warranty notes <small>(optional)</small><textarea id="maintenanceWarrantyNotes" rows="2" placeholder="Anything Profillment should know"></textarea></label>
+          <p class="warranty-help">RELAY will create Brad's warranty follow-up automatically. Item / Serial # is optional for items such as bed frames.</p>
+        </div>
         <button id="confirmMaintenanceResolve" type="button">✓ MARK RESOLVED</button>
         <p id="maintenanceResolveMessage"></p>
       </section>
@@ -494,7 +505,7 @@
   </div>
 </div>
 <script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.js"></script>
-<script src="app.js?v=20260925-maintperf"></script>
+<script src="app.js?v=20260925-warranty"></script>
 <script src="pm.js?v=20260924-pm-picker"></script>
 </body>
 </html>
