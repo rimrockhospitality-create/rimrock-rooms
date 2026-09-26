@@ -12,7 +12,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="theme-color" content="#073b63">
   <title>RELAY Operations | CO534</title>
-  <link rel="stylesheet" href="styles.css?v=20260925-filterpmreport">
+  <link rel="stylesheet" href="styles.css?v=20260926-laborproductivity">
   <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/jspdf-autotable@3.8.4/dist/jspdf.plugin.autotable.min.js"></script>
@@ -115,11 +115,24 @@
         <button id="openDailyOperationsReport" class="report-launch-card" type="button"><div><small>DAILY OPERATIONS</small><h2>Daily Operations Report</h2><p>One-minute record of what happened at the hotel today.</p></div><span>OPEN REPORT →</span></button>
         <button id="openHousekeeperPerformanceReport" class="report-launch-card" type="button"><div><small>PEOPLE • PERFORMANCE</small><h2>Housekeeper Performance Report</h2><p>Individual room quality, rework, side work, and tracked-time performance.</p></div><span>OPEN REPORT →</span></button>
         <button id="openInspectorPerformanceReport" class="report-launch-card" type="button"><div><small>ROOM ACCEPTANCE</small><h2>Inspector Performance Report</h2><p>Inspection pace, issue discovery, resolution, and final room acceptance.</p></div><span>OPEN REPORT →</span></button>
+        <button id="openLaborProductivityReport" class="report-launch-card" type="button"><div><small>LABOR • PRODUCTIVITY</small><h2>Labor & Productivity Report</h2><p>Weekly ADP hours, RELAY tracked activity, production, and labor visibility by department.</p></div><span>OPEN REPORT →</span></button>
         <button id="openMaintenancePerformanceReport" class="report-launch-card" type="button"><div><small>ENGINEERING • PERFORMANCE</small><h2>Maintenance Performance Report</h2><p>Workload, tracked time, preventive care, Filter PM, and warranty visibility.</p></div><span>OPEN REPORT →</span></button>
         <button id="openRoomPmReport" class="report-launch-card" type="button"><div><small>ASSET CARE • ROOM PM</small><h2>Preventive Maintenance Report</h2><p>114-room PM rotation health, completion history, deficiencies, time, and upcoming rooms.</p></div><span>OPEN REPORT →</span></button>
         <button id="openFilterPmReport" class="report-launch-card" type="button"><div><small>ASSET CARE • FILTER PM</small><h2>Filter PM Report</h2><p>Monthly compliance, tracked time, completion history, and next-due status for all four filter assets.</p></div><span>OPEN REPORT →</span></button>
         <button id="openWarrantyReport" class="report-launch-card" type="button"><div><small>ASSET PROTECTION • WARRANTY</small><h2>Warranty Items Report</h2><p>Brad’s warranty follow-through from discovery through replacement and installation.</p></div><span>OPEN REPORT →</span></button>
       </div>
+      <section id="laborProductivityReport" class="lpr" hidden>
+        <div class="lpr-actions"><button id="backFromLaborProductivityReport" type="button">← REPORTS</button><button id="printLaborProductivityReport" type="button">PRINT / SAVE PDF</button></div>
+        <article class="lpr-page">
+          <header class="lpr-header"><div><b>RELAY</b><small>ROOM OPERATIONS</small></div><div><strong>Labor & Productivity Report</strong><span>Paid Hours • Tracked Activity • Production • Department Visibility</span></div><label>Week Ending Sunday<input id="lprWeekEnd" type="date"></label></header>
+          <section id="lprKpis" class="lpr-kpis"></section>
+          <section class="lpr-card"><div class="lpr-card-head"><div><h2>ADP ACTUAL HOURS</h2><p>Enter payroll hours once. RELAY stores them as the permanent weekly labor source for performance reporting.</p></div><button id="lprSaveHours" type="button">SAVE WEEKLY HOURS</button></div><div id="lprHoursStatus" class="lpr-status">Loading associates…</div><div class="lpr-table"><table><thead><tr><th>Associate</th><th>Department</th><th>Role</th><th>Actual Hours</th></tr></thead><tbody id="lprHoursBody"></tbody></table></div></section>
+          <section class="lpr-grid"><div class="lpr-card"><h2>LABOR BY DEPARTMENT</h2><div id="lprDepartments"></div></div><div class="lpr-card"><h2>TRACKED TIME BY CATEGORY</h2><div id="lprTracked"></div></div></section>
+          <section class="lpr-grid"><div class="lpr-card"><h2>HOUSEKEEPING PRODUCTION</h2><div id="lprHousekeeping"></div></div><div class="lpr-card"><h2>MAINTENANCE PRODUCTION</h2><div id="lprMaintenance"></div></div></section>
+          <section class="lpr-card"><h2>LABOR VISIBILITY</h2><div id="lprVisibility"></div><p class="lpr-note">RELAY tracked time documents activity captured inside the platform. The difference between paid hours and tracked time is unclassified time, not a performance judgment.</p></section>
+          <footer>RELAY • ROOM OPERATIONS <span>Everhome Suites Denver Airport • CO534 • Weekly Labor & Productivity</span></footer>
+        </article>
+      </section>
       <section id="filterPmReport" class="fpr" hidden>
         <div class="fpr-actions"><button id="backFromFilterPmReport" type="button">← REPORTS</button><button id="printFilterPmReport" type="button">PRINT / SAVE PDF</button></div>
         <article class="fpr-page">
@@ -552,7 +565,7 @@
   </div>
 </div>
 <script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.js"></script>
-<script src="app.js?v=20260925-filterpmreport"></script>
+<script src="app.js?v=20260926-laborproductivity"></script>
 <script src="pm.js?v=20260924-pm-picker"></script>
 </body>
 </html>
