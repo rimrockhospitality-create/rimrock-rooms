@@ -352,7 +352,7 @@ async function loadHousekeepingBoard(){
         :status==='REWORK_IN_PROGRESS'&&!canManageBoard?'<button type="button" class="complete-rework-btn" data-room="'+room+'" data-issue="'+issueId+'">REWORK COMPLETE</button>'
         :status==='REWORK_REQUIRED'&&!canManageBoard?'<button type="button" class="rework-room-btn" data-room="'+room+'" data-issue="'+issueId+'">START REWORK</button>'
         :status==='CLEANING'&&!canManageBoard?'<div class="hk-room-actions"><button type="button" class="hk-context-maint" data-room="'+room+'" onclick="openHkMaintenanceForRoom(this.dataset.room);return false;">🔧 REPORT MAINTENANCE</button><button type="button" class="ready-room-btn" data-room="'+room+'">READY FOR INSPECTION</button></div>'
-        :'<button type="button" class="start-room-btn" data-room="'+room+'" '+(status==='NOT_STARTED'&&!canManageBoard?'':'disabled')+'>'+(status==='NOT_STARTED'?'SCAN QR TO START':action)+'</button>';return '<article class="hk-room-card"><div class="hk-room-top"><span class="hk-room-number">ROOM '+room+'</span><span class="hk-room-pill">'+label+'</span></div><div class="hk-room-meta">Choice assignment • '+a.housekeeper+(status==='CLEANING'?'<br>Started '+started+'<br><strong class="elapsed-timer" data-start="'+started+'">Elapsed --:--</strong>':'')+'</div>'+reworkHtml+button+'</article>'
+        :'<button type="button" class="start-room-btn" data-room="'+room+'" '+(status==='NOT_STARTED'&&!canManageBoard?'':'disabled')+'>'+(status==='NOT_STARTED'?'START WORK':action)+'</button>';return '<article class="hk-room-card"><div class="hk-room-top"><span class="hk-room-number">ROOM '+room+'</span><span class="hk-room-pill">'+label+'</span></div><div class="hk-room-meta">Choice assignment • '+a.housekeeper+(status==='CLEANING'?'<br>Started '+started+'<br><strong class="elapsed-timer" data-start="'+started+'">Elapsed --:--</strong>':'')+'</div>'+reworkHtml+button+'</article>'
     }).join('');
   }catch(err){hkBoardStatus.className='hk-board-status error';hkBoardStatus.textContent='Could not load housekeeping board: '+err.message}
 }
@@ -372,46 +372,15 @@ hkMyRooms.addEventListener('click',e=>{
 });
 
 let pendingStartRoom=null;
-hkMyRooms.addEventListener('click',e=>{const b=e.target.closest('.start-room-btn');if(!b||b.disabled)return;pendingStartRoom=b.dataset.room;qrStartRoom.textContent='Room '+pendingStartRoom;qrStartMessage.textContent='Opening camera… scanning the correct room QR starts cleaning automatically.';qrStartPanel.hidden=false;startQrCamera()});
-document.getElementById('closeQrStart').addEventListener('click',()=>{qrStartPanel.hidden=true;pendingStartRoom=null});
-async function startQrCamera(){
-  if(!pendingStartRoom)return;
-  qrStartMessage.textContent='Opening camera for Room '+pendingStartRoom+'…';
-  let stream;
+hkMyRooms.addEventListener('click',async e=>{
+  const b=e.target.closest('.start-room-btn');if(!b||b.disabled)return;
+  const room=b.dataset.room,old=b.textContent;b.disabled=true;b.textContent='STARTING…';
   try{
-    stream=await navigator.mediaDevices.getUserMedia({video:{facingMode:{ideal:'environment'}},audio:false});
-    const box=document.querySelector('.qr-code-placeholder'),video=document.createElement('video'),canvas=document.createElement('canvas'),ctx=canvas.getContext('2d',{willReadFrequently:true});
-    video.setAttribute('playsinline','');video.muted=true;video.autoplay=true;video.srcObject=stream;box.innerHTML='';box.style.width='min(82vw,360px)';box.style.height='min(82vw,360px)';box.appendChild(video);video.style.width='100%';video.style.height='100%';video.style.objectFit='cover';video.style.borderRadius='12px';
-    await video.play();document.getElementById('confirmQrStart').hidden=true;qrStartMessage.textContent='Point the camera at the Room '+pendingStartRoom+' QR code. Scanning starts cleaning automatically.';
-    const detector=('BarcodeDetector' in window)?new BarcodeDetector({formats:['qr_code']}):null;
-    const stop=()=>stream&&stream.getTracks().forEach(t=>t.stop());
-    const scan=async()=>{
-      if(qrStartPanel.hidden){stop();return}
-      let raw='';
-      try{
-        if(detector){const codes=await detector.detect(video);raw=codes[0]?.rawValue||''}
-        else if(window.jsQR&&video.readyState>=2){canvas.width=video.videoWidth;canvas.height=video.videoHeight;ctx.drawImage(video,0,0);const img=ctx.getImageData(0,0,canvas.width,canvas.height);raw=jsQR(img.data,img.width,img.height)?.data||''}
-      }catch(e){}
-      if(raw){
-        stop();
-        const expected='CO534-RM-'+pendingStartRoom;
-        if(raw!==expected){qrStartMessage.textContent='Wrong room QR. Expected Room '+pendingStartRoom+'.';box.innerHTML='▦';return}
-        qrStartMessage.textContent='✓ Room '+pendingStartRoom+' verified. Starting cleaning session…';box.innerHTML='✓';document.getElementById('confirmQrStart').textContent='STARTING…';document.getElementById('confirmQrStart').disabled=true;
-        try{
-          const startResult=await apiPost({action:'startRoom',propertyId:'CO534',businessDate:housekeepingBusinessDate(),room:pendingStartRoom,housekeeper:currentUser.name,qrId:raw},90000);
-          if(!startResult.ok)throw new Error(startResult.reason||startResult.error||'Start Room blocked');
-          qrStartMessage.textContent='✓ Room '+pendingStartRoom+' started. Status: CLEANING';
-          document.getElementById('confirmQrStart').textContent='ROOM STARTED';
-          setTimeout(async()=>{qrStartPanel.hidden=true;pendingStartRoom=null;document.getElementById('confirmQrStart').disabled=false;document.getElementById('confirmQrStart').textContent='OPEN CAMERA & SCAN QR';box.innerHTML='▦';await loadHousekeepingBoard()},900);
-        }catch(err){qrStartMessage.textContent='Could not start room: '+err.message;document.getElementById('confirmQrStart').textContent='TRY AGAIN';document.getElementById('confirmQrStart').disabled=false}
-        return
-      }
-      requestAnimationFrame(scan);
-    };
-    requestAnimationFrame(scan);
-  }catch(err){if(stream)stream.getTracks().forEach(t=>t.stop());qrStartMessage.textContent='Camera error: '+(err?.name||'UnknownError')+' — '+(err?.message||String(err));const retry=document.getElementById('confirmQrStart');retry.hidden=false;retry.textContent='TRY CAMERA AGAIN'}
-}
-document.getElementById('confirmQrStart').addEventListener('click',startQrCamera);
+    const startResult=await apiPost({action:'startRoom',propertyId:'CO534',businessDate:housekeepingBusinessDate(),room,housekeeper:currentUser.name},90000);
+    if(!startResult.ok)throw new Error(startResult.reason||startResult.error||'Start Room blocked');
+    await loadHousekeepingBoard();
+  }catch(err){b.disabled=false;b.textContent=old;alert('Could not start Room '+room+': '+err.message)}
+});
 
 
 function parseCleaningStart(v){if(!v)return null;const p=String(v).split(/[/ :]/).map(Number);if(p.length<5)return null;return new Date(p[2],p[0]-1,p[1],p[3],p[4],p[5]||0)}
@@ -446,40 +415,30 @@ async function loadInspectionQueue(){
 
 const inspectionQueueEl=document.getElementById('inspectionQueue'),inspectionDetail=document.getElementById('inspectionDetail');
 let activeInspectionRoom='',activeInspectionHousekeeper='';
-let pendingInspectionRoom='',pendingInspectionHousekeeper='',inspectionQrStream=null;
-function closeInspectionQr_(){if(inspectionQrStream){inspectionQrStream.getTracks().forEach(t=>t.stop());inspectionQrStream=null}document.getElementById('inspectionQrPanel').hidden=true;pendingInspectionRoom='';pendingInspectionHousekeeper=''}
-document.getElementById('closeInspectionQr').addEventListener('click',closeInspectionQr_);
-async function startInspectionQrCamera_(){
+let pendingInspectionRoom='',pendingInspectionHousekeeper='';
+async function startInspectionDirect_(){
   if(!pendingInspectionRoom)return;
-  const panel=document.getElementById('inspectionQrPanel'),msg=document.getElementById('inspectionQrMessage'),box=document.getElementById('inspectionQrCamera');
-  msg.textContent='Opening camera for Room '+pendingInspectionRoom+'…';
+  const room=pendingInspectionRoom,housekeeper=pendingInspectionHousekeeper;
   try{
-    inspectionQrStream=await navigator.mediaDevices.getUserMedia({video:{facingMode:{ideal:'environment'}},audio:false});
-    const video=document.createElement('video'),canvas=document.createElement('canvas'),ctx=canvas.getContext('2d',{willReadFrequently:true});
-    video.setAttribute('playsinline','');video.muted=true;video.autoplay=true;video.srcObject=inspectionQrStream;box.innerHTML='';box.appendChild(video);video.style.width='100%';video.style.height='100%';video.style.objectFit='cover';video.style.borderRadius='12px';await video.play();
-    msg.textContent='Point the camera at the Room '+pendingInspectionRoom+' QR code.';
-    const detector=('BarcodeDetector' in window)?new BarcodeDetector({formats:['qr_code']}):null;
-    const scan=async()=>{
-      if(panel.hidden){if(inspectionQrStream)inspectionQrStream.getTracks().forEach(t=>t.stop());return}
-      let raw='';
-      try{if(detector){const codes=await detector.detect(video);raw=codes[0]?.rawValue||''}else if(window.jsQR&&video.readyState>=2){canvas.width=video.videoWidth;canvas.height=video.videoHeight;ctx.drawImage(video,0,0);const img=ctx.getImageData(0,0,canvas.width,canvas.height);raw=jsQR(img.data,img.width,img.height)?.data||''}}catch(e){}
-      if(!raw){requestAnimationFrame(scan);return}
-      if(inspectionQrStream){inspectionQrStream.getTracks().forEach(t=>t.stop());inspectionQrStream=null}
-      const expected='CO534-RM-'+pendingInspectionRoom;
-      if(raw!==expected){msg.textContent='Wrong room QR. Expected Room '+pendingInspectionRoom+'.';box.innerHTML='▦';setTimeout(startInspectionQrCamera_,900);return}
-      msg.textContent='✓ Room '+pendingInspectionRoom+' verified. Starting inspection timer…';box.innerHTML='✓';
-      try{
-        const opened=await apiPost({action:'startInspection',propertyId:'CO534',businessDate:housekeepingBusinessDate(),room:pendingInspectionRoom,housekeeper:pendingInspectionHousekeeper,inspector:currentUser.name,qrId:raw});
-        if(!opened.ok)throw new Error(opened.reason||opened.error||'Could not open inspection');
-        activeInspectionRoom=pendingInspectionRoom;activeInspectionHousekeeper=pendingInspectionHousekeeper;
-        document.getElementById('inspectionRoomTitle').textContent='Room '+activeInspectionRoom;document.getElementById('inspectionHousekeeper').textContent='Housekeeper: '+activeInspectionHousekeeper;
-        panel.hidden=true;pendingInspectionRoom='';pendingInspectionHousekeeper='';inspectionQueueEl.hidden=true;document.getElementById('inspectionStatus').hidden=true;inspectionDetail.hidden=false;inspectionDetail.querySelectorAll('input[type=checkbox]').forEach(x=>x.checked=false);
-        const ms=document.getElementById('inspectionMaintenanceSummary'),mi=(window._inspectionMaintenance||[]).filter(m=>String(m.room)===String(activeInspectionRoom)&&m.status==='OPEN');ms.hidden=!mi.length;ms.innerHTML=mi.length?'<strong>Maintenance Issues</strong>'+mi.map(m=>'<div class="maint-summary-item '+(String(m.blocking).toUpperCase()==='TRUE'?'blocking':'routine')+'"><div>'+(String(m.blocking).toUpperCase()==='TRUE'?'🔴 BLOCKING — ':'⚪ NON-BLOCKING — ')+(m.description||'Maintenance issue')+'</div><button type="button" class="inspection-maint-resolve" data-id="'+m.maintenance_id+'">🔧 FIX / RESOLVE</button></div>').join(''):'';
-      }catch(err){msg.textContent='Could not start inspection: '+err.message;box.innerHTML='▦'}
-    };requestAnimationFrame(scan);
-  }catch(err){if(inspectionQrStream){inspectionQrStream.getTracks().forEach(t=>t.stop());inspectionQrStream=null}msg.textContent='Camera error: '+(err?.message||String(err));box.innerHTML='▦'}
+    const opened=await apiPost({action:'startInspection',propertyId:'CO534',businessDate:housekeepingBusinessDate(),room,housekeeper,inspector:currentUser.name});
+    if(!opened.ok)throw new Error(opened.reason||opened.error||'Could not open inspection');
+    activeInspectionRoom=room;activeInspectionHousekeeper=housekeeper;
+    document.getElementById('inspectionRoomTitle').textContent='Room '+activeInspectionRoom;
+    document.getElementById('inspectionHousekeeper').textContent='Housekeeper: '+activeInspectionHousekeeper;
+    pendingInspectionRoom='';pendingInspectionHousekeeper='';
+    inspectionQueueEl.hidden=true;document.getElementById('inspectionStatus').hidden=true;inspectionDetail.hidden=false;
+    inspectionDetail.querySelectorAll('input[type=checkbox]').forEach(x=>x.checked=false);
+    const ms=document.getElementById('inspectionMaintenanceSummary'),mi=(window._inspectionMaintenance||[]).filter(m=>String(m.room)===String(activeInspectionRoom)&&m.status==='OPEN');
+    ms.hidden=!mi.length;
+    ms.innerHTML=mi.length?'<strong>Maintenance Issues</strong>'+mi.map(m=>'<div class="maint-summary-item '+(String(m.blocking).toUpperCase()==='TRUE'?'blocking':'routine')+'"><div>'+(String(m.blocking).toUpperCase()==='TRUE'?'🔴 BLOCKING — ':'⚪ NON-BLOCKING — ')+(m.description||'Maintenance issue')+'</div><button type="button" class="inspection-maint-resolve" data-id="'+m.maintenance_id+'">🔧 FIX / RESOLVE</button></div>').join(''):'';
+  }catch(err){alert('Could not start inspection: '+err.message)}
 }
-inspectionQueueEl.addEventListener('click',e=>{const b=e.target.closest('.start-inspection-btn');if(!b)return;pendingInspectionRoom=b.dataset.room||'';pendingInspectionHousekeeper=b.dataset.housekeeper||'';document.getElementById('inspectionQrTitle').textContent='Room '+pendingInspectionRoom;document.getElementById('inspectionQrMessage').textContent='Scan the Room '+pendingInspectionRoom+' QR code to begin the inspection.';document.getElementById('inspectionQrCamera').innerHTML='▦';document.getElementById('inspectionQrPanel').hidden=false;startInspectionQrCamera_()});
+inspectionQueueEl.addEventListener('click',e=>{
+  const b=e.target.closest('.start-inspection-btn');if(!b||b.disabled)return;
+  pendingInspectionRoom=b.dataset.room||'';pendingInspectionHousekeeper=b.dataset.housekeeper||'';
+  b.disabled=true;b.textContent='STARTING…';
+  startInspectionDirect_().finally(()=>{if(document.body.contains(b)){b.disabled=false;b.textContent='START INSPECTION'}})
+});
 document.getElementById('inspectionBack').addEventListener('click',()=>{inspectionDetail.hidden=true;inspectionQueueEl.hidden=false;document.getElementById('inspectionStatus').hidden=false});
 
 let inspectionCaptureType=null,inspectionBlocking=null;
@@ -708,7 +667,7 @@ async function loadMaintenanceBoard(){
     const p1=items.filter(x=>x.status==='OPEN'&&x.priority==='P1_GUEST_IMPACT'),p2=items.filter(x=>x.status==='OPEN'&&x.priority==='P2_ROOM_BLOCKING'),p3=items.filter(x=>x.status==='OPEN'&&x.priority==='P3_ROUTINE');
     document.getElementById('maintP1').textContent=p1.length;document.getElementById('maintP2').textContent=p2.length;document.getElementById('maintP3').textContent=p3.length;
     const ordered=[...p1,...p2,...p3];status.textContent=ordered.length?ordered.length+' open maintenance item'+(ordered.length===1?'':'s')+'.':'No open maintenance items.';
-    queue.innerHTML=ordered.map(x=>{const isP1=x.priority==='P1_GUEST_IMPACT',isP2=x.priority==='P2_ROOM_BLOCKING',urgent=(x.description||'').includes('⚠ IMMEDIATE ATTENTION');return '<article class="maint-card '+(isP1?'p1':isP2?'p2':'p3')+(urgent?' urgent':'')+'"><div class="maint-top"><div class="maint-room">'+(String(x.room).match(/^\d+$/)?'ROOM ':'')+x.room+'</div><div class="maint-priority">'+(isP1?'🔴 P1 — GUEST IMPACT':isP2?'⛔ P2 — ROOM BLOCKING':'🔧 P3 — ROUTINE')+(urgent?'<br>⚠ IMMEDIATE ATTENTION':'')+'</div></div><p>'+x.description.replace('⚠ IMMEDIATE ATTENTION — ','')+'</p><div class="maint-meta">Reported by '+x.reported_by+' • '+x.reported_at+'</div><div class="maint-actions">'+(x.photo_ref?'<button class="maint-photo" data-photo="'+x.photo_ref+'">VIEW PHOTO</button>':'')+((currentUser?.roles||[]).includes('MAINTENANCE')?'<button class="maint-start-work" data-id="'+x.maintenance_id+'" data-room="'+x.room+'" data-session="'+(x.workSessionId||'')+'">'+(x.workSessionId?'WORK IN PROGRESS':'SCAN QR TO START')+'</button>':'')+'<button class="maint-resolve" data-id="'+x.maintenance_id+'">✓ MARK RESOLVED</button></div></article>'}).join('');
+    queue.innerHTML=ordered.map(x=>{const isP1=x.priority==='P1_GUEST_IMPACT',isP2=x.priority==='P2_ROOM_BLOCKING',urgent=(x.description||'').includes('⚠ IMMEDIATE ATTENTION');return '<article class="maint-card '+(isP1?'p1':isP2?'p2':'p3')+(urgent?' urgent':'')+'"><div class="maint-top"><div class="maint-room">'+(String(x.room).match(/^\d+$/)?'ROOM ':'')+x.room+'</div><div class="maint-priority">'+(isP1?'🔴 P1 — GUEST IMPACT':isP2?'⛔ P2 — ROOM BLOCKING':'🔧 P3 — ROUTINE')+(urgent?'<br>⚠ IMMEDIATE ATTENTION':'')+'</div></div><p>'+x.description.replace('⚠ IMMEDIATE ATTENTION — ','')+'</p><div class="maint-meta">Reported by '+x.reported_by+' • '+x.reported_at+'</div><div class="maint-actions">'+(x.photo_ref?'<button class="maint-photo" data-photo="'+x.photo_ref+'">VIEW PHOTO</button>':'')+((currentUser?.roles||[]).includes('MAINTENANCE')?'<button class="maint-start-work" data-id="'+x.maintenance_id+'" data-room="'+x.room+'" data-session="'+(x.workSessionId||'')+'">'+(x.workSessionId?'WORK IN PROGRESS':'START WORK')+'</button>':'')+'<button class="maint-resolve" data-id="'+x.maintenance_id+'">✓ MARK RESOLVED</button></div></article>'}).join('');
   }catch(err){status.className='hk-board-status error';status.textContent='Could not load maintenance: '+err.message}
 }
 
@@ -739,22 +698,15 @@ async function relayScanQr_(panel,box,msg,instruction){
   });
  }catch(err){if(stream)stream.getTracks().forEach(t=>t.stop());throw err}
 }
-async function scanMaintenanceQr_(maintenanceId,room,button){
- const panel=document.getElementById('maintenanceQrPanel'),msg=document.getElementById('maintenanceQrMessage'),title=document.getElementById('maintenanceQrTitle'),box=document.getElementById('maintenanceQrCamera'),isRoom=/^\d{3}$/.test(String(room)),label=isRoom?'Room '+room:String(room);
- document.body.appendChild(panel);panel.hidden=false;panel.style.setProperty('display','grid','important');panel.style.zIndex='99999';title.textContent=label;msg.textContent='Opening camera…';box.innerHTML='▦';
- const expected=isRoom?'CO534-RM-'+room:'CO534-LOC-'+String(room).toUpperCase().replace(/[^A-Z0-9]+/g,'-').replace(/^-|-$/g,'');
- try{
-  // Maintenance now uses the same simple scanner pattern proven in Housekeeping.
-  const raw=await relayScanQr_(panel,box,msg,'Scan the '+label+' QR. Scanning starts the maintenance work session automatically.');
-  if(raw!==expected){box.innerHTML='▦';msg.textContent='Wrong location QR. Expected '+label+'.';return}
-  box.innerHTML='✓';msg.textContent='✓ Location verified. Starting work…';button.disabled=true;
-  const r=await apiPost({action:'startMaintenanceWork',maintenanceId,worker:currentUser.name,qrId:raw},30000);
-  if(!r.ok)throw new Error(r.reason||r.error||'Could not start work');
-  button.textContent='✓ WORK IN PROGRESS';button.dataset.session=r.workSessionId;msg.textContent='✓ IN PROGRESS';setTimeout(()=>{panel.hidden=true},450);
- }catch(err){if(String(err?.message)!=='Scanner closed'){button.disabled=false;const reason=err?.message||String(err);msg.textContent=reason==='INVALID_ROOM_QR'?'This QR was read correctly, but the database did not recognize it for '+label+'.':('Could not start maintenance work: '+reason)}}
+async function startMaintenanceDirect_(maintenanceId,room,button){
+  button.disabled=true;const old=button.textContent;button.textContent='STARTING…';
+  try{
+    const r=await apiPost({action:'startMaintenanceWork',maintenanceId,worker:currentUser.name},30000);
+    if(!r.ok)throw new Error(r.reason||r.error||'Could not start work');
+    button.textContent='✓ WORK IN PROGRESS';button.dataset.session=r.workSessionId;
+    relayCacheClear_('maintenance:');
+  }catch(err){button.disabled=false;button.textContent=old;alert('Could not start maintenance work: '+(err?.message||String(err)))}
 }
-function closeMaintenanceQr_(){if(maintenanceQrStream){maintenanceQrStream.getTracks().forEach(t=>t.stop());maintenanceQrStream=null}const p=document.getElementById('maintenanceQrPanel');if(p){p.hidden=true;p.style.removeProperty('display')}}
-document.getElementById('closeMaintenanceQr')?.addEventListener('click',closeMaintenanceQr_);
 
 async function relayViewPhoto_(photoRef){
   const ref=String(photoRef||'').trim();
@@ -782,7 +734,7 @@ async function relayViewPhoto_(photoRef){
 
 document.getElementById('maintenanceQueue').addEventListener('click',async e=>{
  const p=e.target.closest('.maint-photo');if(p){e.preventDefault();e.stopPropagation();relayViewPhoto_(p.dataset.photo);return}
- const start=e.target.closest('.maint-start-work');if(start){if(String(start.dataset.session||'').trim())return;const location=String(start.dataset.room||'').trim();const panel=document.getElementById('maintenanceQrPanel');if(panel){panel.hidden=false;panel.style.setProperty('display','grid','important');document.body.appendChild(panel)}requestAnimationFrame(()=>scanMaintenanceQr_(start.dataset.id,location,start));return}
+ const start=e.target.closest('.maint-start-work');if(start){if(String(start.dataset.session||'').trim())return;startMaintenanceDirect_(start.dataset.id,String(start.dataset.room||'').trim(),start);return}
  const b=e.target.closest('.maint-resolve');if(!b)return;
  pendingMaintenanceResolve=b.dataset.id;
  document.getElementById('maintenanceResolveTitle').textContent='Resolve '+(b.closest('.maint-card')?.querySelector('.maint-room')?.textContent||'Maintenance');
@@ -1531,36 +1483,24 @@ async function assignSideWork_(){
    else{const board=document.getElementById('sideWorkBoard');if(board)board.insertAdjacentHTML('afterbegin','<article class="side-work-card"><div><strong>'+task+'</strong><span>'+location+(dueAt?' • Due '+dueAt:'')+'</span><small>Assigned to '+assignedTo+' • just now</small></div><span class="side-work-status">ASSIGNED</span></article>')}
  }catch(err){alert(err.message)}
 }
-let activeSideWorkSessions={},pendingSideWorkScan=null,sideWorkQrStream=null;
-function sideWorkQrId_(location){const v=String(location||'').trim();return /^\d{3}$/.test(v)?'CO534-RM-'+v:'CO534-LOC-'+v.toUpperCase().replace(/[^A-Z0-9]+/g,'-').replace(/^-|-$/g,'')}
-function closeSideWorkQr_(){if(sideWorkQrStream){sideWorkQrStream.getTracks().forEach(t=>t.stop());sideWorkQrStream=null}pendingSideWorkScan=null;const p=document.getElementById('sideWorkQrPanel');if(p)p.hidden=true}
-async function scanSideWorkQr_(taskId,location){
- pendingSideWorkScan={taskId,location};const panel=document.getElementById('sideWorkQrPanel'),msg=document.getElementById('sideWorkQrMessage'),title=document.getElementById('sideWorkQrTitle'),box=document.getElementById('sideWorkQrCamera');
- title.textContent=location||'Side Duty';msg.textContent='Opening camera…';box.innerHTML='▦';panel.hidden=false;
- try{
-  sideWorkQrStream=await navigator.mediaDevices.getUserMedia({video:{facingMode:{ideal:'environment'}},audio:false});
-  const video=document.createElement('video'),canvas=document.createElement('canvas'),ctx=canvas.getContext('2d',{willReadFrequently:true});video.setAttribute('playsinline','');video.muted=true;video.autoplay=true;video.srcObject=sideWorkQrStream;box.innerHTML='';box.appendChild(video);video.style.width='100%';video.style.height='100%';video.style.objectFit='cover';video.style.borderRadius='12px';await video.play();
-  msg.textContent='Scan the '+location+' location QR. Scanning starts the task automatically.';
-  const detector=('BarcodeDetector' in window)?new BarcodeDetector({formats:['qr_code']}):null,expected=sideWorkQrId_(location);
-  const scan=async()=>{if(!pendingSideWorkScan||panel.hidden)return;let raw='';try{if(detector){const codes=await detector.detect(video);raw=codes[0]?.rawValue||''}else if(window.jsQR&&video.readyState>=2){canvas.width=video.videoWidth;canvas.height=video.videoHeight;ctx.drawImage(video,0,0);const img=ctx.getImageData(0,0,canvas.width,canvas.height);raw=jsQR(img.data,img.width,img.height)?.data||''}}catch(_){}
-   if(raw){if(raw!==expected){msg.textContent='Wrong location QR. Scan the '+location+' QR.';requestAnimationFrame(scan);return}sideWorkQrStream.getTracks().forEach(t=>t.stop());sideWorkQrStream=null;box.innerHTML='✓';msg.textContent='✓ Location verified. Starting task…';
-    try{const r=await apiPost({action:'startSideWork',taskId,worker:currentUser.name,qrId:raw});if(!r.ok)throw new Error(r.reason||'Could not start');activeSideWorkSessions[taskId]=r.sessionId;msg.textContent='✓ IN PROGRESS';relayCacheClear_('side:');relayCacheClear_('hk:');
-     // The start write is authoritative. Do not wait on another Sheets read just to show COMPLETE.
-     const startBtn=document.querySelector('.side-work-start[data-task="'+taskId+'"]');
-     if(startBtn){const complete=document.createElement('button');complete.className='side-work-complete';complete.dataset.task=taskId;complete.textContent='COMPLETE';startBtn.replaceWith(complete)}
-     setTimeout(()=>closeSideWorkQr_(),450)}catch(err){msg.textContent='Could not start: '+err.message}return}
-   requestAnimationFrame(scan)};
-  requestAnimationFrame(scan);
- }catch(err){msg.textContent='Camera error: '+(err?.message||String(err))}
+let activeSideWorkSessions={};
+async function startSideWorkDirect_(taskId,button){
+  const old=button.textContent;button.disabled=true;button.textContent='STARTING…';
+  try{
+    const r=await apiPost({action:'startSideWork',taskId,worker:currentUser.name},45000);
+    if(!r.ok)throw new Error(r.reason||r.error||'Could not start');
+    activeSideWorkSessions[taskId]=r.sessionId;
+    relayCacheClear_('side:');relayCacheClear_('hk:');
+    const complete=document.createElement('button');complete.className='side-work-complete';complete.dataset.task=taskId;complete.textContent='COMPLETE';button.replaceWith(complete);
+  }catch(err){button.disabled=false;button.textContent=old;alert('Could not start task: '+err.message)}
 }
-document.getElementById('closeSideWorkQr')?.addEventListener('click',closeSideWorkQr_);
 document.addEventListener('click',async e=>{
- const start=e.target.closest('.side-work-start');if(start){scanSideWorkQr_(start.dataset.task,start.dataset.location);return}
+ const start=e.target.closest('.side-work-start');if(start){startSideWorkDirect_(start.dataset.task,start);return}
  const done=e.target.closest('.side-work-complete');if(done){let sid=activeSideWorkSessions[done.dataset.task];
   if(!sid){
    done.disabled=true;done.textContent='CHECKING…';
    try{relayCacheClear_('side:');const r=await apiPost({action:'getWorkBoard',businessDate:housekeepingBusinessDate(),worker:currentUser.name},45000);if(r.ok){const task=(r.sideWork||[]).find(x=>x.taskId===done.dataset.task&&x.status==='IN_PROGRESS'&&x.sessionId);if(task){sid=task.sessionId;activeSideWorkSessions[done.dataset.task]=sid}}}catch(_){}
-   if(!sid){done.disabled=false;done.textContent='COMPLETE';alert('RELAY could not recover the active work session yet. Refresh once and try COMPLETE again — do not rescan the QR.');return}
+   if(!sid){done.disabled=false;done.textContent='COMPLETE';alert('RELAY could not recover the active work session yet. Refresh once and try COMPLETE again — wait a moment and try COMPLETE again.');return}
   }
   const card=done.closest('.side-work-card'),parent=card?.parentNode,next=card?.nextSibling;done.disabled=true;done.textContent='COMPLETE';
   // Optimistic completion: the worker gets an instant response while the write finishes.
