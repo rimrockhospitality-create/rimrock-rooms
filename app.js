@@ -422,6 +422,7 @@ async function startInspectionDirect_(){
   try{
     const opened=await apiPost({action:'startInspection',propertyId:'CO534',businessDate:housekeepingBusinessDate(),room,housekeeper,inspector:currentUser.name});
     if(!opened.ok)throw new Error(opened.reason||opened.error||'Could not open inspection');
+    resetInspectionForNewRoom_();
     activeInspectionRoom=room;activeInspectionHousekeeper=housekeeper;
     document.getElementById('inspectionRoomTitle').textContent='Room '+activeInspectionRoom;
     document.getElementById('inspectionHousekeeper').textContent='Housekeeper: '+activeInspectionHousekeeper;
@@ -444,6 +445,22 @@ document.getElementById('inspectionBack').addEventListener('click',()=>{inspecti
 let inspectionCaptureType=null,inspectionBlocking=null;
 let inspectionCounts={hk:0,maint:0,blocking:0,highlight:0};
 function renderInspectionCounts(){const el=document.getElementById('inspectionIssueSummary');if(!el)return;const total=inspectionCounts.hk+inspectionCounts.maint;el.innerHTML='<strong>Issues captured: '+total+'</strong><span>📸 HK: '+inspectionCounts.hk+' &nbsp; • &nbsp; 🔧 Maintenance: '+inspectionCounts.maint+' &nbsp; • &nbsp; ⛔ Blocking: '+inspectionCounts.blocking+' &nbsp; • &nbsp; ✨ Highlights: '+inspectionCounts.highlight+'</span>'}
+function resetInspectionForNewRoom_(){
+  inspectionCounts={hk:0,maint:0,blocking:0,highlight:0};renderInspectionCounts();
+  window._relayInspectorFixedIssueIds=new Set();
+  resetInspectionCapture();
+  const capture=document.getElementById('inspectionCapture');if(capture)delete capture.dataset.issueId;
+  document.querySelectorAll('.inspect-q').forEach(q=>{
+    delete q.dataset.answer;delete q.dataset.issueId;delete q.dataset.resolution;
+    q.querySelectorAll('.yn button,[data-resolution]').forEach(b=>{b.classList.remove('yes','no','selected');b.disabled=false});
+    q.querySelector('.deficiency-evidence')?.remove();
+    const d=q.querySelector('.fail-detail');if(d){d.hidden=true;d.querySelectorAll('input,textarea,select').forEach(x=>{if(x.type==='checkbox'||x.type==='radio')x.checked=false;else x.value=''});}
+  });
+  inspectionDetail.querySelectorAll('input[type=file]').forEach(x=>x.value='');
+  const pass=document.querySelector('.pass-room-btn');if(pass){pass.disabled=false;pass.textContent='PASS ROOM';}
+  document.getElementById('maintenanceBlocking')?.querySelectorAll('button').forEach(b=>b.classList.remove('selected'));
+}
+
 function resetInspectionCapture(){inspectionCaptureType=null;inspectionBlocking=null;document.getElementById('inspectionPhoto').value='';document.getElementById('inspectionNote').value='';document.getElementById('inspectionCapture').hidden=true;const b=document.getElementById('saveInspectionCapture');b.disabled=true;b.textContent='SAVE'};
 function openInspectionCapture(type){
   inspectionCaptureType=type;inspectionBlocking=null;
