@@ -340,7 +340,7 @@ async function loadHousekeepingBoard(){
     }
     // Render immediately from cached/snapshot state, then fetch side work only when it is not already present.
     renderSideWorkBoardFromState_(state);
-    if(!('sideWork' in state)&&!currentUser.roles.includes('INSPECTOR')&&!isHkOnly) setTimeout(()=>loadSideWorkBoard_(),0);
+    if(!('sideWork' in state)&&!currentUser.roles.includes('INSPECTOR')) setTimeout(()=>loadSideWorkBoard_(),0);
     hkMyRooms.innerHTML=visible.map(a=>{
       const room=String(a.room),s=sessionByRoom.get(room),rework=reworkByRoom.get(room)||[],activeRework=rework.find(i=>i.status==='REWORK_IN_PROGRESS'),status=activeRework?'REWORK_IN_PROGRESS':rework.length?'REWORK_REQUIRED':(s?.status||'NOT_STARTED');
       const label=status==='REWORK_IN_PROGRESS'?'REWORK IN PROGRESS':status==='REWORK_REQUIRED'?'REWORK REQUIRED':status==='READY_FOR_INSPECTION'?'READY FOR INSPECTION':status==='CLEANING'?'CLEANING':'NOT STARTED';
