@@ -1015,11 +1015,16 @@ document.getElementById('saveShiftNote').addEventListener('click',async()=>{
  try{const r=await apiPost({action:'saveShiftNote',sessionId:localStorage.getItem('relaySessionId'),businessDate:housekeepingBusinessDate(),shift:activeChecklist||'GENERAL',noteType:activeNoteType,issueInformation:issue,solutionAction:solution,followUp});
  if(!r.ok)throw new Error(r.reason||r.error||'Save failed');msg.textContent='✓ Shift note saved.';setTimeout(async()=>{document.getElementById('shiftNotePanel').hidden=true;document.getElementById('shiftNoteIssue').value='';document.getElementById('shiftNoteSolution').value='';document.getElementById('shiftNoteFollowup').value='';activeNoteType='';document.querySelectorAll('.note-types button').forEach(x=>x.classList.remove('selected'));await loadOpenShiftNotes_();refreshDashboardOps()},450)}catch(err){msg.textContent='Save failed: '+err.message}
 });
-document.getElementById('completeShift').addEventListener('click',async()=>{
+document.getElementById('completeShift').addEventListener('click',async function(){
+ const btn=this;if(btn.disabled)return;
  const list=CHECKLISTS[activeChecklist]||[],state=taskState[activeChecklist]||{},done=Object.values(state).filter(Boolean).length;
  if(done<list.length&&!confirm('This checklist is '+done+' of '+list.length+' complete. Complete the shift anyway?'))return;
- const r=await apiPost({action:'completeChecklistShift',sessionId:localStorage.getItem('relaySessionId'),businessDate:housekeepingBusinessDate(),shift:activeChecklist,tasks:list.map((x,i)=>({taskIndex:i,taskName:x[0],status:state[i]?'COMPLETE':'INCOMPLETE'}))});
- if(!r.ok){alert('Shift could not be saved: '+(r.reason||r.error||'Unknown error'));return}alert('✓ '+activeChecklist+' shift saved to RELAY.');openChecklistHub();
+ const shiftBeingSaved=activeChecklist,old=btn.textContent;btn.disabled=true;btn.textContent='SAVING…';
+ try{
+  const r=await apiPost({action:'completeChecklistShift',sessionId:localStorage.getItem('relaySessionId'),businessDate:housekeepingBusinessDate(),shift:shiftBeingSaved,tasks:list.map((x,i)=>({taskIndex:i,taskName:x[0],status:state[i]?'COMPLETE':'INCOMPLETE'}))});
+  if(!r.ok)throw new Error(r.reason||r.error||'Unknown error');
+  taskState[shiftBeingSaved]={};alert('✓ '+shiftBeingSaved+' shift saved to RELAY.');openChecklistHub();
+ }catch(err){alert('Shift could not be saved: '+err.message)}finally{btn.disabled=false;btn.textContent=old}
 });
 document.getElementById('checklistDate').textContent=new Date().toLocaleDateString('en-US',{weekday:'long',month:'long',day:'numeric'});
 
