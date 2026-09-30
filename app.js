@@ -320,15 +320,16 @@ async function loadHousekeepingBoard(){
     hkBoardDate.textContent=new Intl.DateTimeFormat('en-US',{weekday:'long',month:'long',day:'numeric',year:'numeric',timeZone:'America/Denver'}).format(businessDateObj);
     if(!state.ok)throw new Error(state.error||'Could not load board');
     if(!isHkOnly){relayCacheSet_('inspection:'+date,state);relayCacheSet_('maintenance:'+date,state);relayCacheSet_('dashboard:today:'+date,state)}
-    const assignments=state.assignments||[],sessions=state.cleaningSessions||[],inspectionIssues=state.inspectionIssues||[];
+    const assignments=state.assignments||[],sessions=state.cleaningSessions||[],inspections=state.inspections||[],inspectionIssues=state.inspectionIssues||[];
     if(!('inspectionIssues' in state))console.warn('RELAY getToday snapshot does not include inspectionIssues; rendering board without rework overlay.');
     console.log('Rimrock rework payload',inspectionIssues);
     const sessionByRoom=new Map(sessions.map(s=>[String(s.room),s]));
+    const inspectionByRoom=new Map(inspections.map(i=>[String(i.room),i]));
     const reworkByRoom=new Map();
     inspectionIssues.filter(i=>['REWORK_REQUIRED','REWORK_IN_PROGRESS'].includes(i.status)&&(canManageBoard||i.housekeeper===currentUser.name)).forEach(i=>{const k=String(i.room);if(!reworkByRoom.has(k))reworkByRoom.set(k,[]);reworkByRoom.get(k).push(i)});
     const visible=canManageBoard?assignments:assignments.filter(a=>a.housekeeper===currentUser.name);
     const cleaning=visible.filter(a=>sessionByRoom.get(String(a.room))?.status==='CLEANING').length;
-    const ready=visible.filter(a=>sessionByRoom.get(String(a.room))?.status==='READY_FOR_INSPECTION').length;
+    const ready=visible.filter(a=>{const room=String(a.room),ss=sessionByRoom.get(room),ii=inspectionByRoom.get(room);return ss?.status==='READY_FOR_INSPECTION'||ii?.result==='PASSED'}).length;
     document.getElementById('hkAssignedCount').textContent=visible.length;
     document.getElementById('hkCleaningCount').textContent=cleaning;
     document.getElementById('hkReadyCount').textContent=ready;
@@ -342,8 +343,8 @@ async function loadHousekeepingBoard(){
     renderSideWorkBoardFromState_(state);
     if(!('sideWork' in state)&&!currentUser.roles.includes('INSPECTOR')) setTimeout(()=>loadSideWorkBoard_(),0);
     hkMyRooms.innerHTML=visible.map(a=>{
-      const room=String(a.room),s=sessionByRoom.get(room),rework=reworkByRoom.get(room)||[],activeRework=rework.find(i=>i.status==='REWORK_IN_PROGRESS'),status=activeRework?'REWORK_IN_PROGRESS':rework.length?'REWORK_REQUIRED':(s?.status||'NOT_STARTED');
-      const label=status==='REWORK_IN_PROGRESS'?'REWORK IN PROGRESS':status==='REWORK_REQUIRED'?'REWORK REQUIRED':status==='READY_FOR_INSPECTION'?'READY FOR INSPECTION':status==='CLEANING'?'CLEANING':'NOT STARTED';
+      const room=String(a.room),s=sessionByRoom.get(room),inspection=inspectionByRoom.get(room),rework=reworkByRoom.get(room)||[],activeRework=rework.find(i=>i.status==='REWORK_IN_PROGRESS'),status=activeRework?'REWORK_IN_PROGRESS':rework.length?'REWORK_REQUIRED':inspection?.result==='PASSED'?'READY':(s?.status||'NOT_STARTED');
+      const label=status==='REWORK_IN_PROGRESS'?'REWORK IN PROGRESS':status==='REWORK_REQUIRED'?'REWORK REQUIRED':(status==='READY_FOR_INSPECTION'||status==='READY')?'READY':status==='CLEANING'?'CLEANING':'NOT STARTED';
       const action=status==='REWORK_IN_PROGRESS'?'REWORK COMPLETE':status==='REWORK_REQUIRED'?'START REWORK':status==='CLEANING'?'Room in progress':status==='READY_FOR_INSPECTION'?'Awaiting inspection':'START ROOM';
       const started=s?.started_at||'';const reworkHtml=rework.length?'<div class="hk-rework-list">'+rework.map(i=>'<div class="hk-rework-item"><strong>'+i.deficiency_label+'</strong>'+(i.note?'<span>'+i.note+'</span>':'')+'<button type="button" class="view-rework-photo" data-photo="'+i.photo_ref+'">View inspector photo</button></div>').join('')+'</div>':'';const issueId=(activeRework||rework[0])?.issue_id||'';
       const canInspect=currentUser.roles.some(r=>['ADMIN','INSPECTOR'].includes(r));
