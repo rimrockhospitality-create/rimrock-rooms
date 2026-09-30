@@ -67,10 +67,9 @@ function pmSaveDraft(){
 async function pmStartRoom(room,button){
  button.disabled=true;
  try{
- const known=pmBoard?.sessions.find(s=>s.room===room);let qrId='';
- if(!known){const panel=document.getElementById('maintenanceQrPanel'),box=document.getElementById('maintenanceQrCamera'),msg=document.getElementById('maintenanceQrMessage');document.getElementById('maintenanceQrTitle').textContent='Room '+room+' PM';document.body.appendChild(panel);panel.hidden=false;panel.style.setProperty('display','grid','important');qrId=await relayScanQr_(panel,box,msg,'Scan Room '+room+' to start PM.');closeMaintenanceQr_();}
- const r=await pmApi('startPm',{room,qrId});pmOpenSession(r.session);
- }catch(e){if(e.message!=='Scanner closed')alert('Could not open PM: '+e.message);}finally{button.disabled=false;}
+  const r=await pmApi('startPm',{room});
+  pmOpenSession(r.session);
+ }catch(e){alert('Could not open PM: '+e.message);}finally{button.disabled=false;}
 }
 document.getElementById('pmView').addEventListener('click',async e=>{
  const room=e.target.closest('[data-pm-room]');if(room){await pmStartRoom(room.dataset.pmRoom,room);return;}
