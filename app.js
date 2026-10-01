@@ -954,7 +954,15 @@ const CHECKLISTS={
  ]
 };
 let activeChecklist='',taskState={},activeNoteType='';
+function checklistDraftKey_(name){return 'relayChecklistDraft:'+String(currentUser?.propertyId||'CO534')+':'+housekeepingBusinessDate()+':'+String(currentUser?.userId||currentUser?.username||currentUser?.name||'user')+':'+name}
+function loadChecklistDraft_(name){
+ try{const raw=localStorage.getItem(checklistDraftKey_(name));if(!raw)return;const saved=JSON.parse(raw),state={};Object.keys(saved||{}).forEach(k=>{if(saved[k])state[k]=true});taskState[name]=state}catch(_){}
+}
+function saveChecklistDraft_(name){try{localStorage.setItem(checklistDraftKey_(name),JSON.stringify(taskState[name]||{}))}catch(_){}}
+function clearChecklistDraft_(name){try{localStorage.removeItem(checklistDraftKey_(name))}catch(_){}}
+function loadAllChecklistDrafts_(){['AM','PM','AUDIT','MAINTENANCE'].forEach(loadChecklistDraft_)}
 function openChecklistHub(){
+ loadAllChecklistDrafts_();
  const maintenanceOnly=!!(currentUser&&currentUser.roles&&currentUser.roles.includes('MAINTENANCE')&&!currentUser.roles.includes('ADMIN'));
  document.getElementById('checklistDetail').hidden=true;
  document.querySelector('.checklist-layout').hidden=false;document.querySelector('.checklist-kpis').hidden=false;document.querySelector('.checklist-hero').hidden=false;
@@ -984,7 +992,7 @@ function openChecklistHub(){
  syncChecklistProgress();loadOpenShiftNotes_();
 }
 function openChecklist(name){
- activeChecklist=name;const list=CHECKLISTS[name]||[];document.querySelector('.checklist-layout').hidden=true;document.querySelector('.checklist-kpis').hidden=true;document.querySelector('.checklist-hero').hidden=true;document.getElementById('checklistDetail').hidden=false;
+ activeChecklist=name;loadChecklistDraft_(name);const list=CHECKLISTS[name]||[];document.querySelector('.checklist-layout').hidden=true;document.querySelector('.checklist-kpis').hidden=true;document.querySelector('.checklist-hero').hidden=true;document.getElementById('checklistDetail').hidden=false;
  const titles={AM:['FRONT DESK • AM','AM / 1st Shift','7 AM — 3 PM'],PM:['FRONT DESK • PM','PM / 2nd Shift','3 PM — 11 PM'],AUDIT:['FRONT DESK • NIGHT AUDIT','Night Audit','11 PM — 7 AM'],MAINTENANCE:['ENGINEERING • DAILY','Maintenance Daily','Property operations']};
  const t=titles[name];document.getElementById('detailEyebrow').textContent=t[0];document.getElementById('detailTitle').textContent=t[1];document.getElementById('detailSubtitle').textContent=t[2]+' • '+list.length+' tasks';
  renderChecklist();const pw=document.getElementById('addPropertyWalkPhoto');if(pw)pw.hidden=name!=='MAINTENANCE';
@@ -1005,7 +1013,7 @@ function syncChecklistProgress(){
 }
 document.querySelectorAll('.shift-card,.maintenance-check-card').forEach(b=>b.addEventListener('click',()=>openChecklist(b.dataset.shift)));
 document.getElementById('backToChecklists').addEventListener('click',openChecklistHub);
-document.getElementById('checklistTasks').addEventListener('click',e=>{const b=e.target.closest('.task-check');if(!b)return;const s=taskState[activeChecklist]||(taskState[activeChecklist]={});s[b.dataset.i]=!s[b.dataset.i];renderChecklist()});
+document.getElementById('checklistTasks').addEventListener('click',e=>{const b=e.target.closest('.task-check');if(!b)return;const s=taskState[activeChecklist]||(taskState[activeChecklist]={});s[b.dataset.i]=!s[b.dataset.i];saveChecklistDraft_(activeChecklist);renderChecklist()});
 function openShiftNote(){document.getElementById('shiftNotePanel').hidden=false;activeNoteType='';document.querySelectorAll('.note-types button').forEach(x=>x.classList.remove('selected'));document.getElementById('shiftNoteMessage').textContent=''}
 document.getElementById('addShiftNote').addEventListener('click',openShiftNote);document.getElementById('addChecklistNote').addEventListener('click',openShiftNote);document.getElementById('closeShiftNote').addEventListener('click',()=>document.getElementById('shiftNotePanel').hidden=true);
 document.querySelectorAll('.note-types button').forEach(b=>b.addEventListener('click',()=>{activeNoteType=b.dataset.noteType;document.querySelectorAll('.note-types button').forEach(x=>x.classList.toggle('selected',x===b))}));
@@ -1024,7 +1032,7 @@ document.getElementById('completeShift').addEventListener('click',async function
  try{
   const r=await apiPost({action:'completeChecklistShift',sessionId:localStorage.getItem('relaySessionId'),businessDate:housekeepingBusinessDate(),shift:shiftBeingSaved,tasks:list.map((x,i)=>({taskIndex:i,taskName:x[0],status:state[i]?'COMPLETE':'INCOMPLETE'}))});
   if(!r.ok)throw new Error(r.reason||r.error||'Unknown error');
-  taskState[shiftBeingSaved]={};alert('✓ '+shiftBeingSaved+' shift saved to RELAY.');openChecklistHub();
+  taskState[shiftBeingSaved]={};clearChecklistDraft_(shiftBeingSaved);alert('✓ '+shiftBeingSaved+' shift saved to RELAY.');openChecklistHub();
  }catch(err){alert('Shift could not be saved: '+err.message)}finally{btn.disabled=false;btn.textContent=old}
 });
 document.getElementById('checklistDate').textContent=new Date().toLocaleDateString('en-US',{weekday:'long',month:'long',day:'numeric'});
@@ -1245,7 +1253,7 @@ document.getElementById('saveException').addEventListener('click',()=>{
  const note=document.getElementById('exceptionNote').value.trim(),msg=document.getElementById('exceptionMessage');
  if(activeExceptionIndex===null||!activeExceptionType||!note){msg.textContent='Choose N/A, Issue, or Follow-Up and enter a note.';return}
  const key=activeChecklist+':'+activeExceptionIndex;exceptionState[key]={type:activeExceptionType,note};
- if(activeExceptionType==='NA'){const state=taskState[activeChecklist]||(taskState[activeChecklist]={});state[activeExceptionIndex]=true}
+ if(activeExceptionType==='NA'){const state=taskState[activeChecklist]||(taskState[activeChecklist]={});state[activeExceptionIndex]=true;saveChecklistDraft_(activeChecklist)}
  msg.textContent='✓ Exception recorded.';renderChecklist();syncChecklistProgress();
  setTimeout(closeException_,650);
 });
