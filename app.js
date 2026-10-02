@@ -1527,23 +1527,31 @@ async function startSideWorkDirect_(taskId,button){
 }
 document.addEventListener('click',async e=>{
  const start=e.target.closest('.side-work-start');if(start){startSideWorkDirect_(start.dataset.task,start);return}
- const done=e.target.closest('.side-work-complete');if(done){let sid=activeSideWorkSessions[done.dataset.task];
-  if(!sid){
-   done.disabled=true;done.textContent='CHECKING…';
-   try{relayCacheClear_('side:');const r=await apiPost({action:'getWorkBoard',businessDate:housekeepingBusinessDate(),worker:currentUser.name},45000);if(r.ok){const task=(r.sideWork||[]).find(x=>x.taskId===done.dataset.task&&x.status==='IN_PROGRESS'&&x.sessionId);if(task){sid=task.sessionId;activeSideWorkSessions[done.dataset.task]=sid}}}catch(_){}
-   if(!sid){done.disabled=false;done.textContent='COMPLETE';alert('RELAY could not recover the active work session yet. Refresh once and try COMPLETE again — wait a moment and try COMPLETE again.');return}
-  }
-  const card=done.closest('.side-work-card'),parent=card?.parentNode,next=card?.nextSibling;done.disabled=true;done.textContent='COMPLETE';
-  // Optimistic completion: the worker gets an instant response while the write finishes.
+ const done=e.target.closest('.side-work-complete');if(done){
+  const taskId=done.dataset.task;
+  const sid=activeSideWorkSessions[taskId]||'';
+  const card=done.closest('.side-work-card'),parent=card?.parentNode,next=card?.nextSibling;
+  done.disabled=true;done.textContent='COMPLETE';
+  // Completion is recoverable from the backend by task + worker. The browser
+  // sessionId is only an optimization, so refreshes cannot strand a task.
   card?.remove();relayCacheClear_('side:');relayCacheClear_('hk:');
-  try{const r=await apiPost({action:'completeSideWork',sessionId:sid},45000);if(!r.ok)throw new Error(r.reason||'Could not complete');delete activeSideWorkSessions[done.dataset.task];relayCacheClear_('side:');relayCacheClear_('dashboard:');
-   // Re-fetch the authoritative board after completion so the just-finished task cannot remain visually stale.
+  try{
+   const payload={action:'completeSideWork',taskId,worker:currentUser.name};
+   if(sid)payload.sessionId=sid;
+   const r=await apiPost(payload,45000);
+   if(!r.ok)throw new Error(r.reason||r.error||'Could not complete');
+   delete activeSideWorkSessions[taskId];relayCacheClear_('side:');relayCacheClear_('dashboard:');
    const fresh=await apiPost({action:'getWorkBoard',worker:currentUser.name},45000);
-   if(fresh.ok){if(fresh.businessDate){relayBusinessDate=fresh.businessDate;relayBusinessDayLoadedAt=Date.now()}renderSideWorkBoardFromState_(fresh);relayCacheSet_('side:CURRENT:'+currentUser.name,fresh)}else{await loadSideWorkBoard_()}}
-  catch(err){if(parent&&card){next?parent.insertBefore(card,next):parent.appendChild(card);done.disabled=false}alert('Could not save completion. The task has been restored: '+err.message)}
+   if(fresh.ok){
+    if(fresh.businessDate){relayBusinessDate=fresh.businessDate;relayBusinessDayLoadedAt=Date.now()}
+    renderSideWorkBoardFromState_(fresh);relayCacheSet_('side:CURRENT:'+currentUser.name,fresh);
+   }else{await loadSideWorkBoard_()}
+  }catch(err){
+   if(parent&&card){next?parent.insertBefore(card,next):parent.appendChild(card);done.disabled=false;done.textContent='COMPLETE'}
+   alert('Could not save completion. The task has been restored: '+err.message)
+  }
  }
 });
-
 
 
 function dorEsc_(v){return String(v??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]))}
