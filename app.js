@@ -878,6 +878,7 @@ const CHECKLISTS={
  ['Review No-Shows & Fees','Verify prior-night no-shows and proper no-show fee posting.'],
  ['Review Departures & Billing','Verify proper billing, routing and applicable fees before checkout.'],
  ['Recognize Choice Rewards','Identify arriving Choice Rewards / VIP guests and special attention needs.'],
+ ['Choice Rewards Sign-Ups','Offer and complete Choice Rewards enrollment with eligible guests.']
  ['Prepare VIP / Recognition Bags','Prepare applicable bags for placement after successful room inspection.'],
  ['Housekeeping Setup','Build/verify assignments, sync to RELAY and confirm My Board.'],
  ['Review OOO/OOS & Maintenance','Verify Choice room status against P1/P2 maintenance and room holds.'],
@@ -939,9 +940,13 @@ const CHECKLISTS={
  ['Complete Audit Shift','Submit checklist, exceptions, notes and laundry status; log out of Choice.']
  ],
  MAINTENANCE:[
- ['Start Maintenance Shift','Review carryover notes, P1/P2/P3 queue and room holds.'],
+ ['8:00–10:45 — Housekeeping Launch','Strip rooms, make beds, and help get Housekeeping kicked off right.'],
+ ['8:00–10:45 — Support Room Turns','Keep priority room turns moving and help with immediate Housekeeping needs.'],
+ ['8:00–10:45 — Housekeeping Check-In','Confirm Housekeeping is staffed, moving, and has what it needs before transitioning to Maintenance.'],
+ ['8:00–10:45 — Morning Handoff','Capture anything that needs to carry into the Maintenance queue once the morning launch is complete.'],
+ ['10:45 AM — Start Maintenance Operations','Begin the technical Maintenance checklist and review carryover notes, P1/P2/P3 queue and room holds.'],
  ['Complete Assigned PM Rooms','Complete scheduled preventive-maintenance rooms and log deficiencies.'],
- ['Help Housekeeping Strip Rooms','Support priority room turns with linen/trash removal as needed.'],
+ ['Clean Grill','Clean the grill; on Fridays complete the full grill clean.'],
  ['Full Exterior Property Walk','Parking, entrances, sidewalks, dumpster, pet area, EV, landscaping, lighting and exterior.'],
  ['Full Interior Property Walk','Lobby, halls, stairs, elevators, restrooms, laundry, fitness, HK and mechanical areas.'],
  ['Life-Safety / Building Awareness','Visual check of fire panel, exits, elevators, mechanical areas, leaks/noises/hazards.'],
@@ -950,7 +955,7 @@ const CHECKLISTS={
  ['Maintenance Shop / Equipment','Organize tools, charge batteries, check supplies and store chemicals correctly.'],
  ['End-of-Shift Property Check','Light second walk; verify unresolved P1/P2 and room holds.'],
  ['Maintenance Shift Notes','Document informational items, issues and follow-ups.'],
- ['Complete Maintenance Shift','Account for PM rooms, walks, queue, exceptions and follow-ups.']
+ ['Complete Maintenance Shift','Account for PM rooms, morning HK launch, walks, queue, exceptions and follow-ups.']
  ]
 };
 let activeChecklist='',taskState={},activeNoteType='';
@@ -997,19 +1002,17 @@ function openChecklist(name){
  const t=titles[name];document.getElementById('detailEyebrow').textContent=t[0];document.getElementById('detailTitle').textContent=t[1];document.getElementById('detailSubtitle').textContent=t[2]+' • '+list.length+' tasks';
  renderChecklist();const pw=document.getElementById('addPropertyWalkPhoto');if(pw)pw.hidden=name!=='MAINTENANCE';
 }
+function maintenanceMorningOpen_(){ const d=new Date(); return d.getHours()*60+d.getMinutes()<645; }
 function renderChecklist(){
  const list=CHECKLISTS[activeChecklist]||[],state=taskState[activeChecklist]||(taskState[activeChecklist]={});
- document.getElementById('checklistTasks').innerHTML=list.map((x,i)=>'<article class="check-task '+(state[i]?'done':'')+'"><button type="button" class="task-check" data-i="'+i+'">'+(state[i]?'✓':'')+'</button><div><h4>'+(i+1)+'. '+x[0]+'</h4><p>'+x[1]+'</p></div><button type="button" class="task-exception" data-i="'+i+'">EXCEPTION</button></article>').join('');
- const done=Object.values(state).filter(Boolean).length,pct=list.length?Math.round(done/list.length*100):0;document.getElementById('detailPercent').textContent=pct+'%';syncChecklistProgress();
-}
-function syncChecklistProgress(){
- const order=['AM','PM','AUDIT','MAINTENANCE'];
- const kpis=[...document.querySelectorAll('.checklist-kpis article')];
- order.forEach((name,i)=>{
-  const list=CHECKLISTS[name]||[],state=taskState[name]||{},done=Object.values(state).filter(Boolean).length,pct=list.length?Math.round(done/list.length*100):0;
-  const k=kpis[i];if(k){k.querySelector('strong').textContent=pct+'%';k.querySelector('em').textContent=done?(done+' of '+list.length+' complete'):'Not started'}
-  document.querySelectorAll('.rr-shift-card[data-shift-open="'+name+'"]').forEach(card=>{card.querySelector('.rr-dial strong').textContent=pct+'%';card.querySelector('.rr-dial em').textContent=done?(done+' / '+list.length+' COMPLETE'):'NOT STARTED'});
- });
+ const maintenanceMorning=activeChecklist==='MAINTENANCE'&&maintenanceMorningOpen_();
+ const visible=list.map((x,i)=>({x,i})).filter(({i})=>!maintenanceMorning||i<4);
+ document.getElementById('checklistTasks').innerHTML=visible.map(({x,i})=>'<article class="check-task '+(state[i]?'done':'')+'"><button type="button" class="task-check" data-i="'+i+'">'+(state[i]?'✓':'')+'</button><div><h4>'+(i+1)+'. '+(x[0]==='Clean Grill'&&new Date().getDay()===5?'Clean Grill (Full Clean)':x[0])+'</h4><p>'+x[1]+'</p></div><button type="button" class="task-exception" data-i="'+i+'">EXCEPTION</button></article>').join('');
+ const done=Object.values(state).filter(Boolean).length,pct=list.length?Math.round(done/list.length*100):0;
+ document.getElementById('detailPercent').textContent=maintenanceMorning?'Morning Launch':pct+'%';
+ const sub=document.getElementById('detailSubtitle');
+ if(activeChecklist==='MAINTENANCE')sub.textContent=(maintenanceMorning?'8:00 AM — 10:45 AM • Housekeeping Launch':'10:45 AM onward • Maintenance Operations')+' • '+(maintenanceMorning?4:list.length)+' tasks';
+ syncChecklistProgress();
 }
 document.querySelectorAll('.shift-card,.maintenance-check-card').forEach(b=>b.addEventListener('click',()=>openChecklist(b.dataset.shift)));
 document.getElementById('backToChecklists').addEventListener('click',openChecklistHub);
@@ -1027,6 +1030,7 @@ document.getElementById('saveShiftNote').addEventListener('click',async()=>{
 document.getElementById('completeShift').addEventListener('click',async function(){
  const btn=this;if(btn.disabled)return;
  const list=CHECKLISTS[activeChecklist]||[],state=taskState[activeChecklist]||{},done=Object.values(state).filter(Boolean).length;
+ if(activeChecklist==='MAINTENANCE'&&maintenanceMorningOpen_()){alert("Brad's Maintenance operations checklist opens at 10:45 AM. Complete the Housekeeping Launch tasks first, then return at 10:45.");return;}
  if(done<list.length&&!confirm('This checklist is '+done+' of '+list.length+' complete. Complete the shift anyway?'))return;
  const shiftBeingSaved=activeChecklist,old=btn.textContent;btn.disabled=true;btn.textContent='SAVING…';
  try{
