@@ -140,59 +140,72 @@ async function loadPdfJs(){
   window.pdfjsLib.GlobalWorkerOptions.workerSrc='https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
   return window.pdfjsLib;
 }
-async function parseChoiceText(text){
-  const property=(text.match(/Property\s*Code:\s*([A-Z0-9]+)/i)||[])[1]||'';
-  const date=(text.match(/Business\s*Date:\s*(\d{1,2}\/\d{1,2}\/\d{4})/i)||[])[1]||'';
-  const roomRows=[...text.matchAll(/(?:^|\s)(\d{3})\s+(NK|NQQ|SNHK|SNK|NHQQ1?|NHK1)\s+(VAC|OCC)\s+(Ready|Dirty)/g)].map(m=>({room:m[1],type:m[2],status:m[3],condition:m[4]}));
+async function parseChoiceText(textOrPages){
+  const pages=Array.isArray(textOrPages)?textOrPages:[String(textOrPages||'')];
+  const allText=pages.join('\n');
+  const property=(allText.match(/Property\s*Code:\s*([A-Z0-9]+)/i)||[])[1]||'';
+  const date=(allText.match(/Business\s*Date:\s*(\d{1,2}\/\d{1,2}\/\d{4})/i)||[])[1]||'';
+  const rowRe=/(?:^|\s)(\d{3})\s+(NK|NQQ|SNHK|SNK|NHQQ1?|NHK1)\s+(VAC|OCC|OOO)\s+(Ready|Dirty)(?=\s|$)/g;
+  const roomRows=[];
+  pages.forEach((page,pageIndex)=>{
+    const rows=[...page.matchAll(rowRe)].map(m=>({room:m[1],type:m[2],status:m[3],condition:m[4],page:pageIndex+1}));
+    roomRows.push(...rows);
+  });
   const uniqueRooms=[...new Map(roomRows.map(r=>[r.room,r])).values()];
   const assignments=[];
-  // Choice renders the report title immediately before a named assignment on some PDFs.
-  // Anchor the employee name to "Business Date" and strip report-title noise before normalizing Last, First.
-  const names=[...text.matchAll(/(?:Housekeeping\s+Room\s+Assignment\s+)?([A-Z][A-Za-z' -]{1,40}),\s*([A-Z][A-Za-z' -]{1,40})\s+Business\s*Date:/g)];
-  for(const n of names){
-    const start=n.index, next=names.find(x=>x.index>start);
-    const block=text.slice(start,next?next.index:text.length);
-    const assigned=[...block.matchAll(/(?:^|\s)(\d{3})\s+(?:NK|NQQ|SNHK|SNK|NHQQ1?|NHK1)\s+(?:VAC|OCC)\s+(?:Ready|Dirty)/g)].map(m=>m[1]);
-    const last=n[1].replace(/Housekeeping\s+Room\s+Assignment/gi,'').trim();
-    const first=n[2].trim();
-    assignments.push({name:first+' '+last,rooms:[...new Set(assigned)]});
-  }
-  // Choice can omit the name heading for the first/primary housekeeper when the
-  // report begins with the property's room pages. If exactly one active RELAY
-  // housekeeper is absent from the named sections, the leading room block belongs
-  // to that remaining housekeeper. This preserves the Choice report structure
-  // without hard-coding an employee name.
-  if(names.length){
-    const firstNamedStart=names[0].index;
-    const leading=text.slice(0,firstNamedStart);
-    const leadingRooms=[...leading.matchAll(/(?:^|\s)(\d{3})\s+(?:NK|NQQ|SNHK|SNK|NHQQ1?|NHK1)\s+(?:VAC|OCC)\s+(?:Ready|Dirty)/g)].map(m=>m[1]);
+  const unnamedPages=[];
+  pages.forEach((page,pageIndex)=>{
+    const header=page.match(/(?:Housekeeping\s+Room\s+Assignment\s*)?([A-Z][A-Za-z' -]{1,40}),\s*([A-Z][A-Za-z' -]{1,40})\s+Business\s*Date:/i);
+    const assigned=[...page.matchAll(rowRe)].map(m=>m[1]);
+    if(header){
+      const last=header[1].trim(),first=header[2].trim();
+      assignments.push({name:first+' '+last,rooms:[...new Set(assigned)],pages:[pageIndex+1]});
+    }else if(assigned.length){
+      unnamedPages.push({page:pageIndex+1,rooms:[...new Set(assigned)]});
+    }
+  });
+  // Choice's CO534 report format puts the primary housekeeper's room pages
+  // before the first named employee page. Keep those pages as one explicit
+  // leading block; never silently assign them unless exactly one active
+  // RELAY housekeeper is absent from the named sections.
+  if(unnamedPages.length){
+    const leadingPages=unnamedPages.filter((x,i)=>i===0||x.page===unnamedPages[i-1].page+1);
+    const leadingRooms=[...new Set(leadingPages.flatMap(x=>x.rooms))];
     if(leadingRooms.length){
+      let resolvedName='';
       try{
         const usersApi=await apiPost({action:'getAssignableHousekeepers',sessionId:localStorage.getItem('relaySessionId')});
         const activeNames=(usersApi.housekeepers||[]).map(u=>String(u.name||'').trim()).filter(Boolean);
-        const namedKeys=new Set(assignments.map(a=>a.name.toLowerCase()));
-        const missing=activeNames.filter(n=>!namedKeys.has(n.toLowerCase()));
-        if(missing.length===1)assignments.unshift({name:missing[0],rooms:[...new Set(leadingRooms)]});
+        const namedKeys=new Set(assignments.map(a=>relayPersonKey_(a.name)));
+        const missing=activeNames.filter(n=>!namedKeys.has(relayPersonKey_(n)));
+        if(missing.length===1)resolvedName=missing[0];
       }catch(e){console.warn('Could not resolve omitted Choice housekeeper heading',e)}
+      assignments.unshift({name:resolvedName,rooms:leadingRooms,pages:leadingPages.map(x=>x.page),unlabeled:true});
     }
   }
-  return {property,date,rooms:uniqueRooms,assignments};
+  return {property,date,rooms:uniqueRooms,assignments,roomRows};
 }
 previewPdf.addEventListener('click',async()=>{
   if(!selectedPdf)return;
   previewPdf.disabled=true; previewPdf.textContent='Reading PDF…'; previewMessage.className='preview-message'; previewMessage.textContent='';
   try{
     const pdfjs=await loadPdfJs(),bytes=new Uint8Array(await selectedPdf.arrayBuffer()),pdf=await pdfjs.getDocument({data:bytes}).promise;
-    let text='';
-    for(let p=1;p<=pdf.numPages;p++){const page=await pdf.getPage(p),content=await page.getTextContent();text+='\n'+content.items.map(i=>i.str).join(' ')}
-    const parsed=await parseChoiceText(text); lastParsed=parsed;
+    const pageTexts=[];
+    for(let p=1;p<=pdf.numPages;p++){const page=await pdf.getPage(p),content=await page.getTextContent();pageTexts.push(content.items.map(i=>i.str).join(' '))}
+    const parsed=await parseChoiceText(pageTexts); lastParsed=parsed;
     previewPanel.hidden=false; validateImport.disabled=false;
     previewSummary.innerHTML=[
       ['Business Date',parsed.date||'Not found'],['Property',parsed.property||'Not found'],['Unique Rooms',parsed.rooms.length],['Housekeepers',parsed.assignments.length]
     ].map(x=>'<div><small>'+x[0]+'</small><strong>'+x[1]+'</strong></div>').join('');
     assignmentPreview.innerHTML=parsed.assignments.length?'<h3>Housekeeper Assignments</h3>'+parsed.assignments.map(a=>'<article><strong>'+a.name+'</strong><span>'+a.rooms.length+' room'+(a.rooms.length===1?'':'s')+': '+(a.rooms.join(', ')||'none detected')+'</span></article>').join(''):'';
-    const pass=parsed.property==='CO534'&&parsed.date==='9/18/2026'&&parsed.rooms.length===114&&parsed.assignments.some(a=>a.name==='Detra Pleasant'&&a.rooms.includes('122'));
-    previewMessage.textContent=pass?'✓ Acceptance test passed: CO534 • 9/18/2026 • 114 unique rooms • Detra Pleasant • Room 122. Nothing has been imported.':'Preview generated. Review the extracted values above; nothing has been imported.';
+    const assignedRooms=parsed.assignments.flatMap(a=>a.rooms);
+    const assignedSet=new Set(assignedRooms);
+    const duplicateAssigned=assignedRooms.length!==assignedSet.size;
+    const allRoomsAssigned=parsed.rooms.length===assignedSet.size&&parsed.rooms.every(r=>assignedSet.has(r.room));
+    const namedAssignments=parsed.assignments.filter(a=>a.name);
+    const assignmentTotal=namedAssignments.reduce((n,a)=>n+a.rooms.length,0);
+    const valid=parsed.property==='CO534'&&parsed.date==='10/2/2026'&&parsed.rooms.length===114&&namedAssignments.length>=2&&assignmentTotal===114&&!duplicateAssigned&&allRoomsAssigned;
+    previewMessage.textContent=valid?'✓ Report structure verified: CO534 • 10/2/2026 • 114 unique rooms • '+namedAssignments.length+' resolved housekeeper blocks • every room assigned exactly once. Nothing has been imported.':'⚠️ Preview found a structural problem. Review the extracted values above before importing. Nothing has been imported.';
   }catch(err){previewPanel.hidden=false;previewMessage.className='preview-message error';previewMessage.textContent='Could not read this PDF: '+err.message}
   finally{previewPdf.disabled=false;previewPdf.textContent='Preview Report →'}
 });
