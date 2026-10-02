@@ -321,6 +321,19 @@ async function loadHousekeepingBoard(){
   hkGreeting.textContent='Good morning, '+currentUser.name.split(' ')[0];
   hkBoardStatus.className='hk-board-status';hkBoardStatus.textContent='Loading today’s assignments…';hkMyRooms.innerHTML='';
   const canManageBoard=currentUser.roles.some(r=>['ADMIN','INSPECTOR','FRONT DESK'].includes(r));
+  // One-time repair for the 10/2/2026 Choice import. The PDF's first 94 rooms
+  // are Detra's block, followed by the explicitly named Haide/Jennifer blocks.
+  // This repairs the already-imported day without requiring Ryan to upload the PDF again.
+  if(canManageBoard&&housekeepingBusinessDate()==='10/2/2026'&&!sessionStorage.getItem('relayChoiceRepair1026')){
+    try{
+      const detra=['101','103','104','105','106','108','110','112','122','124','127','128','129','132','133','201','202','203','204','205','206','210','212','213','215','216','217','218','220','221','222','224','225','227','228','229','230','231','232','233','235','301','302','303','305','309','310','311','312','313','315','316','317','318','319','320','321','322','324','325','327','329','330','331','332','333','335','401','402','403','404','408','409','410','411','412','413','415','416','417','418','419','420','421','422','423','424','425','427','429','430','432','433','435'];
+      const repairAssignments=[{name:'Detra Pleasant',rooms:detra},{name:'Haide Gallardo',rooms:['102','123','125','130','131','135','208','209','211','219']},{name:'Jennifer Leanos Aguilla',rooms:['223','304','306','308','323','328','405','406','428','431']}];
+      const repairRooms=[...detra,'102','123','125','130','131','135','208','209','211','219','223','304','306','308','323','328','405','406','428','431'];
+      const rr=await apiPost({action:'syncChoice',propertyId:'CO534',businessDate:'10/2/2026',rooms:repairRooms.map(room=>({room})),assignments:repairAssignments,comparison:{unchanged:0,new:0,changed:0,conflicts:0},syncedBy:currentUser.name||'RELAY',sourceFilename:'CO534-HouseKeeping Room Assignment-20261002204827.pdf | REPAIR'},180000);
+      if(rr.ok){sessionStorage.setItem('relayChoiceRepair1026','1');console.info('RELAY 10/2 Choice assignment repair complete',rr)}
+      else console.warn('RELAY 10/2 Choice assignment repair blocked',rr);
+    }catch(repairErr){console.warn('RELAY 10/2 Choice assignment repair failed',repairErr)}
+  }
   const isHkOnly=currentUser.roles.includes('HOUSEKEEPER')&&!canManageBoard;
   managerImportBtn.hidden=!canManageBoard;emptyChoiceSyncBtn.hidden=true;hkManagerGroups.hidden=!canManageBoard;
   try{
