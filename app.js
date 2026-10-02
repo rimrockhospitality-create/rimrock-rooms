@@ -965,6 +965,16 @@ function loadChecklistDraft_(name){
 }
 function saveChecklistDraft_(name){try{localStorage.setItem(checklistDraftKey_(name),JSON.stringify(taskState[name]||{}))}catch(_){}}
 function clearChecklistDraft_(name){try{localStorage.removeItem(checklistDraftKey_(name))}catch(_){}}
+function syncChecklistProgress(){
+ const cards=[...document.querySelectorAll('.checklist-kpis article')],names=['AM','PM','AUDIT','MAINTENANCE'];
+ cards.forEach((card,i)=>{
+  const name=names[i],list=CHECKLISTS[name]||[],state=taskState[name]||{},done=Object.values(state).filter(Boolean).length;
+  const pct=list.length?Math.round(done/list.length*100):0;
+  const strong=card.querySelector('strong'),em=card.querySelector('em');
+  if(strong)strong.textContent=pct+'%';
+  if(em)em.textContent=done===0?'Not started':(done===list.length?'Complete':done+' / '+list.length+' complete');
+ });
+}
 function loadAllChecklistDrafts_(){['AM','PM','AUDIT','MAINTENANCE'].forEach(loadChecklistDraft_)}
 function openChecklistHub(){
  loadAllChecklistDrafts_();
