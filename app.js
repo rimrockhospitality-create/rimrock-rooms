@@ -1536,7 +1536,10 @@ document.addEventListener('click',async e=>{
   const card=done.closest('.side-work-card'),parent=card?.parentNode,next=card?.nextSibling;done.disabled=true;done.textContent='COMPLETE';
   // Optimistic completion: the worker gets an instant response while the write finishes.
   card?.remove();relayCacheClear_('side:');relayCacheClear_('hk:');
-  try{const r=await apiPost({action:'completeSideWork',sessionId:sid},45000);if(!r.ok)throw new Error(r.reason||'Could not complete');delete activeSideWorkSessions[done.dataset.task];relayCacheClear_('side:');await loadSideWorkBoard_()}
+  try{const r=await apiPost({action:'completeSideWork',sessionId:sid},45000);if(!r.ok)throw new Error(r.reason||'Could not complete');delete activeSideWorkSessions[done.dataset.task];relayCacheClear_('side:');relayCacheClear_('dashboard:');
+   // Re-fetch the authoritative board after completion so the just-finished task cannot remain visually stale.
+   const fresh=await apiPost({action:'getWorkBoard',worker:currentUser.name},45000);
+   if(fresh.ok){if(fresh.businessDate){relayBusinessDate=fresh.businessDate;relayBusinessDayLoadedAt=Date.now()}renderSideWorkBoardFromState_(fresh);relayCacheSet_('side:CURRENT:'+currentUser.name,fresh)}else{await loadSideWorkBoard_()}}
   catch(err){if(parent&&card){next?parent.insertBefore(card,next):parent.appendChild(card);done.disabled=false}alert('Could not save completion. The task has been restored: '+err.message)}
  }
 });
