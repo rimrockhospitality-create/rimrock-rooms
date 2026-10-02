@@ -1570,7 +1570,17 @@ async function loadDailyOperationsReport_(){
  const date=await loadRelayBusinessDay_(),set=(id,v)=>{const e=document.getElementById(id);if(e)e.textContent=v};
  set('dorDate',date||'—');set('dorGenerated','Report Generated: '+new Date().toLocaleTimeString([],{hour:'numeric',minute:'2-digit'}));
  const sid=localStorage.getItem('relaySessionId');
- const [today,work,lostFoundReport,maintenanceReport,maintenanceBoard,pmBoard,hotelPerformanceResult,...shiftResults]=await Promise.all([apiPost({action:'getToday',businessDate:date},45000),apiPost({action:'getWorkBoard'},45000),apiPost({action:'getLostFoundReport',sessionId:sid,businessDate:date},45000).catch(err=>({ok:false,error:String(err?.message||err)})),apiPost({action:'getMaintenanceReport',sessionId:sid,businessDate:date},45000).catch(()=>({ok:false})),apiPost({action:'getMaintenanceBoard',sessionId:sid,businessDate:date,worker:currentUser.name},45000).catch(()=>({ok:false})),apiPost({action:'getPmBoard',sessionId:sid},45000).catch(()=>({ok:false})),apiPost({action:'getHotelPerformance',businessDate:date},45000).catch(()=>({ok:false})),apiPost({action:'getShiftOperations',sessionId:sid,businessDate:date},45000)]);
+ const dorSafe_= (promise,fallback={ok:false}) => Promise.resolve(promise).catch(err=>({ ...fallback, ok:false, error:String(err?.message||err) }));
+ const [today,work,lostFoundReport,maintenanceReport,maintenanceBoard,pmBoard,hotelPerformanceResult,...shiftResults]=await Promise.all([
+  dorSafe_(apiPost({action:'getToday',businessDate:date},45000)),
+  dorSafe_(apiPost({action:'getWorkBoard'},45000)),
+  dorSafe_(apiPost({action:'getLostFoundReport',sessionId:sid,businessDate:date},45000)),
+  dorSafe_(apiPost({action:'getMaintenanceReport',sessionId:sid,businessDate:date},45000)),
+  dorSafe_(apiPost({action:'getMaintenanceBoard',sessionId:sid,businessDate:date,worker:currentUser.name},45000)),
+  dorSafe_(apiPost({action:'getPmBoard',sessionId:sid},45000)),
+  dorSafe_(apiPost({action:'getHotelPerformance',businessDate:date},45000)),
+  dorSafe_(apiPost({action:'getShiftOperations',sessionId:sid,businessDate:date},45000))
+ ]);
  const dorDedupeNotes_=rows=>[...new Map(rows.map(x=>[String(x.noteId||x.note_id||x.id||[x.businessDate||x.business_date||'',x.shift||'',x.noteType||x.note_type||'',x.issueInformation||x.issue_information||x.note||'',x.enteredAt||x.entered_at||x.createdAt||x.created_at||''].join('|')),x])).values()];
  const shift={ok:shiftResults.some(r=>r&&r.ok),shiftNotes:dorDedupeNotes_(shiftResults.flatMap(r=>r&&r.ok?[...(r.shiftNotes||[]),...(r.notes||[])]:[])),openNotes:dorDedupeNotes_(shiftResults.flatMap(r=>r&&r.ok?(r.openNotes||[]):[]))};
  if(!today.ok){document.getElementById('dorSummary').innerHTML='<p>Could not load daily operations.</p>';return}
