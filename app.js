@@ -1450,7 +1450,7 @@ function renderSideWorkBoardFromState_(r){
  const tasks=(r.sideWork||[]).filter(x=>x.status!=='COMPLETE'&&(isMonitor||isWorker&&x.assignedTo===worker));
  if(isWorker){tasks.forEach(t=>{if(t.sessionId)activeSideWorkSessions[t.taskId]=t.sessionId});(r.sideWorkSessions||[]).forEach(x=>{if(x.status==='IN_PROGRESS'&&x.taskId)activeSideWorkSessions[x.taskId]=x.sessionId})}
  const title=isMonitor?'Active Side Duties':'My Work Beyond '+(roles.includes('MAINTENANCE')?'Maintenance':'Rooms');
- box.innerHTML='<div class="side-work-head"><div><small>OPERATIONAL SIDE DUTIES</small><h2>'+title+'</h2></div>'+(canAssign?'<button id="assignSideWorkBtn">+ ASSIGN SIDE DUTY</button>':'')+'</div><div class="side-work-list">'+(isInspector&&!isMonitor?'<p class="side-work-empty">Assign side duties here. Front Desk and Admin monitor completion.</p>':tasks.length?tasks.map(t=>'<article class="side-work-card"><div><strong>'+t.task+'</strong><span>'+t.location+(t.dueAt?' • Due '+t.dueAt:'')+'</span><small>Assigned to '+t.assignedTo+' by '+t.assignedBy+'</small></div>'+(isWorker?(t.status==='IN_PROGRESS'?'<button class="side-work-complete" data-task="'+t.taskId+'">COMPLETE</button>':'<button class="side-work-start" data-task="'+t.taskId+'" data-location="'+String(t.location||'').replace(/"/g,'&quot;')+'">START TASK</button>'):'<b>'+t.status.replaceAll('_',' ')+'</b>')+'</article>').join(''):'<p class="side-work-empty">No active side duties.</p>')+'</div>';
+ box.innerHTML='<div class="side-work-head"><div><small>OPERATIONAL SIDE DUTIES</small><h2>'+title+'</h2></div>'+(canAssign?'<button id="assignSideWorkBtn">+ ASSIGN SIDE DUTY</button>':'')+'</div><div class="side-work-list">'+(isInspector&&!isMonitor?'<p class="side-work-empty">Assign side duties here. Front Desk and Admin monitor completion.</p>':tasks.length?tasks.map(t=>'<article class="side-work-card"><div><strong>'+t.task+'</strong><span>'+t.location+(t.dueAt?' • Due '+t.dueAt:'')+'</span><small>Assigned to '+t.assignedTo+' by '+t.assignedBy+'</small></div>'+(isWorker?(t.status==='IN_PROGRESS'?'<button type="button" class="side-work-complete" data-task="'+t.taskId+'" onclick="completeSideWorkDirect_(\''+String(t.taskId).replace(/'/g,"\\'")+'\',this);return false;">COMPLETE</button>':'<button type="button" class="side-work-start" data-task="'+t.taskId+'" data-location="'+String(t.location||'').replace(/"/g,'&quot;')+'" onclick="startSideWorkDirect_(\''+String(t.taskId).replace(/'/g,"\\'")+'\',this);return false;">START TASK</button>'):'<b>'+t.status.replaceAll('_',' ')+'</b>')+'</article>').join(''):'<p class="side-work-empty">No active side duties.</p>')+'</div>';
  document.getElementById('assignSideWorkBtn')?.addEventListener('click',assignSideWork_);
 }
 async function loadSideWorkBoard_(){
@@ -1515,6 +1515,27 @@ async function assignSideWork_(){
  }catch(err){alert(err.message)}
 }
 let activeSideWorkSessions={};
+async function completeSideWorkDirect_(taskId,button){
+ if(!button||button.disabled)return;
+ const sid=activeSideWorkSessions[taskId]||'';
+ const card=button.closest('.side-work-card'),parent=card?.parentNode,next=card?.nextSibling;
+ button.disabled=true;button.textContent='COMPLETING…';
+ try{
+  const payload={action:'completeSideWork',taskId,worker:currentUser.name};
+  if(sid)payload.sessionId=sid;
+  const r=await apiPost(payload,45000);
+  if(!r.ok)throw new Error(r.reason||r.error||'Could not complete');
+  delete activeSideWorkSessions[taskId];relayCacheClear_('side:');relayCacheClear_('hk:');relayCacheClear_('dashboard:');
+  if(card)card.remove();
+  const fresh=await apiPost({action:'getWorkBoard',worker:currentUser.name},45000);
+  if(fresh.ok){renderSideWorkBoardFromState_(fresh);relayCacheSet_('side:CURRENT:'+currentUser.name,fresh)}
+  else await loadSideWorkBoard_();
+ }catch(err){
+  if(parent&&card){next?parent.insertBefore(card,next):parent.appendChild(card)}
+  button.disabled=false;button.textContent='COMPLETE';
+  alert('Could not save completion: '+err.message);
+ }
+}
 async function startSideWorkDirect_(taskId,button){
   const old=button.textContent;button.disabled=true;button.textContent='STARTING…';
   try{
