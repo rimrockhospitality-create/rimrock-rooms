@@ -433,7 +433,7 @@
             <button class="shift-card" data-shift="AUDIT"><span class="shift-icon">🌙</span><div><small>11 PM — 7 AM</small><h3>Night Audit</h3><p>Audit controls, printed backup reports, EOD and next-day handoff.</p></div><b>21 TASKS →</b></button>
           </div>
           <div class="section-title maint-title"><div><small>ENGINEERING</small><h2>Maintenance Daily</h2></div></div>
-          <a class="maintenance-check-card" data-shift="MAINTENANCE" href="#maintenance-checklist"><div><span>🔧</span><div><h3>Brad's Daily Operating Checklist</h3><p>8:00–10:45 HK launch • 10:45 Maintenance • PM rooms • Grill • Property walks</p></div></div><b>DAILY CHECKLIST →</b></a>
+          <a class="maintenance-check-card" data-shift="MAINTENANCE" href="#maintenance-checklist" onclick="event.preventDefault();try{openChecklist('MAINTENANCE')}catch(e){alert('Maintenance checklist error: '+(e&&e.message?e.message:e))}"><div><span>🔧</span><div><h3>Brad's Daily Operating Checklist</h3><p>8:00–10:45 HK launch • 10:45 Maintenance • PM rooms • Grill • Property walks</p></div></div><b>DAILY CHECKLIST →</b></a>
         </div>
         <aside class="handoff-rail">
           <div class="rail-head"><small>SHIFT HANDOFF</small><h3>Open Follow-Ups</h3></div>
