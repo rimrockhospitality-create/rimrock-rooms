@@ -878,7 +878,7 @@ const CHECKLISTS={
  ['Review No-Shows & Fees','Verify prior-night no-shows and proper no-show fee posting.'],
  ['Review Departures & Billing','Verify proper billing, routing and applicable fees before checkout.'],
  ['Recognize Choice Rewards','Identify arriving Choice Rewards / VIP guests and special attention needs.'],
- ['Choice Rewards Sign-Ups','Offer and complete Choice Rewards enrollment with eligible guests.']
+ ['Choice Rewards Sign-Ups','Offer and complete Choice Rewards enrollment with eligible guests.'],
  ['Prepare VIP / Recognition Bags','Prepare applicable bags for placement after successful room inspection.'],
  ['Housekeeping Setup','Build/verify assignments, sync to RELAY and confirm My Board.'],
  ['Review OOO/OOS & Maintenance','Verify Choice room status against P1/P2 maintenance and room holds.'],
