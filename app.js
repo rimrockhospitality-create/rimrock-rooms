@@ -140,7 +140,7 @@ async function loadPdfJs(){
   window.pdfjsLib.GlobalWorkerOptions.workerSrc='https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
   return window.pdfjsLib;
 }
-function parseChoiceText(text){
+async function parseChoiceText(text){
   const property=(text.match(/Property\s*Code:\s*([A-Z0-9]+)/i)||[])[1]||'';
   const date=(text.match(/Business\s*Date:\s*(\d{1,2}\/\d{1,2}\/\d{4})/i)||[])[1]||'';
   const roomRows=[...text.matchAll(/(?:^|\s)(\d{3})\s+(NK|NQQ|SNHK|SNK|NHQQ1?|NHK1)\s+(VAC|OCC)\s+(Ready|Dirty)/g)].map(m=>({room:m[1],type:m[2],status:m[3],condition:m[4]}));
@@ -185,7 +185,7 @@ previewPdf.addEventListener('click',async()=>{
     const pdfjs=await loadPdfJs(),bytes=new Uint8Array(await selectedPdf.arrayBuffer()),pdf=await pdfjs.getDocument({data:bytes}).promise;
     let text='';
     for(let p=1;p<=pdf.numPages;p++){const page=await pdf.getPage(p),content=await page.getTextContent();text+='\n'+content.items.map(i=>i.str).join(' ')}
-    const parsed=parseChoiceText(text); lastParsed=parsed;
+    const parsed=await parseChoiceText(text); lastParsed=parsed;
     previewPanel.hidden=false; validateImport.disabled=false;
     previewSummary.innerHTML=[
       ['Business Date',parsed.date||'Not found'],['Property',parsed.property||'Not found'],['Unique Rooms',parsed.rooms.length],['Housekeepers',parsed.assignments.length]
