@@ -1042,6 +1042,7 @@ document.getElementById('completeShift').addEventListener('click',async function
  }catch(err){alert('Shift could not be saved: '+err.message)}finally{btn.disabled=false;btn.textContent=old}
 });
 document.getElementById('checklistDate').textContent=new Date().toLocaleDateString('en-US',{weekday:'long',month:'long',day:'numeric'});
+window.addEventListener('hashchange',()=>{if(location.hash==='#maintenance-checklist'){if(currentUser&&allowedViews(currentUser.roles).includes('Checklists')){show('Checklists');openChecklist('MAINTENANCE')}}});
 
 document.querySelectorAll('.rr-command-strip [data-view]').forEach(b=>b.addEventListener('click',()=>show(b.dataset.view)));
 
