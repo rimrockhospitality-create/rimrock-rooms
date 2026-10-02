@@ -291,6 +291,11 @@ function updateChoiceSyncAccess_(){const allowed=canSyncChoice_();managerImportB
 function openChoiceSync(){if(!canSyncChoice_())return;housekeepingView.hidden=true;importView.hidden=false}
 managerImportBtn.addEventListener('click',openChoiceSync);emptyChoiceSyncBtn.addEventListener('click',openChoiceSync);
 function housekeepingBusinessDate(){return relayBusinessDate||new Intl.DateTimeFormat('en-US',{timeZone:'America/Denver'}).format(new Date())}
+function relayPersonKey_(value){return String(value||'').toLowerCase().replace(/[^a-z0-9]+/g,' ').trim().replace(/\s+/g,' ')}
+function relaySamePerson_(a,b){
+ const x=relayPersonKey_(a),y=relayPersonKey_(b);if(!x||!y)return false;if(x===y)return true;
+ const ax=x.split(' '),ay=y.split(' ');return ax.length>=2&&ay.length>=2&&ax[0]===ay[0]&&ax[ax.length-1]===ay[ay.length-1];
+}
 async function loadRelayBusinessDay_(force=false){if(!force&&relayBusinessDate&&Date.now()-relayBusinessDayLoadedAt<60000)return relayBusinessDate;try{const r=await apiPost({action:'getBusinessDay',sessionId:localStorage.getItem('relaySessionId')});if(r.ok&&r.businessDate){relayBusinessDate=r.businessDate;relayBusinessDayLoadedAt=Date.now();document.querySelectorAll('[data-business-date]').forEach(x=>x.textContent=r.businessDate);return r.businessDate}}catch(e){console.warn('Business day load failed',e)}return housekeepingBusinessDate()}
 async function loadHousekeepingBoard(){
   if(!currentUser)return;
@@ -306,6 +311,18 @@ async function loadHousekeepingBoard(){
     if(isHkOnly){
       const provisional=relayBusinessDate||'CURRENT',cacheKey='hk:'+provisional+':'+currentUser.name;
       state=relayCached_(cacheKey)||await apiPost({action:'getHousekeeperBoard',worker:currentUser.name},30000);
+      // If the targeted housekeeper endpoint returns no assignments, fall back to the authoritative
+      // property snapshot and filter locally using the same normalized person matching used by the API.
+      // This protects against legacy/name-format differences without changing assignment data.
+      if(state.ok&&!(state.assignments||[]).length){
+        try{
+          const fallback=await apiPost({action:'getToday',businessDate:housekeepingBusinessDate()},30000);
+          if(fallback.ok){
+            const mine=(fallback.assignments||[]).filter(a=>relaySamePerson_(a.housekeeper,currentUser.name));
+            if(mine.length)state={...state,assignments:mine,cleaningSessions:(fallback.cleaningSessions||[]).filter(x=>relaySamePerson_(x.housekeeper,currentUser.name)),inspections:fallback.inspections||[],inspectionIssues:(fallback.inspectionIssues||[]).filter(x=>relaySamePerson_(x.housekeeper,currentUser.name))};
+          }
+        }catch(fallbackErr){console.warn('Housekeeper board fallback failed',fallbackErr)}
+      }
       if(state.ok&&state.businessDate){relayBusinessDate=state.businessDate;relayBusinessDayLoadedAt=Date.now();relayCacheSet_('hk:'+relayBusinessDate+':'+currentUser.name,state)}
       date=state.businessDate||housekeepingBusinessDate();
     }else{
