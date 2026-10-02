@@ -1536,7 +1536,7 @@ document.addEventListener('click',async e=>{
   const card=done.closest('.side-work-card'),parent=card?.parentNode,next=card?.nextSibling;done.disabled=true;done.textContent='COMPLETE';
   // Optimistic completion: the worker gets an instant response while the write finishes.
   card?.remove();relayCacheClear_('side:');relayCacheClear_('hk:');
-  try{const r=await apiPost({action:'completeSideWork',sessionId:sid},45000);if(!r.ok)throw new Error(r.reason||'Could not complete');delete activeSideWorkSessions[done.dataset.task]}
+  try{const r=await apiPost({action:'completeSideWork',sessionId:sid},45000);if(!r.ok)throw new Error(r.reason||'Could not complete');delete activeSideWorkSessions[done.dataset.task];relayCacheClear_('side:');await loadSideWorkBoard_()}
   catch(err){if(parent&&card){next?parent.insertBefore(card,next):parent.appendChild(card);done.disabled=false}alert('Could not save completion. The task has been restored: '+err.message)}
  }
 });
