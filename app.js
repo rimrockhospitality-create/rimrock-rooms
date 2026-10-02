@@ -17,6 +17,16 @@ const ROLE_VIEWS={
 };
 const ROLE_LABELS={ADMIN:'Admin',INSPECTOR:'Inspector',MAINTENANCE:'Maintenance','FRONT DESK':'Front Desk',HOUSEKEEPER:'Housekeeper'};
 let currentUser=null;
+// Early checklist navigation guard. Registered before the rest of the UI wiring so later initialization errors cannot disable this click path.
+document.addEventListener('click',function(e){
+ const card=e.target&&e.target.closest?e.target.closest('.maintenance-check-card'):null;
+ if(!card||card.dataset.shift!=='MAINTENANCE')return;
+ e.preventDefault();e.stopImmediatePropagation();
+ try{
+   if(!currentUser){alert('RELAY session is not ready. Refresh and sign in again.');return;}
+   show('Checklists');openChecklist('MAINTENANCE');
+ }catch(err){alert('Could not open Brad’s checklist: '+(err&&err.message?err.message:String(err)));console.error(err);}
+},true);
 const home=document.getElementById('homeView'),lostFoundView=document.getElementById('lostFoundView'),reportsView=document.getElementById('reportsView'),housekeepingView=document.getElementById('housekeepingView'),inspectionView=document.getElementById('inspectionView'),maintenanceView=document.getElementById('maintenanceView'),checklistsView=document.getElementById('checklistsView'),importView=document.getElementById('importView'),placeholder=document.getElementById('placeholder'),title=document.getElementById('placeholderTitle'),drawer=document.getElementById('drawer'),drawerLinks=document.getElementById('drawerLinks');
 const todayEl=document.getElementById('today');if(todayEl)todayEl.textContent=new Intl.DateTimeFormat('en-US',{weekday:'long',month:'long',day:'numeric',year:'numeric'}).format(new Date());
 
