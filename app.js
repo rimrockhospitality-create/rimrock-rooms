@@ -157,6 +157,25 @@ function parseChoiceText(text){
     const first=n[2].trim();
     assignments.push({name:first+' '+last,rooms:[...new Set(assigned)]});
   }
+  // Choice can omit the name heading for the first/primary housekeeper when the
+  // report begins with the property's room pages. If exactly one active RELAY
+  // housekeeper is absent from the named sections, the leading room block belongs
+  // to that remaining housekeeper. This preserves the Choice report structure
+  // without hard-coding an employee name.
+  if(names.length){
+    const firstNamedStart=names[0].index;
+    const leading=text.slice(0,firstNamedStart);
+    const leadingRooms=[...leading.matchAll(/(?:^|\s)(\d{3})\s+(?:NK|NQQ|SNHK|SNK|NHQQ1?|NHK1)\s+(?:VAC|OCC)\s+(?:Ready|Dirty)/g)].map(m=>m[1]);
+    if(leadingRooms.length){
+      try{
+        const usersApi=await apiPost({action:'getAssignableHousekeepers',sessionId:localStorage.getItem('relaySessionId')});
+        const activeNames=(usersApi.housekeepers||[]).map(u=>String(u.name||'').trim()).filter(Boolean);
+        const namedKeys=new Set(assignments.map(a=>a.name.toLowerCase()));
+        const missing=activeNames.filter(n=>!namedKeys.has(n.toLowerCase()));
+        if(missing.length===1)assignments.unshift({name:missing[0],rooms:[...new Set(leadingRooms)]});
+      }catch(e){console.warn('Could not resolve omitted Choice housekeeper heading',e)}
+    }
+  }
   return {property,date,rooms:uniqueRooms,assignments};
 }
 previewPdf.addEventListener('click',async()=>{
