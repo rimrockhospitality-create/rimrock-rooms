@@ -992,6 +992,7 @@ const CHECKLISTS={
  ['8:00–10:45 — Morning Handoff','Capture anything that needs to carry into the Maintenance queue once the morning launch is complete.'],
  ['10:45 AM — Start Maintenance Operations','Begin the technical Maintenance checklist and review carryover notes, P1/P2/P3 queue and room holds.'],
  ['Complete Assigned PM Rooms','Complete scheduled preventive-maintenance rooms and log deficiencies.'],
+ ['Monthly Filter Change — 1st of Every Month','Change the scheduled mechanical/AHU filters and log completion.'],
  ['Clean Grill','Clean the grill; on Fridays complete the full grill clean.'],
  ['Full Exterior Property Walk','Parking, entrances, sidewalks, dumpster, pet area, EV, landscaping, lighting and exterior.'],
  ['Full Interior Property Walk','Lobby, halls, stairs, elevators, restrooms, laundry, fitness, HK and mechanical areas.'],
@@ -1014,8 +1015,8 @@ function clearChecklistDraft_(name){try{localStorage.removeItem(checklistDraftKe
 function syncChecklistProgress(){
  const cards=[...document.querySelectorAll('.checklist-kpis article')],names=['AM','PM','AUDIT','MAINTENANCE'];
  cards.forEach((card,i)=>{
-  const name=names[i],list=CHECKLISTS[name]||[],state=taskState[name]||{},done=Object.values(state).filter(Boolean).length;
-  const pct=list.length?Math.round(done/list.length*100):0;
+  const name=names[i],list=CHECKLISTS[name]||[],state=taskState[name]||{},applicable=list.filter((x)=>!(name==='MAINTENANCE'&&x[0].startsWith('Monthly Filter Change')&&new Date().getDate()!==1)),done=applicable.reduce((n,x,idx)=>{const original=list.indexOf(x);return n+(state[original]?1:0)},0);
+  const pct=applicable.length?Math.round(done/applicable.length*100):0;
   const strong=card.querySelector('strong'),em=card.querySelector('em');
   if(strong)strong.textContent=pct+'%';
   if(em)em.textContent=done===0?'Not started':(done===list.length?'Complete':done+' / '+list.length+' complete');
@@ -1062,9 +1063,10 @@ function maintenanceMorningOpen_(){ const d=new Date(); return d.getHours()*60+d
 function renderChecklist(){
  const list=CHECKLISTS[activeChecklist]||[],state=taskState[activeChecklist]||(taskState[activeChecklist]={});
  const maintenanceMorning=activeChecklist==='MAINTENANCE'&&maintenanceMorningOpen_();
- const visible=list.map((x,i)=>({x,i})).filter(({i})=>!maintenanceMorning||i<4);
+ const visible=list.map((x,i)=>({x,i})).filter(({x,i})=>(!maintenanceMorning||i<4)&&!(activeChecklist==='MAINTENANCE'&&x[0].startsWith('Monthly Filter Change')&&new Date().getDate()!==1));
  document.getElementById('checklistTasks').innerHTML=visible.map(({x,i})=>'<article class="check-task '+(state[i]?'done':'')+'"><button type="button" class="task-check" data-i="'+i+'">'+(state[i]?'✓':'')+'</button><div><h4>'+(i+1)+'. '+(x[0]==='Clean Grill'&&new Date().getDay()===5?'Clean Grill (Full Clean)':x[0])+'</h4><p>'+x[1]+'</p></div><button type="button" class="task-exception" data-i="'+i+'">EXCEPTION</button></article>').join('');
- const done=Object.values(state).filter(Boolean).length,pct=list.length?Math.round(done/list.length*100):0;
+ const applicable=list.map((x,i)=>({x,i})).filter(({x,i})=>!(activeChecklist==='MAINTENANCE'&&x[0].startsWith('Monthly Filter Change')&&new Date().getDate()!==1));
+ const done=applicable.filter(({i})=>state[i]).length,pct=applicable.length?Math.round(done/applicable.length*100):0;
  document.getElementById('detailPercent').textContent=maintenanceMorning?'Morning Launch':pct+'%';
  const sub=document.getElementById('detailSubtitle');
  if(activeChecklist==='MAINTENANCE')sub.textContent=(maintenanceMorning?'8:00 AM — 10:45 AM • Housekeeping Launch':'10:45 AM onward • Maintenance Operations')+' • '+(maintenanceMorning?4:list.length)+' tasks';
