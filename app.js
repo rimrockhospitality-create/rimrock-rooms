@@ -1094,6 +1094,13 @@ document.querySelectorAll('.shift-card,.maintenance-check-card').forEach(b=>b.ad
 document.addEventListener('click',e=>{const card=e.target.closest('.shift-card,.maintenance-check-card');if(!card)return;if(card.dataset.shift)openChecklist(card.dataset.shift)});
 document.getElementById('backToChecklists').addEventListener('click',openChecklistHub);
 document.getElementById('checklistTasks').addEventListener('click',e=>{
+ const issue=e.target.closest('[data-maint-issue]');
+ if(issue){
+   e.preventDefault();
+   e.stopPropagation();
+   openMaintenanceChecklistIssue_(issue.dataset.maintIssue);
+   return;
+ }
  const filter=e.target.closest('[data-open-filter-pm]');
  if(filter){
    e.preventDefault();
