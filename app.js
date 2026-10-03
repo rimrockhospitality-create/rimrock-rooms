@@ -2196,7 +2196,7 @@ document.getElementById('maintenanceWarrantyItem')?.addEventListener('change',e=
  document.getElementById('fprAssets').addEventListener('click',async e=>{
   const start=e.target.closest('[data-filter-start]'),complete=e.target.closest('[data-filter-complete]');if(!start&&!complete)return;
   const btn=start||complete,assetId=btn.dataset.filterStart||btn.dataset.filterComplete;btn.disabled=true;btn.textContent=start?'STARTING…':'COMPLETING…';
-  try{const action=start?'startFilterPm':'completeFilterPm',r=await apiPost({action,sessionId:localStorage.getItem('relaySessionId'),assetId},45000);if(!r.ok)throw new Error(r.reason||r.error||'Filter PM action failed');await load()}catch(err){alert(err.message);await load()}
+  try{const action=start?'startFilterPm':'completeFilterPm',r=await apiPost({action,sessionId:localStorage.getItem('relaySessionId'),assetId},45000);if(!r.ok)throw new Error(r.reason||r.error||'Filter PM action failed');if(complete){try{const d=dk(r.businessDate)||dk(new Date()),key='relayChecklistDraft:'+String(currentUser?.propertyId||'CO534')+':'+d.slice(0,7)+'-01:'+String(currentUser?.userId||currentUser?.username||currentUser?.name||'user')+':MAINTENANCE',raw=localStorage.getItem(key),saved=raw?JSON.parse(raw):{},idx=(CHECKLISTS.MAINTENANCE||[]).findIndex(x=>String(x[0]).startsWith('Monthly Filter Change'));if(idx>=0){saved[idx]=true;localStorage.setItem(key,JSON.stringify(saved))}}catch(_){} }await load()}catch(err){alert(err.message);await load()}
  });
  document.getElementById('backFromWarrantyReport').addEventListener('click',()=>{report.hidden=true;library.hidden=false});
  document.getElementById('printWarrantyReport').addEventListener('click',()=>window.print());
