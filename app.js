@@ -1349,7 +1349,7 @@ document.addEventListener('click',function(e){
  const filterPm=e.target.closest('[data-open-filter-pm]');
  if(filterPm){
   e.preventDefault();e.stopImmediatePropagation();
-  openFilterPmWork_();return;
+  window.openRelayFilterPm?.();return;
  }
  const task=e.target.closest('.task-check');
  if(task){
