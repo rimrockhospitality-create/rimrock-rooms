@@ -1113,14 +1113,25 @@ function openFilterPmWork_(){
   if(!panel){
     panel=document.createElement('section');
     panel.id='filterPmWorkPanel';
-    panel.style.cssText='position:fixed;inset:0;z-index:99999;background:#f6f8fb;overflow:auto;padding:22px 18px 80px;box-sizing:border-box';
+    panel.style.cssText='position:fixed;inset:0;z-index:99999;background:#f6f8fb;overflow:auto;padding:22px 18px 80px;box-sizing:border-box;color:#102f52!important';
     panel.innerHTML=`
+      <style>
+        #filterPmWorkPanel,#filterPmWorkPanel *{opacity:1!important}
+        #filterPmWorkPanel{color:#102f52!important}
+        #filterPmWorkPanel .fpm-muted{color:#61798a!important}
+        #filterPmWorkPanel .fpm-status{color:#102f52!important;background:#fff!important}
+        #filterPmWorkPanel .fpm-asset-label{color:#61798a!important;font-weight:800;letter-spacing:.08em}
+        #filterPmWorkPanel .fpm-asset-name{color:#102f52!important}
+        #filterPmWorkPanel .fpm-state{color:#102f52!important;font-weight:800}
+        #filterPmWorkPanel .fpm-btn{color:#fff!important;background:#111827!important}
+        #filterPmWorkPanel .fpm-btn:disabled{color:#fff!important}
+      </style>
       <div style="max-width:980px;margin:0 auto">
         <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:16px;margin-bottom:18px">
-          <div><small style="letter-spacing:.12em;font-weight:700">MAINTENANCE • FILTER PM</small><h1 style="margin:5px 0 4px">Filter PM</h1><p style="margin:0;color:#667085">Mechanical 1–3 and AHU • monthly filter service</p></div>
-          <button id="closeFilterPmWork" type="button" style="font-size:28px;line-height:1;border:0;background:transparent;cursor:pointer">×</button>
+          <div><small class="fpm-asset-label">MAINTENANCE • FILTER PM</small><h1 style="margin:5px 0 4px;color:#102f52!important">Filter PM</h1><p class="fpm-muted" style="margin:0">Mechanical 1–3 and AHU • monthly filter service</p></div>
+          <button id="closeFilterPmWork" type="button" style="font-size:28px;line-height:1;border:0;background:transparent;cursor:pointer;color:#102f52!important">×</button>
         </div>
-        <div id="filterPmWorkStatus" style="padding:12px 14px;border-radius:10px;background:#fff;border:1px solid #d9dee8;margin-bottom:16px">Loading Filter PM…</div>
+        <div id="filterPmWorkStatus" class="fpm-status" style="padding:12px 14px;border-radius:10px;border:1px solid #d9dee8;margin-bottom:16px">Loading Filter PM…</div>
         <div id="filterPmWorkList" style="display:grid;gap:12px"></div>
       </div>`;
     document.body.appendChild(panel);
@@ -1151,11 +1162,12 @@ async function loadFilterPmWork_(){
       const other=session&&!mine;
       const state=session?(mine?'IN PROGRESS BY YOU':'IN PROGRESS BY '+(session.worker||'ANOTHER ASSOCIATE')):(overdue?'OVERDUE':today?'DUE TODAY':'ON SCHEDULE');
       const action=session?(mine?'COMPLETE FILTER':'LOCKED'):'START FILTER PM';
-      return '<article style="background:#fff;border:1px solid '+(overdue?'#d92d20':today?'#e0a100':'#d9dee8')+';border-radius:12px;padding:16px;display:flex;justify-content:space-between;align-items:center;gap:16px;flex-wrap:wrap">'
-        +'<div style="min-width:240px"><small style="font-weight:700;letter-spacing:.08em">'+esc(x.assetType||'FILTER PM')+'</small><h2 style="margin:4px 0">'+esc(x.assetName)+'</h2>'
-        +'<div style="color:#667085">Due '+esc(fmt(due))+(session?' • Started '+esc(session.startedAt):'')+'</div><strong style="display:block;margin-top:7px">'+esc(state)+'</strong></div>'
-        +'<button type="button" data-filter-asset="'+esc(x.assetId)+'" '+(other?'disabled':'')+' style="min-width:170px;padding:12px 16px;border-radius:9px;border:0;background:'+(other?'#d0d5dd':'#111827')+';color:#fff;font-weight:700;cursor:'+(other?'not-allowed':'pointer')+'">'+action+'</button></article>';
-    }).join('')||'<div style="background:#fff;border:1px solid #d9dee8;border-radius:12px;padding:18px">No Filter PM schedule found.</div>';
+      const border=overdue?'#d92d20':today?'#e0a100':'#d9dee8';
+      return '<article style="background:#fff;border:1px solid '+border+';border-radius:12px;padding:18px;display:flex;justify-content:space-between;align-items:center;gap:16px;flex-wrap:wrap">'
+        +'<div style="min-width:240px"><div class="fpm-asset-label">'+esc(x.assetType||'FILTER PM')+'</div><h2 class="fpm-asset-name" style="margin:5px 0">'+esc(x.assetName)+'</h2>'
+        +'<div class="fpm-muted">Due '+esc(fmt(due))+(session?' • Started '+esc(session.startedAt):'')+'</div><div class="fpm-state" style="margin-top:8px">'+esc(state)+'</div></div>'
+        +'<button type="button" class="fpm-btn" data-filter-asset="'+esc(x.assetId)+'" '+(other?'disabled':'')+' style="min-width:180px;padding:13px 16px;border-radius:9px;border:0;font-weight:800;cursor:'+(other?'not-allowed':'pointer')+'">'+action+'</button></article>';
+    }).join('')||'<div class="fpm-status" style="border:1px solid #d9dee8;border-radius:12px;padding:18px">No Filter PM schedule found.</div>';
     list.querySelectorAll('[data-filter-asset]').forEach(btn=>btn.addEventListener('click',async()=>{
       const assetId=btn.dataset.filterAsset,asset=(board.schedule||[]).find(x=>String(x.assetId)===String(assetId));
       if(!asset)return;
@@ -1165,8 +1177,7 @@ async function loadFilterPmWork_(){
         if(!mine){
           const started=await apiPost({action:'startFilterPm',sessionId:localStorage.getItem('relaySessionId'),assetId},45000);
           if(!started.ok)throw new Error(started.reason||started.error||'Could not start Filter PM');
-          await loadFilterPmWork_();
-          return;
+          await loadFilterPmWork_(); return;
         }
         const completed=await apiPost({action:'completeFilterPm',sessionId:localStorage.getItem('relaySessionId'),assetId},45000);
         if(!completed.ok)throw new Error(completed.reason||completed.error||'Could not complete Filter PM');
@@ -1178,10 +1189,9 @@ async function loadFilterPmWork_(){
     }));
   }catch(err){
     status.textContent='Could not load Filter PM: '+err.message;
-    list.innerHTML='<div style="background:#fff;border:1px solid #d9dee8;border-radius:12px;padding:18px">Try again.</div>';
+    list.innerHTML='<div class="fpm-status" style="border:1px solid #d9dee8;border-radius:12px;padding:18px">Try again.</div>';
   }
 }
-window.openRelayFilterPm = openFilterPmWork_;
 function openShiftNote(){document.getElementById('shiftNotePanel').hidden=false;activeNoteType='';document.querySelectorAll('.note-types button').forEach(x=>x.classList.remove('selected'));document.getElementById('shiftNoteMessage').textContent=''}
 document.getElementById('addShiftNote').addEventListener('click',openShiftNote);document.getElementById('addChecklistNote').addEventListener('click',openShiftNote);document.getElementById('closeShiftNote').addEventListener('click',()=>document.getElementById('shiftNotePanel').hidden=true);
 document.querySelectorAll('.note-types button').forEach(b=>b.addEventListener('click',()=>{activeNoteType=b.dataset.noteType;document.querySelectorAll('.note-types button').forEach(x=>x.classList.toggle('selected',x===b))}));
