@@ -339,13 +339,13 @@ async function loadHousekeepingBoard(){
   hkGreeting.textContent='Good morning, '+currentUser.name.split(' ')[0];
   hkBoardStatus.className='hk-board-status';hkBoardStatus.textContent='Loading today’s assignments…';hkMyRooms.innerHTML='';
   const canManageBoard=currentUser.roles.some(r=>['ADMIN','INSPECTOR','FRONT DESK'].includes(r));
-  const isHkOnly=currentUser.roles.includes('HOUSEKEEPING')&&!canManageBoard;
+  const hkOnlyMode=Array.isArray(currentUser.roles)&&currentUser.roles.includes('HOUSEKEEPING')&&!canManageBoard;
   managerImportBtn.hidden=!canManageBoard;emptyChoiceSyncBtn.hidden=true;hkManagerGroups.hidden=!canManageBoard;
   try{
     // Housekeepers use one lightweight round-trip for only their rooms, cleaning sessions, and active rework.
     // Managers still confirm the authoritative business day before loading the property-wide snapshot.
     let state,date;
-    if(isHkOnly){
+    if(hkOnlyMode){
       const provisional=relayBusinessDate||'CURRENT',cacheKey='hk:'+provisional+':'+currentUser.name;
       state=relayCached_(cacheKey)||await apiPost({action:'getHousekeeperBoard',worker:currentUser.name},30000);
       // If the targeted housekeeper endpoint returns no assignments, fall back to the authoritative
@@ -383,7 +383,7 @@ async function loadHousekeepingBoard(){
     const businessDateObj=new Date(date+' 12:00:00');
     hkBoardDate.textContent=new Intl.DateTimeFormat('en-US',{weekday:'long',month:'long',day:'numeric',year:'numeric',timeZone:'America/Denver'}).format(businessDateObj);
     if(!state.ok)throw new Error(state.error||'Could not load board');
-    if(!isHkOnly){relayCacheSet_('inspection:'+date,state);relayCacheSet_('maintenance:'+date,state);relayCacheSet_('dashboard:today:'+date,state)}
+    if(!hkOnlyMode){relayCacheSet_('inspection:'+date,state);relayCacheSet_('maintenance:'+date,state);relayCacheSet_('dashboard:today:'+date,state)}
     const assignments=state.assignments||[],sessions=state.cleaningSessions||[],inspections=state.inspections||[],inspectionIssues=state.inspectionIssues||[];
     if(!('inspectionIssues' in state))console.warn('RELAY getToday snapshot does not include inspectionIssues; rendering board without rework overlay.');
     console.log('Rimrock rework payload',inspectionIssues);
