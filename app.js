@@ -346,8 +346,9 @@ async function loadHousekeepingBoard(){
     // Managers still confirm the authoritative business day before loading the property-wide snapshot.
     let state,date;
     if(hkOnlyMode){
-      const provisional=relayBusinessDate||'CURRENT',cacheKey='hk:'+provisional+':'+currentUser.name;
-      state=relayCached_(cacheKey)||await apiPost({action:'getHousekeeperBoard',worker:currentUser.name},30000);
+      const provisional=relayBusinessDate||'CURRENT',cacheKey='hk:v3:'+provisional+':'+currentUser.name;
+      // Housekeeper boards must always fetch the latest assignment/session state; stale local cache can make completed rooms appear as START WORK.
+      state=await apiPost({action:'getHousekeeperBoard',worker:currentUser.name},30000);
       // If the targeted housekeeper endpoint returns no assignments, fall back to the authoritative
       // property snapshot and filter locally using the same normalized person matching used by the API.
       // This protects against legacy/name-format differences without changing assignment data.
