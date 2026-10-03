@@ -2236,6 +2236,18 @@ document.getElementById('maintenanceWarrantyItem')?.addEventListener('change',e=
 })();
 
 
+/* RELAY Filter PM checklist bridge — direct, capture-phase */
+(function(){
+ document.addEventListener('click',function(e){
+  const b=e.target.closest && e.target.closest('[data-open-filter-pm]');
+  if(!b)return;
+  e.preventDefault();
+  e.stopPropagation();
+  const open=document.getElementById('openFilterPmReport');
+  if(open){open.click();}
+ },true);
+})();
+
 /* RELAY Filter PM Report — live monthly compliance */
 (function(){
  const report=document.getElementById('filterPmReport'),library=document.getElementById('reportLibrary'),open=document.getElementById('openFilterPmReport');if(!report||!open)return;
