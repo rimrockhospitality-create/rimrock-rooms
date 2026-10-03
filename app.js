@@ -164,25 +164,6 @@ async function parseChoiceText(textOrPages){
       unnamedPages.push({page:pageIndex+1,rooms:[...new Set(assigned)]});
     }
   });
-  // Choice's CO534 report format puts the primary housekeeper's room pages
-  // before the first named employee page. Keep those pages as one explicit
-  // leading block; never silently assign them unless exactly one active
-  // RELAY housekeeper is absent from the named sections.
-  if(unnamedPages.length){
-    const leadingPages=unnamedPages.filter((x,i)=>i===0||x.page===unnamedPages[i-1].page+1);
-    const leadingRooms=[...new Set(leadingPages.flatMap(x=>x.rooms))];
-    if(leadingRooms.length){
-      let resolvedName='';
-      try{
-        const usersApi=await apiPost({action:'getAssignableHousekeepers',sessionId:localStorage.getItem('relaySessionId')});
-        const activeNames=(usersApi.housekeepers||[]).map(u=>String(u.name||'').trim()).filter(Boolean);
-        const namedKeys=new Set(assignments.map(a=>relayPersonKey_(a.name)));
-        const missing=activeNames.filter(n=>!namedKeys.has(relayPersonKey_(n)));
-        if(missing.length===1)resolvedName=missing[0];
-      }catch(e){console.warn('Could not resolve omitted Choice housekeeper heading',e)}
-      assignments.unshift({name:resolvedName,rooms:leadingRooms,pages:leadingPages.map(x=>x.page),unlabeled:true});
-    }
-  }
   return {property,date,rooms:uniqueRooms,assignments,roomRows};
 }
 previewPdf.addEventListener('click',async()=>{
