@@ -1095,9 +1095,92 @@ document.addEventListener('click',e=>{const card=e.target.closest('.shift-card,.
 document.getElementById('backToChecklists').addEventListener('click',openChecklistHub);
 document.getElementById('checklistTasks').addEventListener('click',e=>{
  const filter=e.target.closest('[data-open-filter-pm]');
- if(filter){document.getElementById('openFilterPmReport')?.click();return}
- const b=e.target.closest('.task-check');if(!b)return;const s=taskState[activeChecklist]||(taskState[activeChecklist]={});s[b.dataset.i]=!s[b.dataset.i];saveChecklistDraft_(activeChecklist);renderChecklist()
+ if(filter){
+   e.preventDefault();
+   e.stopPropagation();
+   openFilterPmWork_();
+   return;
+ }
+ const b=e.target.closest('.task-check');if(!b)return;
+ const s=taskState[activeChecklist]||(taskState[activeChecklist]={});
+ s[b.dataset.i]=!s[b.dataset.i];
+ saveChecklistDraft_(activeChecklist);
+ renderChecklist()
 });
+
+function openFilterPmWork_(){
+  let panel=document.getElementById('filterPmWorkPanel');
+  if(!panel){
+    panel=document.createElement('section');
+    panel.id='filterPmWorkPanel';
+    panel.style.cssText='position:fixed;inset:0;z-index:99999;background:#f6f8fb;overflow:auto;padding:22px 18px 80px;box-sizing:border-box';
+    panel.innerHTML=`
+      <div style="max-width:980px;margin:0 auto">
+        <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:16px;margin-bottom:18px">
+          <div><small style="letter-spacing:.12em;font-weight:700">MAINTENANCE • FILTER PM</small><h1 style="margin:5px 0 4px">Filter PM</h1><p style="margin:0;color:#667085">Mechanical 1–3 and AHU • monthly filter service</p></div>
+          <button id="closeFilterPmWork" type="button" style="font-size:28px;line-height:1;border:0;background:transparent;cursor:pointer">×</button>
+        </div>
+        <div id="filterPmWorkStatus" style="padding:12px 14px;border-radius:10px;background:#fff;border:1px solid #d9dee8;margin-bottom:16px">Loading Filter PM…</div>
+        <div id="filterPmWorkList" style="display:grid;gap:12px"></div>
+      </div>`;
+    document.body.appendChild(panel);
+    document.getElementById('closeFilterPmWork').addEventListener('click',()=>panel.remove());
+  }
+  panel.hidden=false;
+  loadFilterPmWork_();
+}
+
+async function loadFilterPmWork_(){
+  const panel=document.getElementById('filterPmWorkPanel');
+  const status=document.getElementById('filterPmWorkStatus');
+  const list=document.getElementById('filterPmWorkList');
+  if(!panel||!status||!list)return;
+  status.textContent='Loading Filter PM…';
+  list.innerHTML='';
+  try{
+    const r=await apiPost({action:'getFilterPmBoard',sessionId:localStorage.getItem('relaySessionId')},45000);
+    if(!r.ok)throw new Error(r.reason||r.error||'Filter PM unavailable');
+    const board=r,day=String(board.businessDate||'').slice(0,10);
+    const fmt=v=>{const s=String(v||'').slice(0,10);if(!s)return '—';const d=new Date(s+'T12:00:00');return d.toLocaleDateString(undefined,{month:'short',day:'numeric',year:'numeric'})};
+    const esc=v=>String(v??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
+    status.textContent=(board.summary?.overdue||0)+' overdue • '+(board.summary?.dueToday||0)+' due today • '+(board.summary?.completedThisMonth||0)+' completed this month';
+    list.innerHTML=(board.schedule||[]).map(x=>{
+      const due=String(x.dueDate||'').slice(0,10),session=x.session;
+      const overdue=due&&due<day,today=due===day;
+      const mine=session&&String(session.userId)===String(currentUser?.userId);
+      const other=session&&!mine;
+      const state=session?(mine?'IN PROGRESS BY YOU':'IN PROGRESS BY '+(session.worker||'ANOTHER ASSOCIATE')):(overdue?'OVERDUE':today?'DUE TODAY':'ON SCHEDULE');
+      const action=session?(mine?'COMPLETE FILTER':'LOCKED'):'START FILTER PM';
+      return '<article style="background:#fff;border:1px solid '+(overdue?'#d92d20':today?'#e0a100':'#d9dee8')+';border-radius:12px;padding:16px;display:flex;justify-content:space-between;align-items:center;gap:16px;flex-wrap:wrap">'
+        +'<div style="min-width:240px"><small style="font-weight:700;letter-spacing:.08em">'+esc(x.assetType||'FILTER PM')+'</small><h2 style="margin:4px 0">'+esc(x.assetName)+'</h2>'
+        +'<div style="color:#667085">Due '+esc(fmt(due))+(session?' • Started '+esc(session.startedAt):'')+'</div><strong style="display:block;margin-top:7px">'+esc(state)+'</strong></div>'
+        +'<button type="button" data-filter-asset="'+esc(x.assetId)+'" '+(other?'disabled':'')+' style="min-width:170px;padding:12px 16px;border-radius:9px;border:0;background:'+(other?'#d0d5dd':'#111827')+';color:#fff;font-weight:700;cursor:'+(other?'not-allowed':'pointer')+'">'+action+'</button></article>';
+    }).join('')||'<div style="background:#fff;border:1px solid #d9dee8;border-radius:12px;padding:18px">No Filter PM schedule found.</div>';
+    list.querySelectorAll('[data-filter-asset]').forEach(btn=>btn.addEventListener('click',async()=>{
+      const assetId=btn.dataset.filterAsset,asset=(board.schedule||[]).find(x=>String(x.assetId)===String(assetId));
+      if(!asset)return;
+      const mine=asset.session&&String(asset.session.userId)===String(currentUser?.userId);
+      btn.disabled=true;btn.textContent=mine?'COMPLETING…':'STARTING…';
+      try{
+        if(!mine){
+          const started=await apiPost({action:'startFilterPm',sessionId:localStorage.getItem('relaySessionId'),assetId},45000);
+          if(!started.ok)throw new Error(started.reason||started.error||'Could not start Filter PM');
+          await loadFilterPmWork_();
+          return;
+        }
+        const completed=await apiPost({action:'completeFilterPm',sessionId:localStorage.getItem('relaySessionId'),assetId},45000);
+        if(!completed.ok)throw new Error(completed.reason||completed.error||'Could not complete Filter PM');
+        await loadFilterPmWork_();
+      }catch(err){
+        btn.disabled=false;btn.textContent=mine?'COMPLETE FILTER':'START FILTER PM';
+        status.textContent='Filter PM error: '+err.message;
+      }
+    }));
+  }catch(err){
+    status.textContent='Could not load Filter PM: '+err.message;
+    list.innerHTML='<div style="background:#fff;border:1px solid #d9dee8;border-radius:12px;padding:18px">Try again.</div>';
+  }
+}
 function openShiftNote(){document.getElementById('shiftNotePanel').hidden=false;activeNoteType='';document.querySelectorAll('.note-types button').forEach(x=>x.classList.remove('selected'));document.getElementById('shiftNoteMessage').textContent=''}
 document.getElementById('addShiftNote').addEventListener('click',openShiftNote);document.getElementById('addChecklistNote').addEventListener('click',openShiftNote);document.getElementById('closeShiftNote').addEventListener('click',()=>document.getElementById('shiftNotePanel').hidden=true);
 document.querySelectorAll('.note-types button').forEach(b=>b.addEventListener('click',()=>{activeNoteType=b.dataset.noteType;document.querySelectorAll('.note-types button').forEach(x=>x.classList.toggle('selected',x===b))}));
