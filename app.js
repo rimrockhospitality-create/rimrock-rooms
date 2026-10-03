@@ -1097,12 +1097,8 @@ document.addEventListener('click',e=>{
  const filterBtn=e.target.closest?.('[data-open-filter-pm]');
  if(!filterBtn)return;
  e.preventDefault();e.stopPropagation();e.stopImmediatePropagation();
- const rv=document.getElementById('reportsView'),lib=document.getElementById('reportLibrary'),report=document.getElementById('filterPmReport');
- if(rv)rv.hidden=false;if(lib)lib.hidden=true;
- document.querySelectorAll('#reportsView>section').forEach(x=>x.hidden=true);
- if(report){report.hidden=false;window.scrollTo({top:0,behavior:'smooth'});}
  const opener=document.getElementById('openFilterPmReport');
- if(opener&&report&&report.hidden){opener.click();}
+ if(opener){opener.click();window.scrollTo({top:0,behavior:'smooth'});}
  return false;
 },true);
 document.getElementById('checklistTasks').addEventListener('click',e=>{
