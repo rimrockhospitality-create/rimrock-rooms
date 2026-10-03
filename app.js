@@ -1095,7 +1095,7 @@ document.addEventListener('click',e=>{const card=e.target.closest('.shift-card,.
 document.getElementById('backToChecklists').addEventListener('click',openChecklistHub);
 document.getElementById('checklistTasks').addEventListener('click',e=>{
  const filter=e.target.closest('[data-open-filter-pm]');
- if(filter){window.openRelayFilterPm?.();return}
+ if(filter){document.getElementById('openFilterPmReport')?.click();return}
  const b=e.target.closest('.task-check');if(!b)return;const s=taskState[activeChecklist]||(taskState[activeChecklist]={});s[b.dataset.i]=!s[b.dataset.i];saveChecklistDraft_(activeChecklist);renderChecklist()
 });
 function openShiftNote(){document.getElementById('shiftNotePanel').hidden=false;activeNoteType='';document.querySelectorAll('.note-types button').forEach(x=>x.classList.remove('selected'));document.getElementById('shiftNoteMessage').textContent=''}
@@ -2193,11 +2193,11 @@ document.getElementById('maintenanceWarrantyItem')?.addEventListener('change',e=
    document.getElementById('wrrDetailBody').innerHTML='<div class="wrr-detail-grid"><div><small>ROOM / LOCATION</small><strong>'+esc(x.roomLocation||'—')+'</strong></div><div><small>ITEM</small><strong>'+esc(x.itemType||'—')+'</strong></div><div><small>MANUFACTURER / MODEL</small><strong>'+esc([x.manufacturer,x.model].filter(Boolean).join(' • ')||'—')+'</strong></div><div><small>ITEM / SERIAL #</small><strong>'+esc(x.itemSerialNumber||'Not provided')+'</strong></div></div><div class="wrr-failure"><b>FAILURE / ORIGINAL MAINTENANCE</b><br>'+esc(x.failureDescription||'—')+'</div><div class="wrr-email"><b>EMAIL-READY PROFILLMENT SUBMISSION</b><pre>'+esc(email)+'</pre></div>';
    document.getElementById('wrrDetailStatus').value=x.status||'NEW_NOT_EMAILED';document.getElementById('wrrReference').value=x.profillmentReference||'';document.getElementById('wrrNotes').value=x.notes||'';document.getElementById('wrrMessage').textContent='';document.getElementById('warrantyDetailPanel').hidden=false;
  }
- open.addEventListener('click',()=>{const rv=document.getElementById('reportsView');if(rv)rv.hidden=false;document.querySelectorAll('main>section, .page-section').forEach(x=>{if(x!==rv&&!x.closest('#reportsView'))x.hidden=true});library.hidden=true;document.querySelectorAll('#reportsView>section').forEach(x=>x.hidden=true);report.hidden=false;load()});
+ open.addEventListener('click',()=>{library.hidden=true;document.querySelectorAll('#reportsView>section').forEach(x=>x.hidden=true);report.hidden=false;load()});
  document.getElementById('fprAssets').addEventListener('click',async e=>{
   const start=e.target.closest('[data-filter-start]'),complete=e.target.closest('[data-filter-complete]');if(!start&&!complete)return;
   const btn=start||complete,assetId=btn.dataset.filterStart||btn.dataset.filterComplete;btn.disabled=true;btn.textContent=start?'STARTING…':'COMPLETING…';
-  try{const action=start?'startFilterPm':'completeFilterPm',r=await apiPost({action,sessionId:localStorage.getItem('relaySessionId'),assetId},45000);if(!r.ok)throw new Error(r.reason||r.error||'Filter PM action failed');if(start){btn.className='fpr-complete';btn.dataset.filterStart='';btn.dataset.filterComplete=assetId;btn.removeAttribute('data-filter-start');btn.setAttribute('data-filter-complete',assetId);btn.textContent='COMPLETE FILTER';btn.disabled=false;const card=btn.closest('.fpr-asset');if(card){const status=card.querySelector('span');if(status)status.textContent='IN PROGRESS';card.classList.remove('overdue','due')}}else{try{const d=dk(r.businessDate)||dk(new Date()),key='relayChecklistDraft:'+String(currentUser?.propertyId||'CO534')+':'+d.slice(0,7)+'-01:'+String(currentUser?.userId||currentUser?.username||currentUser?.name||'user')+':MAINTENANCE',raw=localStorage.getItem(key),saved=raw?JSON.parse(raw):{},idx=(CHECKLISTS.MAINTENANCE||[]).findIndex(x=>String(x[0]).startsWith('Monthly Filter Change'));if(idx>=0){saved[idx]=true;localStorage.setItem(key,JSON.stringify(saved))}}catch(_){}await load()}}catch(err){alert(err.message);await load()}
+  try{const action=start?'startFilterPm':'completeFilterPm',r=await apiPost({action,sessionId:localStorage.getItem('relaySessionId'),assetId},45000);if(!r.ok)throw new Error(r.reason||r.error||'Filter PM action failed');if(complete){try{const d=dk(r.businessDate)||dk(new Date()),key='relayChecklistDraft:'+String(currentUser?.propertyId||'CO534')+':'+d.slice(0,7)+'-01:'+String(currentUser?.userId||currentUser?.username||currentUser?.name||'user')+':MAINTENANCE',raw=localStorage.getItem(key),saved=raw?JSON.parse(raw):{},idx=(CHECKLISTS.MAINTENANCE||[]).findIndex(x=>String(x[0]).startsWith('Monthly Filter Change'));if(idx>=0){saved[idx]=true;localStorage.setItem(key,JSON.stringify(saved))}}catch(_){} }await load()}catch(err){alert(err.message);await load()}
  });
  document.getElementById('backFromWarrantyReport').addEventListener('click',()=>{report.hidden=true;library.hidden=false});
  document.getElementById('printWarrantyReport').addEventListener('click',()=>window.print());
@@ -2236,18 +2236,6 @@ document.getElementById('maintenanceWarrantyItem')?.addEventListener('change',e=
 })();
 
 
-/* RELAY Filter PM checklist bridge — direct, capture-phase */
-(function(){
- document.addEventListener('click',function(e){
-  const b=e.target.closest && e.target.closest('[data-open-filter-pm]');
-  if(!b)return;
-  e.preventDefault();
-  e.stopPropagation();
-  const open=document.getElementById('openFilterPmReport');
-  if(open){open.click();}
- },true);
-})();
-
 /* RELAY Filter PM Report — live monthly compliance */
 (function(){
  const report=document.getElementById('filterPmReport'),library=document.getElementById('reportLibrary'),open=document.getElementById('openFilterPmReport');if(!report||!open)return;
@@ -2259,7 +2247,6 @@ document.getElementById('maintenanceWarrantyItem')?.addEventListener('change',e=
  document.getElementById('fprHistoryCount').textContent=mh.length+' completion'+(mh.length===1?'':'s');document.getElementById('fprHistoryBody').innerHTML=mh.length?mh.slice().sort((a,b)=>dk(b.businessDate||b.completedAt).localeCompare(dk(a.businessDate||a.completedAt))).map(x=>{const prior=x.priorDueDate||x.prior_due_date||x.dueDate||x.due_date,next=x.nextDueDate||x.next_due_date||addMonth(x.businessDate||x.completedAt);return '<tr><td>'+fmt(x.businessDate||x.completedAt)+'</td><td><b>'+esc(x.assetName||x.asset_name||x.assetId||'—')+'</b></td><td>'+esc(x.completedBy||x.completed_by||x.worker||'—')+'</td><td>'+(minutes(x)===null?'—':minutes(x)+' min')+'</td><td>'+fmt(prior)+'</td><td>'+fmt(next)+'</td><td><span class="fpr-pill">COMPLETE</span></td></tr>'}).join(''):'<tr><td colspan="7" style="text-align:center;padding:18px">No Filter PM completions in this month.</td></tr>';
  const names=schedule.length?schedule.map(s=>s.assetName||s.asset_name||s.assetId):['Mechanical 1','Mechanical 2','Mechanical 3','AHU'];document.getElementById('fprSpecs').innerHTML=names.map(n=>'<div class="fpr-spec"><strong>'+esc(n)+'</strong><small>Filter size: To be recorded</small><small>Filter type / MERV: To be recorded</small><small>Quantity: To be recorded</small></div>').join('');}
  async function load(){document.getElementById('fprHistoryBody').innerHTML='<tr><td colspan="7" style="text-align:center;padding:18px">Loading Filter PM records…</td></tr>';try{const r=await apiPost({action:'getFilterPmBoard',sessionId:localStorage.getItem('relaySessionId')},45000);if(!r.ok)throw new Error(r.reason||r.error||'Filter PM unavailable');if(!document.getElementById('fprMonth').value){const d=dk(r.businessDate)||dk(new Date());document.getElementById('fprMonth').value=d.slice(0,7)}render(r)}catch(e){document.getElementById('fprHistoryBody').innerHTML='<tr><td colspan="7" style="text-align:center;padding:18px">Could not load Filter PM report: '+esc(e.message)+'</td></tr>'}}
- window.openRelayFilterPm=()=>{const rv=document.getElementById('reportsView'),lib=document.getElementById('reportLibrary');if(rv)rv.hidden=false;if(lib)lib.hidden=true;document.querySelectorAll('#reportsView>section').forEach(x=>x.hidden=true);report.hidden=false;window.scrollTo({top:0,behavior:'smooth'});load()};
  open.addEventListener('click',()=>{library.hidden=true;document.querySelectorAll('#reportsView>section').forEach(x=>x.hidden=true);report.hidden=false;load()});document.getElementById('backFromFilterPmReport').addEventListener('click',()=>{report.hidden=true;library.hidden=false});document.getElementById('printFilterPmReport').addEventListener('click',()=>window.print());document.getElementById('fprMonth').addEventListener('change',load);document.getElementById('mprFilterReport')?.addEventListener('click',()=>{document.getElementById('maintenancePerformanceReport').hidden=true;report.hidden=false;load()});document.querySelectorAll('[data-view="Reports"]').forEach(b=>b.addEventListener('click',()=>{report.hidden=true}));
 })();
 
