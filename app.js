@@ -1346,6 +1346,11 @@ document.addEventListener('click',function(e){
   if(name){show('Checklists');openChecklist(name)}
   return;
  }
+ const filterPm=e.target.closest('[data-open-filter-pm]');
+ if(filterPm){
+  e.preventDefault();e.stopImmediatePropagation();
+  openFilterPmWork_();return;
+ }
  const task=e.target.closest('.task-check');
  if(task){
   e.preventDefault();e.stopImmediatePropagation();
