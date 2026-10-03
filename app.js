@@ -339,6 +339,7 @@ async function loadHousekeepingBoard(){
   hkGreeting.textContent='Good morning, '+currentUser.name.split(' ')[0];
   hkBoardStatus.className='hk-board-status';hkBoardStatus.textContent='Loading today’s assignments…';hkMyRooms.innerHTML='';
   const canManageBoard=currentUser.roles.some(r=>['ADMIN','INSPECTOR','FRONT DESK'].includes(r));
+  const isHkOnly=currentUser.roles.includes('HOUSEKEEPING')&&!canManageBoard;
   managerImportBtn.hidden=!canManageBoard;emptyChoiceSyncBtn.hidden=true;hkManagerGroups.hidden=!canManageBoard;
   try{
     // Housekeepers use one lightweight round-trip for only their rooms, cleaning sessions, and active rework.
