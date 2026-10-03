@@ -1095,7 +1095,7 @@ document.addEventListener('click',e=>{const card=e.target.closest('.shift-card,.
 document.getElementById('backToChecklists').addEventListener('click',openChecklistHub);
 document.getElementById('checklistTasks').addEventListener('click',e=>{
  const filter=e.target.closest('[data-open-filter-pm]');
- if(filter){document.getElementById('openFilterPmReport')?.click();return}
+ if(filter){window.openRelayFilterPm?.();return}
  const b=e.target.closest('.task-check');if(!b)return;const s=taskState[activeChecklist]||(taskState[activeChecklist]={});s[b.dataset.i]=!s[b.dataset.i];saveChecklistDraft_(activeChecklist);renderChecklist()
 });
 function openShiftNote(){document.getElementById('shiftNotePanel').hidden=false;activeNoteType='';document.querySelectorAll('.note-types button').forEach(x=>x.classList.remove('selected'));document.getElementById('shiftNoteMessage').textContent=''}
