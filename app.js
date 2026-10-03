@@ -1007,6 +1007,21 @@ const CHECKLISTS={
 };
 let activeChecklist='',taskState={},activeNoteType='';
 function checklistDraftKey_(name){return 'relayChecklistDraft:'+String(currentUser?.propertyId||'CO534')+':'+housekeepingBusinessDate()+':'+String(currentUser?.userId||currentUser?.username||currentUser?.name||'user')+':'+name}
+function monthlyFilterStatus_(){
+ const now=new Date(),day=now.getDate();
+ if(day===1)return 'DUE';
+ if(day<1)return 'DUE';
+ const due=new Date(now.getFullYear(),now.getMonth(),1);
+ const dueDate=due.toISOString().slice(0,10);
+ const key='relayChecklistDraft:'+String(currentUser?.propertyId||'CO534')+':'+dueDate+':'+String(currentUser?.userId||currentUser?.username||currentUser?.name||'user')+':MAINTENANCE';
+ try{
+   const raw=localStorage.getItem(key),saved=raw?JSON.parse(raw):{};
+   const idx=(CHECKLISTS.MAINTENANCE||[]).findIndex(x=>String(x[0]).startsWith('Monthly Filter Change'));
+   if(idx>=0&&saved&&saved[idx])return 'COMPLETE';
+ }catch(_){}
+ return 'OVERDUE';
+}
+
 function loadChecklistDraft_(name){
  try{const raw=localStorage.getItem(checklistDraftKey_(name));if(!raw)return;const saved=JSON.parse(raw),state={};Object.keys(saved||{}).forEach(k=>{if(saved[k])state[k]=true});taskState[name]=state}catch(_){}
 }
@@ -1015,7 +1030,7 @@ function clearChecklistDraft_(name){try{localStorage.removeItem(checklistDraftKe
 function syncChecklistProgress(){
  const cards=[...document.querySelectorAll('.checklist-kpis article')],names=['AM','PM','AUDIT','MAINTENANCE'];
  cards.forEach((card,i)=>{
-  const name=names[i],list=CHECKLISTS[name]||[],state=taskState[name]||{},applicable=list.filter((x)=>!(name==='MAINTENANCE'&&x[0].startsWith('Monthly Filter Change')&&new Date().getDate()!==1)),done=applicable.reduce((n,x,idx)=>{const original=list.indexOf(x);return n+(state[original]?1:0)},0);
+  const name=names[i],list=CHECKLISTS[name]||[],state=taskState[name]||{},filterStatus=name==='MAINTENANCE'?monthlyFilterStatus_():null,applicable=list.filter((x,idx)=>!(name==='MAINTENANCE'&&x[0].startsWith('Monthly Filter Change')&&filterStatus==='COMPLETE')),done=applicable.reduce((n,x)=>{const original=list.indexOf(x);return n+(state[original]?1:0)},0);
   const pct=applicable.length?Math.round(done/applicable.length*100):0;
   const strong=card.querySelector('strong'),em=card.querySelector('em');
   if(strong)strong.textContent=pct+'%';
@@ -1063,9 +1078,10 @@ function maintenanceMorningOpen_(){ const d=new Date(); return d.getHours()*60+d
 function renderChecklist(){
  const list=CHECKLISTS[activeChecklist]||[],state=taskState[activeChecklist]||(taskState[activeChecklist]={});
  const maintenanceMorning=activeChecklist==='MAINTENANCE'&&maintenanceMorningOpen_();
- const visible=list.map((x,i)=>({x,i})).filter(({x,i})=>(!maintenanceMorning||i<4)&&!(activeChecklist==='MAINTENANCE'&&x[0].startsWith('Monthly Filter Change')&&new Date().getDate()!==1));
- document.getElementById('checklistTasks').innerHTML=visible.map(({x,i})=>'<article class="check-task '+(state[i]?'done':'')+'"><button type="button" class="task-check" data-i="'+i+'">'+(state[i]?'✓':'')+'</button><div><h4>'+(i+1)+'. '+(x[0]==='Clean Grill'&&new Date().getDay()===5?'Clean Grill (Full Clean)':x[0])+'</h4><p>'+x[1]+'</p></div><button type="button" class="task-exception" data-i="'+i+'">EXCEPTION</button></article>').join('');
- const applicable=list.map((x,i)=>({x,i})).filter(({x,i})=>!(activeChecklist==='MAINTENANCE'&&x[0].startsWith('Monthly Filter Change')&&new Date().getDate()!==1));
+ const filterStatus=activeChecklist==='MAINTENANCE'?monthlyFilterStatus_():null;
+ const visible=list.map((x,i)=>({x,i})).filter(({x,i})=>(!maintenanceMorning||i<4)&&!(activeChecklist==='MAINTENANCE'&&x[0].startsWith('Monthly Filter Change')&&filterStatus==='COMPLETE'));
+ document.getElementById('checklistTasks').innerHTML=visible.map(({x,i})=>{const overdue=activeChecklist==='MAINTENANCE'&&x[0].startsWith('Monthly Filter Change')&&filterStatus==='OVERDUE';return '<article class="check-task '+(state[i]?'done':'')+(overdue&&!state[i]?' overdue':'')+'"><button type="button" class="task-check" data-i="'+i+'">'+(state[i]?'✓':'')+'</button><div><h4>'+(i+1)+'. '+(x[0]==='Clean Grill'&&new Date().getDay()===5?'Clean Grill (Full Clean)':x[0])+(overdue&&!state[i]?' <span class="task-overdue-badge">OVERDUE</span>':'')+'</h4><p>'+x[1]+(overdue&&!state[i]?' It was due on the 1st and has not been completed.':'')+'</p></div><button type="button" class="task-exception" data-i="'+i+'">EXCEPTION</button></article>';}).join('');
+ const applicable=list.map((x,i)=>({x,i})).filter(({x,i})=>!(activeChecklist==='MAINTENANCE'&&x[0].startsWith('Monthly Filter Change')&&filterStatus==='COMPLETE'));
  const done=applicable.filter(({i})=>state[i]).length,pct=applicable.length?Math.round(done/applicable.length*100):0;
  document.getElementById('detailPercent').textContent=maintenanceMorning?'Morning Launch':pct+'%';
  const sub=document.getElementById('detailSubtitle');
