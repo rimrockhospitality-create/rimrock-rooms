@@ -1081,7 +1081,7 @@ function renderChecklist(){
  const filterStatus=activeChecklist==='MAINTENANCE'?monthlyFilterStatus_():null;
  let visible=list.map((x,i)=>({x,i})).filter(({x,i})=>{const isFilter=activeChecklist==='MAINTENANCE'&&x[0].startsWith('Monthly Filter Change');return !(isFilter&&filterStatus==='COMPLETE');});
  visible.sort((a,b)=>{const ao=activeChecklist==='MAINTENANCE'&&a.x[0].startsWith('Monthly Filter Change')&&filterStatus==='OVERDUE',bo=activeChecklist==='MAINTENANCE'&&b.x[0].startsWith('Monthly Filter Change')&&filterStatus==='OVERDUE';return Number(bo)-Number(ao)||a.i-b.i;});
- document.getElementById('checklistTasks').innerHTML=visible.map(({x,i})=>{const overdue=activeChecklist==='MAINTENANCE'&&x[0].startsWith('Monthly Filter Change')&&filterStatus==='OVERDUE';return '<article class="check-task '+(state[i]?'done':'')+(overdue&&!state[i]?' overdue':'')+'">'+(x[0].startsWith('Monthly Filter Change')?'<button type="button" class="task-check task-filter-link" data-open-filter-pm>OPEN FILTER PM</button>':'<button type="button" class="task-check" data-i="'+i+'">'+(state[i]?'✓':'')+'</button>')+'<div><h4>'+(i+1)+'. '+(x[0]==='Clean Grill'&&new Date().getDay()===5?'Clean Grill (Full Clean)':x[0])+(overdue&&!state[i]?' <span class="task-overdue-badge">OVERDUE</span>':'')+'</h4><p>'+x[1]+(overdue&&!state[i]?' It was due on the 1st and has not been completed.':'')+'</p></div><button type="button" class="task-exception" data-i="'+i+'">EXCEPTION</button></article>';}).join('');
+ document.getElementById('checklistTasks').innerHTML=visible.map(({x,i})=>{const overdue=activeChecklist==='MAINTENANCE'&&x[0].startsWith('Monthly Filter Change')&&filterStatus==='OVERDUE';return '<article class="check-task '+(state[i]?'done':'')+(overdue&&!state[i]?' overdue':'')+'">'+(x[0].startsWith('Monthly Filter Change')?'<button type="button" class="task-check task-filter-link" data-open-filter-pm>OPEN FILTER PM</button>':'<button type="button" class="task-check" data-i="'+i+'">'+(state[i]?'✓':'')+'</button>')+'<div><h4>'+(i+1)+'. '+(x[0]==='Clean Grill'&&new Date().getDay()===5?'Clean Grill (Full Clean)':x[0])+(overdue&&!state[i]?' <span class="task-overdue-badge">OVERDUE</span>':'')+'</h4><p>'+x[1]+(overdue&&!state[i]?' It was due on the 1st and has not been completed.':'')+'</p></div><button type="button" class="task-exception" data-i="'+i+'">EXCEPTION</button>'+(activeChecklist==='MAINTENANCE'?'<button type="button" class="task-issue-photo" data-maint-issue="'+i+'">📷 ISSUE / WORK ORDER</button>':'')+'</article>';}).join('');
  const applicable=list.map((x,i)=>({x,i})).filter(({x,i})=>!(activeChecklist==='MAINTENANCE'&&x[0].startsWith('Monthly Filter Change')&&filterStatus==='COMPLETE'));
  const done=applicable.filter(({i})=>state[i]).length,pct=applicable.length?Math.round(done/applicable.length*100):0;
  document.getElementById('detailPercent').textContent=maintenanceMorning?'Morning Launch':pct+'%';
@@ -1094,6 +1094,13 @@ document.querySelectorAll('.shift-card,.maintenance-check-card').forEach(b=>b.ad
 document.addEventListener('click',e=>{const card=e.target.closest('.shift-card,.maintenance-check-card');if(!card)return;if(card.dataset.shift)openChecklist(card.dataset.shift)});
 document.getElementById('backToChecklists').addEventListener('click',openChecklistHub);
 document.getElementById('checklistTasks').addEventListener('click',e=>{
+ const issue=e.target.closest('[data-maint-issue]');
+ if(issue){
+   e.preventDefault();
+   e.stopPropagation();
+   openMaintenanceChecklistIssue_(issue.dataset.maintIssue);
+   return;
+ }
  const filter=e.target.closest('[data-open-filter-pm]');
  if(filter){
    e.preventDefault();
@@ -1108,6 +1115,110 @@ document.getElementById('checklistTasks').addEventListener('click',e=>{
  renderChecklist()
 });
 
+function openMaintenanceChecklistIssue_(taskIndex){
+  if(activeChecklist!=='MAINTENANCE')return;
+  const task=(CHECKLISTS.MAINTENANCE||[])[Number(taskIndex)];
+  if(!task)return;
+  let panel=document.getElementById('maintenanceChecklistIssuePanel');
+  if(!panel){
+    panel=document.createElement('section');
+    panel.id='maintenanceChecklistIssuePanel';
+    panel.style.cssText='position:fixed;inset:0;z-index:100000;background:rgba(5,20,32,.72);display:flex;align-items:flex-start;justify-content:center;padding:18px;overflow:auto;box-sizing:border-box';
+    panel.innerHTML=`
+      <div style="width:min(680px,100%);margin:20px auto;background:#fff;border-radius:16px;box-shadow:0 18px 60px rgba(0,0,0,.28);overflow:hidden;color:#102f52">
+        <div style="padding:18px 20px;border-bottom:1px solid #e5e9ef;display:flex;justify-content:space-between;gap:12px;align-items:flex-start">
+          <div><small style="font-weight:800;letter-spacing:.08em;color:#61798a">MAINTENANCE • ISSUE / WORK ORDER</small><h2 id="mcIssueTitle" style="margin:5px 0 0;color:#102f52">Issue</h2></div>
+          <button type="button" id="mcIssueClose" style="border:0;background:transparent;font-size:30px;line-height:1;color:#102f52;cursor:pointer">×</button>
+        </div>
+        <div style="padding:20px">
+          <label style="display:block;font-weight:800;margin-bottom:7px">LOCATION</label>
+          <select id="mcIssueLocationType" style="width:100%;padding:12px;border:1px solid #cbd5df;border-radius:9px;font-size:16px">
+            <option value="PUBLIC_AREA">AREA / EQUIPMENT</option>
+            <option value="GUEST_ROOM">GUEST ROOM</option>
+          </select>
+          <div id="mcIssueAreaWrap" style="margin-top:14px">
+            <label style="display:block;font-weight:800;margin-bottom:7px">AREA / EQUIPMENT</label>
+            <input id="mcIssueArea" type="text" style="width:100%;padding:12px;border:1px solid #cbd5df;border-radius:9px;font-size:16px;box-sizing:border-box">
+          </div>
+          <div id="mcIssueRoomWrap" hidden style="margin-top:14px">
+            <label style="display:block;font-weight:800;margin-bottom:7px">ROOM NUMBER</label>
+            <input id="mcIssueRoom" inputmode="numeric" type="text" placeholder="e.g. 214" style="width:100%;padding:12px;border:1px solid #cbd5df;border-radius:9px;font-size:16px;box-sizing:border-box">
+          </div>
+          <label style="display:block;font-weight:800;margin:16px 0 7px">WHAT'S WRONG?</label>
+          <textarea id="mcIssueDescription" rows="4" style="width:100%;padding:12px;border:1px solid #cbd5df;border-radius:9px;font-size:16px;box-sizing:border-box;resize:vertical"></textarea>
+          <div style="margin-top:16px">
+            <label style="display:block;font-weight:800;margin-bottom:7px">PHOTO</label>
+            <input id="mcIssuePhoto" type="file" accept="image/*" capture="environment" style="width:100%">
+            <small style="display:block;color:#61798a;margin-top:6px">Optional. If you take a photo, it automatically flows into Daily Ops.</small>
+          </div>
+          <label style="display:flex;align-items:center;gap:9px;margin-top:16px;font-weight:800">
+            <input id="mcIssueUrgent" type="checkbox"> Immediate attention
+          </label>
+          <div id="mcIssueMessage" style="min-height:24px;margin-top:14px;color:#61798a"></div>
+          <button id="mcIssueSave" type="button" style="width:100%;margin-top:8px;padding:14px;border:0;border-radius:10px;background:#102f52;color:#fff;font-weight:800;font-size:16px;cursor:pointer">CREATE WORK ORDER</button>
+        </div>
+      </div>`;
+    document.body.appendChild(panel);
+    document.getElementById('mcIssueClose').addEventListener('click',()=>panel.remove());
+    document.getElementById('mcIssueLocationType').addEventListener('change',e=>{
+      const room=e.target.value==='GUEST_ROOM';
+      document.getElementById('mcIssueRoomWrap').hidden=!room;
+      document.getElementById('mcIssueAreaWrap').hidden=room;
+    });
+    document.getElementById('mcIssueSave').addEventListener('click',async()=>{
+      const save=document.getElementById('mcIssueSave'),msg=document.getElementById('mcIssueMessage');
+      const type=document.getElementById('mcIssueLocationType').value;
+      const area=document.getElementById('mcIssueArea').value.trim();
+      const room=document.getElementById('mcIssueRoom').value.trim();
+      const description=document.getElementById('mcIssueDescription').value.trim();
+      const urgent=document.getElementById('mcIssueUrgent').checked;
+      const file=document.getElementById('mcIssuePhoto').files?.[0];
+      if(!description){msg.textContent='Describe the issue first.';return}
+      if(type==='GUEST_ROOM'&&!room){msg.textContent='Enter the room number.';return}
+      if(type==='PUBLIC_AREA'&&!area){msg.textContent='Enter the area or equipment.';return}
+      save.disabled=true;save.textContent='CREATING…';msg.textContent='';
+      try{
+        let photoBase64='',photoMimeType='';
+        if(file){photoBase64=await fileToDataUrl(file);photoMimeType=file.type||'image/jpeg'}
+        const r=await apiPost({
+          action:'logMaintenance',
+          propertyId:'CO534',
+          businessDate:housekeepingBusinessDate(),
+          reportedBy:currentUser.name,
+          locationType:type,
+          room:type==='GUEST_ROOM'?room:'',
+          area:type==='PUBLIC_AREA'?area:'',
+          specificLocation:'Checklist: '+task[0],
+          description:description,
+          guestReported:false,
+          urgent:urgent,
+          photoBase64,
+          photoMimeType
+        },90000);
+        if(!r.ok)throw new Error(r.reason||r.error||'Could not create work order');
+        msg.textContent='✓ Work order created'+(r.photoRef?' • photo saved • Daily Ops':'')+'.';
+        save.textContent='CREATED';
+        relayCacheClear_('maintenance:');relayCacheClear_('dashboard:');
+        setTimeout(()=>{panel.remove();loadMaintenanceBoard?.()},900);
+      }catch(err){
+        save.disabled=false;save.textContent='CREATE WORK ORDER';msg.textContent='Could not create work order: '+err.message;
+      }
+    });
+  }
+  panel.hidden=false;
+  document.getElementById('mcIssueTitle').textContent=(Number(taskIndex)+1)+'. '+task[0];
+  document.getElementById('mcIssueLocationType').value='PUBLIC_AREA';
+  document.getElementById('mcIssueArea').value=task[0];
+  document.getElementById('mcIssueRoom').value='';
+  document.getElementById('mcIssueDescription').value=task[0]+': ';
+  document.getElementById('mcIssuePhoto').value='';
+  document.getElementById('mcIssueUrgent').checked=false;
+  document.getElementById('mcIssueRoomWrap').hidden=true;
+  document.getElementById('mcIssueAreaWrap').hidden=false;
+  document.getElementById('mcIssueMessage').textContent='';
+  document.getElementById('mcIssueSave').disabled=false;
+  document.getElementById('mcIssueSave').textContent='CREATE WORK ORDER';
+}
 function openFilterPmWork_(){
   let panel=document.getElementById('filterPmWorkPanel');
   if(!panel){
