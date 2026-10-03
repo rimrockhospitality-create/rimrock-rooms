@@ -1093,6 +1093,18 @@ document.querySelectorAll('.shift-card,.maintenance-check-card').forEach(b=>b.ad
 // Defensive delegated handler: keeps checklist cards clickable even if the page restores or rerenders them.
 document.addEventListener('click',e=>{const card=e.target.closest('.shift-card,.maintenance-check-card');if(!card)return;if(card.dataset.shift)openChecklist(card.dataset.shift)});
 document.getElementById('backToChecklists').addEventListener('click',openChecklistHub);
+document.addEventListener('click',e=>{
+ const filterBtn=e.target.closest?.('[data-open-filter-pm]');
+ if(!filterBtn)return;
+ e.preventDefault();e.stopPropagation();e.stopImmediatePropagation();
+ const rv=document.getElementById('reportsView'),lib=document.getElementById('reportLibrary'),report=document.getElementById('filterPmReport');
+ if(rv)rv.hidden=false;if(lib)lib.hidden=true;
+ document.querySelectorAll('#reportsView>section').forEach(x=>x.hidden=true);
+ if(report){report.hidden=false;window.scrollTo({top:0,behavior:'smooth'});}
+ const opener=document.getElementById('openFilterPmReport');
+ if(opener&&report&&report.hidden){opener.click();}
+ return false;
+},true);
 document.getElementById('checklistTasks').addEventListener('click',e=>{
  const filter=e.target.closest('[data-open-filter-pm]');
  if(filter){document.getElementById('openFilterPmReport')?.click();return}
