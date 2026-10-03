@@ -1093,13 +1093,6 @@ document.querySelectorAll('.shift-card,.maintenance-check-card').forEach(b=>b.ad
 // Defensive delegated handler: keeps checklist cards clickable even if the page restores or rerenders them.
 document.addEventListener('click',e=>{const card=e.target.closest('.shift-card,.maintenance-check-card');if(!card)return;if(card.dataset.shift)openChecklist(card.dataset.shift)});
 document.getElementById('backToChecklists').addEventListener('click',openChecklistHub);
-document.addEventListener('click',e=>{
- const filterBtn=e.target.closest?.('[data-open-filter-pm]');
- if(!filterBtn)return;
- e.preventDefault();e.stopPropagation();e.stopImmediatePropagation();
- if(typeof window.openRelayFilterPm==='function') window.openRelayFilterPm();
- return false;
-},true);
 document.getElementById('checklistTasks').addEventListener('click',e=>{
  const filter=e.target.closest('[data-open-filter-pm]');
  if(filter){document.getElementById('openFilterPmReport')?.click();return}
