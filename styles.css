@@ -617,3 +617,17 @@ input::placeholder,textarea::placeholder{color:#7d98aa!important;opacity:1}
     min-width:0;
   }
 }
+
+
+/* Keep the maintenance issue/work-order action readable when the checklist
+   collapses to a narrow layout (including browser zoom/tablet widths). */
+@media(max-width:900px){
+  .check-task .task-issue-photo{
+    width:max-content;
+    max-width:calc(100vw - 110px);
+    min-width:142px;
+    white-space:nowrap;
+    padding:9px 12px;
+    box-sizing:border-box;
+  }
+}
