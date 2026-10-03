@@ -582,3 +582,38 @@ input::placeholder,textarea::placeholder{color:#7d98aa!important;opacity:1}
 .check-task.overdue{border-left:5px solid #c53b3b!important;background:#fff7f7!important}.task-overdue-badge{display:inline-block;margin-left:8px;padding:3px 7px;border-radius:999px;background:#c53b3b;color:#fff;font-size:11px;font-weight:900;vertical-align:middle}.check-task.overdue p{color:#9d2f2f!important;font-weight:700}
 .task-filter-link{width:auto!important;min-width:120px!important;padding:10px 12px!important;font-size:11px!important;font-weight:900!important;letter-spacing:.04em!important;color:#fff!important;background:var(--blue)!important;border-radius:10px!important}.fpr-asset{display:flex;align-items:center;justify-content:space-between;gap:16px}.fpr-asset button{border:0;border-radius:9px;padding:9px 12px;font-weight:900;cursor:pointer}.fpr-start{background:var(--blue);color:#fff}.fpr-complete{background:#1f9d63;color:#fff}.fpr-asset button:disabled{opacity:.55;cursor:wait}
 .check-task:has(.task-filter-link){grid-template-columns:170px minmax(0,1fr) auto}.task-filter-link{display:flex!important;align-items:center!important;justify-content:center!important;position:relative!important;z-index:5!important;pointer-events:auto!important;white-space:normal!important;line-height:1.15!important;min-height:44px!important;box-sizing:border-box!important}.check-task:has(.task-filter-link) h4{color:#183a52!important}.check-task:has(.task-filter-link) p{color:#7a2d2d!important}
+
+/* Maintenance issue/work-order action — compact, intentional checklist layout */
+.check-task{
+  grid-template-columns:46px minmax(0,1fr) auto auto;
+}
+.check-task .task-issue-photo{
+  min-width:142px;
+  border:0;
+  border-radius:8px;
+  padding:9px 11px;
+  background:#eef5fa;
+  color:#173b5f;
+  font-weight:900;
+  font-size:12px;
+  line-height:1.1;
+  cursor:pointer;
+  white-space:normal;
+}
+.check-task .task-issue-photo:hover{
+  background:#dcecf7;
+}
+@media(max-width:900px){
+  .check-task{
+    grid-template-columns:42px minmax(0,1fr);
+    align-items:start;
+  }
+  .check-task .task-exception,
+  .check-task .task-issue-photo{
+    grid-column:2;
+    justify-self:start;
+  }
+  .check-task .task-issue-photo{
+    min-width:0;
+  }
+}
