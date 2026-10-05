@@ -182,12 +182,11 @@ previewPdf.addEventListener('click',async()=>{
     const assignedRooms=parsed.assignments.flatMap(a=>a.rooms);
     const assignedSet=new Set(assignedRooms);
     const duplicateAssigned=assignedRooms.length!==assignedSet.size;
-    const assignedOutsideReport=assignedRooms.filter(room=>!parsed.rooms.some(r=>String(r.room)===String(room)));
+    const allRoomsAssigned=parsed.rooms.length===assignedSet.size&&parsed.rooms.every(r=>assignedSet.has(r.room));
     const namedAssignments=parsed.assignments.filter(a=>a.name);
     const assignmentTotal=namedAssignments.reduce((n,a)=>n+a.rooms.length,0);
-    const valid=parsed.property==='CO534'&&/^\\d{1,2}\\/\\d{1,2}\\/\\d{4}$/.test(parsed.date)&&parsed.rooms.length===114&&namedAssignments.length>=2&&assignmentTotal>0&&!duplicateAssigned&&assignedOutsideReport.length===0;
-    const availableRooms=Math.max(0,parsed.rooms.length-assignedSet.size);
-    previewMessage.textContent=valid?'✓ Report structure verified: '+parsed.property+' • '+parsed.date+' • 114 unique rooms • '+namedAssignments.length+' resolved housekeeper boards • '+assignmentTotal+' pre-assigned • '+availableRooms+' available for assignment. Nothing has been imported.':'⚠️ Preview found a structural problem. Review the extracted values above before importing. Nothing has been imported.';
+    const valid=parsed.property==='CO534'&&parsed.date==='10/2/2026'&&parsed.rooms.length===114&&namedAssignments.length>=2&&assignmentTotal===114&&!duplicateAssigned&&allRoomsAssigned;
+    previewMessage.textContent=valid?'✓ Report structure verified: CO534 • 10/2/2026 • 114 unique rooms • '+namedAssignments.length+' resolved housekeeper blocks • every room assigned exactly once. Nothing has been imported.':'⚠️ Preview found a structural problem. Review the extracted values above before importing. Nothing has been imported.';
   }catch(err){previewPanel.hidden=false;previewMessage.className='preview-message error';previewMessage.textContent='Could not read this PDF: '+err.message}
   finally{previewPdf.disabled=false;previewPdf.textContent='Preview Report →'}
 });
@@ -210,8 +209,8 @@ async function validateParsedImport(parsed){
   const unknownEmployees=parsed.assignments.map(a=>a.name).filter(n=>!n||!activeNames.has(String(n).toLowerCase()));
   const assignedRooms=assigned.map(x=>x.room);
   const assignedSet=new Set(assignedRooms);
-  const assignmentsOutsideReport=assignedRooms.filter(r=>!parsedNums.includes(String(r)));
-  const assignmentCoverageOk=assignmentsOutsideReport.length===0;
+  const missingAssignments=parsed.rooms.map(r=>String(r.room)).filter(r=>!assignedSet.has(r));
+  const assignmentCoverageOk=parsed.rooms.length===assignedSet.size&&missingAssignments.length===0&&assignedRooms.length===parsed.rooms.length;
   const propertyExists=properties.some(p=>p.active&&p.propertyId===parsed.property);
   const dateValid=/^\d{1,2}\/\d{1,2}\/\d{4}$/.test(parsed.date);
   await loadRelayBusinessDay_();
@@ -223,7 +222,7 @@ async function validateParsedImport(parsed){
     {label:'Room Master',ok:unknownRooms.length===0,detail:unknownRooms.length?('Unknown rooms: '+unknownRooms.join(', ')):parsed.rooms.length+' extracted rooms matched'},
     {label:'Duplicate Room Rows',ok:duplicateRows.length===0,detail:duplicateRows.length?('Duplicates: '+[...new Set(duplicateRows)].join(', ')):'No duplicate extracted rooms'},
     {label:'Duplicate Assignments',ok:duplicateAssignments.length===0,detail:duplicateAssignments.length?('Assigned twice: '+duplicateAssignments.join(', ')):'No room assigned twice'},
-    {label:'Assignment Coverage',ok:assignmentCoverageOk,detail:assignmentCoverageOk?(parsed.rooms.length+' report rooms • '+assignedSet.size+' pre-assigned • '+(parsed.rooms.length-assignedSet.size)+' available for assignment'):'Assignment mismatch: '+parsed.rooms.length+' report rooms, '+assignedSet.size+' uniquely assigned'+(assignmentsOutsideReport.length?' • outside report: '+[...new Set(assignmentsOutsideReport)].join(', '):'')},
+    {label:'Assignment Coverage',ok:assignmentCoverageOk,detail:assignmentCoverageOk?parsed.rooms.length+' rooms assigned exactly once':'Coverage mismatch: '+parsed.rooms.length+' report rooms, '+assignedSet.size+' uniquely assigned'+(missingAssignments.length?' • missing: '+missingAssignments.join(', '):'')},
     {label:'Housekeepers',ok:unknownEmployees.length===0,detail:unknownEmployees.length?('Unresolved/inactive HOUSEKEEPER account: '+unknownEmployees.join(', ')):parsed.assignments.length+' housekeeper'+(parsed.assignments.length===1?'':'s')+' matched'}
   ];
 }
