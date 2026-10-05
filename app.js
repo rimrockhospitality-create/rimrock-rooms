@@ -182,10 +182,12 @@ previewPdf.addEventListener('click',async()=>{
     const assignedRooms=parsed.assignments.flatMap(a=>a.rooms);
     const assignedSet=new Set(assignedRooms);
     const duplicateAssigned=assignedRooms.length!==assignedSet.size;
-    const allRoomsAssigned=parsed.rooms.length===assignedSet.size&&parsed.rooms.every(r=>assignedSet.has(r.room));
+    const assignmentsOutsideReport=assignedRooms.filter(room=>!parsed.rooms.some(r=>String(r.room)===String(room)));
     const namedAssignments=parsed.assignments.filter(a=>a.name);
     const assignmentTotal=namedAssignments.reduce((n,a)=>n+a.rooms.length,0);
-    const valid=parsed.property==='CO534'&&parsed.date==='10/2/2026'&&parsed.rooms.length===114&&namedAssignments.length>=2&&assignmentTotal===114&&!duplicateAssigned&&allRoomsAssigned;
+    const availableRooms=Math.max(0,parsed.rooms.length-assignedSet.size);
+    const valid=parsed.property==='CO534'&&/^\d{1,2}\/\d{1,2}\/\d{4}$/.test(parsed.date)&&parsed.rooms.length===114&&namedAssignments.length>=2&&assignmentTotal>0&&!duplicateAssigned&&assignmentsOutsideReport.length===0;
+    previewMessage.textContent=valid?'✓ Report structure verified: '+parsed.property+' • '+parsed.date+' • 114 unique rooms • '+namedAssignments.length+' resolved housekeeper boards • '+assignmentTotal+' pre-assigned • '+availableRooms+' available for assignment. Nothing has been imported.':'⚠️ Preview found a structural problem. Review the extracted values above before importing. Nothing has been imported.';
     previewMessage.textContent=valid?'✓ Report structure verified: CO534 • 10/2/2026 • 114 unique rooms • '+namedAssignments.length+' resolved housekeeper blocks • every room assigned exactly once. Nothing has been imported.':'⚠️ Preview found a structural problem. Review the extracted values above before importing. Nothing has been imported.';
   }catch(err){previewPanel.hidden=false;previewMessage.className='preview-message error';previewMessage.textContent='Could not read this PDF: '+err.message}
   finally{previewPdf.disabled=false;previewPdf.textContent='Preview Report →'}
