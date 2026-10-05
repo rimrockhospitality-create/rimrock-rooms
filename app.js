@@ -209,8 +209,8 @@ async function validateParsedImport(parsed){
   const unknownEmployees=parsed.assignments.map(a=>a.name).filter(n=>!n||!activeNames.has(String(n).toLowerCase()));
   const assignedRooms=assigned.map(x=>x.room);
   const assignedSet=new Set(assignedRooms);
-  const missingAssignments=parsed.rooms.map(r=>String(r.room)).filter(r=>!assignedSet.has(r));
-  const assignmentCoverageOk=parsed.rooms.length===assignedSet.size&&missingAssignments.length===0&&assignedRooms.length===parsed.rooms.length;
+  const assignmentsOutsideReport=assignedRooms.filter(r=>!parsedNums.includes(String(r)));
+  const assignmentCoverageOk=assignmentsOutsideReport.length===0;
   const propertyExists=properties.some(p=>p.active&&p.propertyId===parsed.property);
   const dateValid=/^\d{1,2}\/\d{1,2}\/\d{4}$/.test(parsed.date);
   await loadRelayBusinessDay_();
@@ -222,7 +222,7 @@ async function validateParsedImport(parsed){
     {label:'Room Master',ok:unknownRooms.length===0,detail:unknownRooms.length?('Unknown rooms: '+unknownRooms.join(', ')):parsed.rooms.length+' extracted rooms matched'},
     {label:'Duplicate Room Rows',ok:duplicateRows.length===0,detail:duplicateRows.length?('Duplicates: '+[...new Set(duplicateRows)].join(', ')):'No duplicate extracted rooms'},
     {label:'Duplicate Assignments',ok:duplicateAssignments.length===0,detail:duplicateAssignments.length?('Assigned twice: '+duplicateAssignments.join(', ')):'No room assigned twice'},
-    {label:'Assignment Coverage',ok:assignmentCoverageOk,detail:assignmentCoverageOk?parsed.rooms.length+' rooms assigned exactly once':'Coverage mismatch: '+parsed.rooms.length+' report rooms, '+assignedSet.size+' uniquely assigned'+(missingAssignments.length?' • missing: '+missingAssignments.join(', '):'')},
+    {label:'Assignment Coverage',ok:assignmentCoverageOk,detail:assignmentCoverageOk?(parsed.rooms.length+' report rooms • '+assignedSet.size+' pre-assigned • '+(parsed.rooms.length-assignedSet.size)+' available for assignment'):'Assignment mismatch: '+parsed.rooms.length+' report rooms, '+assignedSet.size+' uniquely assigned'+(assignmentsOutsideReport.length?' • outside report: '+[...new Set(assignmentsOutsideReport)].join(', '):'')},
     {label:'Housekeepers',ok:unknownEmployees.length===0,detail:unknownEmployees.length?('Unresolved/inactive HOUSEKEEPER account: '+unknownEmployees.join(', ')):parsed.assignments.length+' housekeeper'+(parsed.assignments.length===1?'':'s')+' matched'}
   ];
 }
