@@ -211,7 +211,7 @@ async function validateParsedImport(parsed){
   const assignedRooms=assigned.map(x=>x.room);
   const assignedSet=new Set(assignedRooms);
   const assignmentsOutsideReport=assignedRooms.filter(r=>!parsedNums.includes(String(r)));
-  const assignmentCoverageOk=assignedRooms.length===assignedSet.size&&assignmentsOutsideReport.length===0;
+  const assignmentCoverageOk=assignmentsOutsideReport.length===0;
   const propertyExists=properties.some(p=>p.active&&p.propertyId===parsed.property);
   const dateValid=/^\d{1,2}\/\d{1,2}\/\d{4}$/.test(parsed.date);
   await loadRelayBusinessDay_();
