@@ -634,3 +634,51 @@ input::placeholder,textarea::placeholder{color:#7d98aa!important;opacity:1}
 
 /* Lost & Found Report */
 .lfr{max-width:1240px;margin:0 auto;padding:24px}.lfr-actions{display:flex;justify-content:space-between;gap:12px;margin-bottom:14px}.lfr-actions>div{display:flex;gap:8px}.lfr-actions button{border:0;border-radius:10px;padding:11px 16px;font-weight:800;cursor:pointer}.lfr-view-btn.active{background:#124b78;color:#fff}.lfr-view-btn{background:#e9f0f5;color:#17385c}.lfr-page{background:#fff;color:#17385c;border-radius:16px;overflow:hidden;box-shadow:0 8px 28px rgba(0,0,0,.08)}.lfr-header{background:#124b78;color:#fff;padding:22px 26px;display:grid;grid-template-columns:1fr 2fr auto;align-items:center;gap:24px}.lfr-header b{display:block;font-size:25px;letter-spacing:1px}.lfr-header small{display:block;opacity:.75;font-weight:700;letter-spacing:1px}.lfr-header>div:nth-child(2) strong{display:block;font-size:25px}.lfr-header>div:nth-child(2) span{display:block;opacity:.8;margin-top:4px}.lfr-header>div:last-child{text-align:right}.lfr-kpis{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;padding:16px}.lfr-kpi{border:1px solid #d9e3eb;border-radius:12px;padding:16px;background:#f7fafc}.lfr-kpi small{display:block;font-size:11px;font-weight:800;letter-spacing:.7px}.lfr-kpi strong{display:block;font-size:28px;margin:5px 0}.lfr-kpi span{font-size:12px;color:#617991}.lfr-card{margin:0 16px 16px;border:1px solid #d9e3eb;border-radius:12px;overflow:hidden}.lfr-card-head{display:flex;justify-content:space-between;align-items:center;padding:16px 18px;background:#f5f8fa}.lfr-card-head h2{margin:0;font-size:15px}.lfr-card-head p{margin:4px 0 0;font-size:12px;color:#617991}.lfr-card-head>span{font-weight:800;font-size:12px}.lfr-table-wrap{overflow:auto}.lfr-table-wrap table{width:100%;border-collapse:collapse;font-size:12px}.lfr-table-wrap th{background:#eaf1f5;text-align:left;padding:9px 10px;font-size:10px;letter-spacing:.5px}.lfr-table-wrap td{padding:10px;border-top:1px solid #e4ebf0;vertical-align:top}.lfr-row{cursor:pointer}.lfr-row:hover td{background:#f5f9fc}.lfr-status{display:inline-block;border-radius:999px;padding:4px 7px;background:#e7f5ed;font-weight:800;font-size:10px}.lfr-status.due{background:#fff0e8}.lfr-empty{text-align:center!important;padding:24px!important;color:#71869a}.lfr-page footer{padding:14px 18px;color:#71869a;font-size:11px}.lfr-page footer span{float:right}.lfr-history-toolbar{display:grid;grid-template-columns:minmax(300px,1fr) 180px 170px;gap:10px;padding:16px;background:#f7fafc;border-bottom:1px solid #d9e3eb}.lfr-search-wrap{display:flex;align-items:center;background:#fff;border:1px solid #cbd8e2;border-radius:10px;padding-left:10px}.lfr-search-wrap span{font-size:20px;color:#607a90}.lfr-search-wrap input{border:0;outline:0;flex:1;padding:11px 9px;font-size:13px}.lfr-search-wrap button{border:0;background:transparent;padding:8px 10px;font-size:10px;font-weight:800;color:#607a90;cursor:pointer}.lfr-history-toolbar select{border:1px solid #cbd8e2;border-radius:10px;background:#fff;padding:10px;color:#17385c;font-weight:700}.lfr-history-summary{display:flex;align-items:baseline;gap:7px;padding:13px 18px}.lfr-history-summary strong{font-size:20px}.lfr-history-summary span{font-weight:700}.lfr-history-summary small{margin-left:auto;color:#71869a}.lfr-time,.lfr-note{display:block;color:#71869a;font-size:10px;margin-top:3px}.lfr-detail{margin:0 16px 16px;border:1px solid #b9cad7;border-radius:12px;background:#f7fafc;padding:16px}.lfr-detail-head{display:flex;justify-content:space-between;align-items:center}.lfr-detail-head small,.lfr-detail-grid small,.lfr-detail-note small{font-size:10px;font-weight:800;letter-spacing:.5px;color:#71869a}.lfr-detail-head h3{margin:3px 0 0}.lfr-detail-head button{border:0;background:#dfe9ef;border-radius:8px;font-size:20px;width:34px;height:34px;cursor:pointer}.lfr-detail-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-top:14px}.lfr-detail-grid>div{background:#fff;border:1px solid #dce6ed;border-radius:9px;padding:10px}.lfr-detail-grid strong{display:block;margin-top:4px}.lfr-detail-note{background:#fff;border:1px solid #dce6ed;border-radius:9px;padding:10px;margin-top:12px}.lfr-detail-note p{margin:5px 0 0}.lfr-photo-btn{border:0;border-radius:8px;padding:8px 11px;font-weight:800;cursor:pointer;background:#e7f0f6;color:#17385c}@media(max-width:900px){.lfr-header{grid-template-columns:1fr}.lfr-header>div:last-child{text-align:left}.lfr-kpis{grid-template-columns:repeat(2,1fr)}.lfr-history-toolbar{grid-template-columns:1fr}.lfr-detail-grid{grid-template-columns:repeat(2,1fr)}}@media print{.lfr{padding:0}.lfr-actions{display:none}.lfr-page{box-shadow:none}.lfr-history-toolbar,.lfr-detail{display:none}.lfr-header{-webkit-print-color-adjust:exact;print-color-adjust:exact}.lfr-card{break-inside:avoid}.lfr-kpis{grid-template-columns:repeat(4,1fr)}body{background:#fff!important}}
+
+/* Daily Ops lower operations cards — balanced, contained, print-clean */
+.dor3-bottom-reorg{
+  grid-template-columns:minmax(0,1fr) minmax(0,1fr)!important;
+  grid-template-areas:"maint passon" "lf lf";
+  gap:10px!important;
+  align-items:stretch!important;
+  padding:0 20px 8px!important;
+}
+.dor3-bottom-reorg .dor3-box{height:auto!important;min-height:0!important}
+.dor3-maint-box{grid-area:maint;display:flex!important;flex-direction:column!important;padding:10px 12px!important;overflow:hidden!important}
+.dor3-passon-box{grid-area:passon;display:flex!important;flex-direction:column!important;padding:10px 12px!important;overflow:hidden!important}
+.dor3-lf-box{grid-area:lf;min-height:48px!important;padding:8px 12px!important}
+.dor3-maint-box .dor3-heading,.dor3-passon-box .dor3-heading{text-align:center!important;margin-bottom:7px!important}
+.dor3-maint-box .dor3-heading small,.dor3-passon-box .dor3-heading small{display:block!important}
+.dor3-maint-box .dor3-maint{
+  width:100%!important;
+  display:grid!important;
+  grid-template-columns:repeat(4,minmax(0,1fr))!important;
+  gap:6px!important;
+  align-content:start!important;
+}
+.dor3-maint-box .dor3-maint>div{
+  min-width:0!important;
+  min-height:48px!important;
+  padding:6px!important;
+  display:flex!important;
+  flex-direction:column!important;
+  justify-content:center!important;
+}
+.dor3-maint-box .dor3-maint .dor-pm-checklist{
+  grid-column:1/-1!important;
+  min-height:0!important;
+  border:0!important;
+  border-radius:5px!important;
+  background:#f4f8fa!important;
+  padding:5px 7px!important;
+  line-height:1.3!important;
+  text-align:left!important;
+}
+.dor3-passon{
+  height:auto!important;
+  min-height:0!important;
+  overflow:visible!important;
+  flex:1!important;
+}
+.dor3-passon-note{grid-template-columns:48px 1fr auto!important}
+.dor3-fd-foot{margin-top:5px!important}
