@@ -1956,9 +1956,15 @@ async function loadDailyOperationsReport_(requestedDate=''){
  const set=(id,v)=>{const e=document.getElementById(id);if(e)e.textContent=v};
  set('dorDate',date||'—');set('dorGenerated','Report Generated: '+new Date().toLocaleTimeString([],{hour:'numeric',minute:'2-digit'}));
  const sid=localStorage.getItem('relaySessionId');
+ // getToday uses the exact business-date display format stored by the RELAY
+ // business-day / assignment sheets (M/d/yyyy). The report date picker uses
+ // ISO (yyyy-MM-dd), so historical reports must normalize before calling the
+ // shared state endpoint. Without this, today's report worked but any loaded
+ // historical date could return an empty/failing daily state.
+ const dorBackendDate_=(()=>{const m=String(date||'').match(/^(\\d{4})-(\\d{2})-(\\d{2})$/);if(!m)return String(date||'');return Number(m[2])+'/'+Number(m[3])+'/'+m[1]})();
  const dorSafe_= (promise,fallback={ok:false}) => Promise.resolve(promise).catch(err=>({ ...fallback, ok:false, error:String(err?.message||err) }));
  const [today,work,lostFoundReport,maintenanceReport,maintenanceBoard,pmBoard,hotelPerformanceResult,...shiftResults]=await Promise.all([
-  dorSafe_(apiPost({action:'getToday',businessDate:date},45000)),
+  dorSafe_(apiPost({action:'getToday',businessDate:dorBackendDate_},45000)),
   dorSafe_(apiPost({action:'getWorkBoard'},45000)),
   dorSafe_(apiPost({action:'getLostFoundReport',sessionId:sid,businessDate:date},45000)),
   dorSafe_(apiPost({action:'getMaintenanceReport',sessionId:sid,businessDate:date},45000)),
