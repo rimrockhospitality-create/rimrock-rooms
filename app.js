@@ -351,17 +351,16 @@ async function loadHousekeepingBoard(){
       // Use the known/open Denver day immediately; getToday is the authoritative board read.
       date=housekeepingBusinessDate();
       const cacheKey='hk:'+date+':'+currentUser.name;
-      state=relayCached_(cacheKey);
-      if(!state){
-        try{state=await apiPost({action:'getToday',businessDate:date},45000)}
-        catch(err){
-          // Apps Script can occasionally return a transient 404 immediately after a deployment.
-          // One automatic retry is safer than making the manager click Housekeeping again.
-          if(String(err?.message||'').includes('(404)'))state=await apiPost({action:'getToday',businessDate:date},45000);
-          else throw err;
-        }
-        relayCacheSet_(cacheKey,state);
+      // The property board is a live multi-device operational view. Never render it from
+      // a browser-local snapshot: housekeeping and inspections may be completed on other devices.
+      try{state=await apiPost({action:'getToday',businessDate:date},45000)}
+      catch(err){
+        // Apps Script can occasionally return a transient 404 immediately after a deployment.
+        // One automatic retry is safer than making the manager click Housekeeping again.
+        if(String(err?.message||'').includes('(404)'))state=await apiPost({action:'getToday',businessDate:date},45000);
+        else throw err;
       }
+      relayCacheSet_(cacheKey,state);
       relayBusinessDate=date;relayBusinessDayLoadedAt=Date.now();
     }
     const businessDateObj=new Date(date+' 12:00:00');
@@ -377,7 +376,7 @@ async function loadHousekeepingBoard(){
     inspectionIssues.filter(i=>['REWORK_REQUIRED','REWORK_IN_PROGRESS'].includes(i.status)&&(canManageBoard||i.housekeeper===currentUser.name)).forEach(i=>{const k=String(i.room);if(!reworkByRoom.has(k))reworkByRoom.set(k,[]);reworkByRoom.get(k).push(i)});
     const visible=canManageBoard?assignments:assignments.filter(a=>a.housekeeper===currentUser.name);
     const cleaning=visible.filter(a=>sessionByRoom.get(String(a.room))?.status==='CLEANING').length;
-    const ready=visible.filter(a=>{const room=String(a.room),ss=sessionByRoom.get(room),ii=inspectionByRoom.get(room);return ss?.status==='READY_FOR_INSPECTION'||ii?.result==='PASSED'}).length;
+    const ready=visible.filter(a=>{const room=String(a.room),ss=sessionByRoom.get(room),ii=inspectionByRoom.get(room);return ss?.status==='READY_FOR_INSPECTION'||ss?.status==='COMPLETE'||ii?.status==='PASSED'||ii?.result==='PASSED'||ii?.roomState==='READY'}).length;
     document.getElementById('hkAssignedCount').textContent=visible.length;
     document.getElementById('hkCleaningCount').textContent=cleaning;
     document.getElementById('hkReadyCount').textContent=ready;
@@ -401,6 +400,7 @@ async function loadHousekeepingBoard(){
         :status==='REWORK_IN_PROGRESS'&&!canManageBoard?'<button type="button" class="complete-rework-btn" data-room="'+room+'" data-issue="'+issueId+'">REWORK COMPLETE</button>'
         :status==='REWORK_REQUIRED'&&!canManageBoard?'<button type="button" class="rework-room-btn" data-room="'+room+'" data-issue="'+issueId+'">START REWORK</button>'
         :status==='CLEANING'&&!canManageBoard?'<div class="hk-room-actions"><button type="button" class="hk-context-maint" data-room="'+room+'" onclick="openHkMaintenanceForRoom(this.dataset.room);return false;">🔧 REPORT MAINTENANCE</button><button type="button" class="ready-room-btn" data-room="'+room+'">READY FOR INSPECTION</button></div>'
+        :status==='READY'?'<div class="hk-room-complete" aria-label="Room complete">✓ ROOM COMPLETE</div>'
         :'<button type="button" class="start-room-btn" data-room="'+room+'" '+(status==='NOT_STARTED'&&!canManageBoard?'':'disabled')+'>'+(status==='NOT_STARTED'?'START WORK':action)+'</button>';return '<article class="hk-room-card"><div class="hk-room-top"><span class="hk-room-number">ROOM '+room+'</span><span class="hk-room-pill">'+label+'</span></div><div class="hk-room-meta">Choice assignment • '+a.housekeeper+(status==='CLEANING'?'<br>Started '+started+'<br><strong class="elapsed-timer" data-start="'+started+'">Elapsed --:--</strong>':'')+'</div>'+reworkHtml+button+'</article>'
     }).join('');
   }catch(err){hkBoardStatus.className='hk-board-status error';hkBoardStatus.textContent='Could not load housekeeping board: '+err.message}
