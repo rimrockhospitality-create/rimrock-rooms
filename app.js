@@ -1417,6 +1417,19 @@ async function refreshDashboardOps(){
   const readyRooms=new Set(sessions.filter(x=>String(x.status||'').toUpperCase()==='READY_FOR_INSPECTION').map(x=>String(x.room||'')).filter(Boolean));
   const openMaint=maint.filter(x=>!['RESOLVED','COMPLETE','COMPLETED','CLOSED'].includes(String(x.status||'').toUpperCase())).length;
   const allNotes=handoff?.ok?(handoff.shiftNotes||handoff.notes||handoff.openNotes||[]):[],openNotes=(handoff?.openNotes||[]).length?handoff.openNotes:allNotes.filter(n=>!['RESOLVED','CLOSED','COMPLETE'].includes(String(n.status||'OPEN').toUpperCase()));
+  const checklistRows=handoff?.ok?(handoff.checklistActivity||[]):[];
+  ['AM','PM','AUDIT','MAINTENANCE'].forEach(name=>{
+    const card=document.querySelector('.rr-shift-card[data-shift-open="'+name+'"]');if(!card)return;
+    const list=CHECKLISTS[name]||[],rows=checklistRows.filter(x=>String(x.shift||'').toUpperCase()===name),latest=new Map();
+    rows.forEach(x=>latest.set(Number(x.taskIndex??x.task_index),x));
+    const done=list.reduce((n,_,i)=>n+(String(latest.get(i)?.status||'').toUpperCase()==='COMPLETE'?1:0),0),pct=list.length?Math.round(done/list.length*100):0,closed=list.length>0&&done===list.length;
+    const dial=card.querySelector('.rr-dial'),strong=dial?.querySelector('strong'),em=dial?.querySelector('em'),action=card.querySelector('i'),count=card.querySelector('b');
+    if(count)count.textContent=list.length+' TASKS';
+    if(strong)strong.textContent=pct+'%';
+    if(em)em.textContent=closed?'COMPLETE':(done?'IN PROGRESS':'NOT STARTED');
+    if(action)action.textContent=closed?'✓ CHECKLIST COMPLETE':(done?'▶ CONTINUE '+(name==='AUDIT'?'AUDIT':name)+' SHIFT':'▶ START '+(name==='AUDIT'?'AUDIT':name==='MAINTENANCE'?'MAINT.':name)+' SHIFT');
+    card.classList.toggle('complete',closed);
+  });
   const followups=openNotes.filter(n=>String(n.noteType||n.note_type||'').toUpperCase().includes('FOLLOW')).length;
   const issues=openNotes.filter(n=>String(n.noteType||n.note_type||'').toUpperCase()==='ISSUE').length;
   const info=allNotes.filter(n=>['INFO','INFORMATION','INFORMATIONAL'].includes(String(n.noteType||n.note_type||'').toUpperCase())).length;
