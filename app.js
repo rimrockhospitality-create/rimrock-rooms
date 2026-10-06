@@ -1009,6 +1009,31 @@ const CHECKLISTS={
  ]
 };
 let activeChecklist='',taskState={},activeNoteType='';
+const checklistClosedState={};
+function checklistCompletionLabel_(name,info){
+ const raw=info?.completedAt||'',d=raw?new Date(raw):null,hasTime=d&&!isNaN(d)&&(/T\d{2}:\d{2}/.test(String(raw))||d.getHours()||d.getMinutes());
+ const when=hasTime?d.toLocaleTimeString([],{hour:'numeric',minute:'2-digit'}):(raw?'Completed '+String(raw):'Complete');
+ return '✓ '+name+' CHECKLIST COMPLETE • '+when+(info?.completedBy?' • '+info.completedBy:'');
+}
+async function loadChecklistServerState_(onlyName=''){
+ try{
+  const r=await apiPost({action:'getShiftOperations',sessionId:localStorage.getItem('relaySessionId'),businessDate:housekeepingBusinessDate()},45000);
+  if(!r.ok)return;
+  const rows=r.checklistActivity||[];
+  const names=onlyName?[onlyName]:['AM','PM','AUDIT','MAINTENANCE'];
+  names.forEach(name=>{
+   const list=CHECKLISTS[name]||[],mine=rows.filter(x=>String(x.shift||'').toUpperCase()===name);
+   const latest=new Map();mine.forEach(x=>latest.set(Number(x.taskIndex??x.task_index),x));
+   const complete=list.length>0&&list.every((_,i)=>String(latest.get(i)?.status||'').toUpperCase()==='COMPLETE');
+   if(complete){
+    const last=latest.get(list.length-1)||[...latest.values()].pop()||{};
+    checklistClosedState[name]={completedAt:last.completedAt||last.completed_at||last.updatedAt||last.updated_at||'',completedBy:last.completedBy||last.completed_by||''};
+    taskState[name]=Object.fromEntries(list.map((_,i)=>[i,true]));
+    clearChecklistDraft_(name);
+   }else delete checklistClosedState[name];
+  });
+ }catch(e){console.error('Checklist completion-state load failed',e)}
+}
 function checklistDraftKey_(name){return 'relayChecklistDraft:'+String(currentUser?.propertyId||'CO534')+':'+housekeepingBusinessDate()+':'+String(currentUser?.userId||currentUser?.username||currentUser?.name||'user')+':'+name}
 function monthlyFilterStatus_(){
  const now=new Date(),day=now.getDate();
@@ -1035,14 +1060,22 @@ function syncChecklistProgress(){
  cards.forEach((card,i)=>{
   const name=names[i],list=CHECKLISTS[name]||[],state=taskState[name]||{},filterStatus=name==='MAINTENANCE'?monthlyFilterStatus_():null,applicable=list.filter((x,idx)=>!(name==='MAINTENANCE'&&x[0].startsWith('Monthly Filter Change')&&filterStatus==='COMPLETE')),done=applicable.reduce((n,x)=>{const original=list.indexOf(x);return n+(state[original]?1:0)},0);
   const pct=applicable.length?Math.round(done/applicable.length*100):0;
-  const strong=card.querySelector('strong'),em=card.querySelector('em');
-  if(strong)strong.textContent=pct+'%';
-  if(em)em.textContent=done===0?'Not started':(done===list.length?'Complete':done+' / '+list.length+' complete');
+  const strong=card.querySelector('strong'),em=card.querySelector('em'),closed=checklistClosedState[name];
+  if(closed){
+   if(strong)strong.textContent='✓';
+   if(em)em.textContent=checklistCompletionLabel_(name,closed).replace(/^✓\s*/,'');
+   card.classList.add('checklist-closed');
+  }else{
+   if(strong)strong.textContent=pct+'%';
+   if(em)em.textContent=done===0?'Not started':(done===list.length?'Complete':done+' / '+list.length+' complete');
+   card.classList.remove('checklist-closed');
+  }
  });
 }
 function loadAllChecklistDrafts_(){['AM','PM','AUDIT','MAINTENANCE'].forEach(loadChecklistDraft_)}
-function openChecklistHub(){
+async function openChecklistHub(){
  loadAllChecklistDrafts_();
+ await loadChecklistServerState_();
  const maintenanceOnly=!!(currentUser&&currentUser.roles&&currentUser.roles.includes('MAINTENANCE')&&!currentUser.roles.includes('ADMIN'));
  document.getElementById('checklistDetail').hidden=true;
  document.querySelector('.checklist-layout').hidden=false;document.querySelector('.checklist-kpis').hidden=false;document.querySelector('.checklist-hero').hidden=false;
@@ -1071,8 +1104,8 @@ function openChecklistHub(){
  }
  syncChecklistProgress();loadOpenShiftNotes_();
 }
-function openChecklist(name){
- activeChecklist=name;loadChecklistDraft_(name);const list=CHECKLISTS[name]||[];document.querySelector('.checklist-layout').hidden=true;document.querySelector('.checklist-kpis').hidden=true;document.querySelector('.checklist-hero').hidden=true;document.getElementById('checklistDetail').hidden=false;
+async function openChecklist(name){
+ activeChecklist=name;loadChecklistDraft_(name);await loadChecklistServerState_(name);const list=CHECKLISTS[name]||[];document.querySelector('.checklist-layout').hidden=true;document.querySelector('.checklist-kpis').hidden=true;document.querySelector('.checklist-hero').hidden=true;document.getElementById('checklistDetail').hidden=false;
  const titles={AM:['FRONT DESK • AM','AM / 1st Shift','7 AM — 3 PM'],PM:['FRONT DESK • PM','PM / 2nd Shift','3 PM — 11 PM'],AUDIT:['FRONT DESK • NIGHT AUDIT','Night Audit','11 PM — 7 AM'],MAINTENANCE:['ENGINEERING • DAILY','Maintenance Daily','Property operations']};
  const t=titles[name];document.getElementById('detailEyebrow').textContent=t[0];document.getElementById('detailTitle').textContent=t[1];document.getElementById('detailSubtitle').textContent=t[2]+' • '+list.length+' tasks';
  renderChecklist();const pw=document.getElementById('addPropertyWalkPhoto');if(pw)pw.hidden=name!=='MAINTENANCE';
@@ -1084,7 +1117,9 @@ function renderChecklist(){
  const filterStatus=activeChecklist==='MAINTENANCE'?monthlyFilterStatus_():null;
  let visible=list.map((x,i)=>({x,i})).filter(({x,i})=>{const isFilter=activeChecklist==='MAINTENANCE'&&x[0].startsWith('Monthly Filter Change');return !(isFilter&&filterStatus==='COMPLETE');});
  visible.sort((a,b)=>{const ao=activeChecklist==='MAINTENANCE'&&a.x[0].startsWith('Monthly Filter Change')&&filterStatus==='OVERDUE',bo=activeChecklist==='MAINTENANCE'&&b.x[0].startsWith('Monthly Filter Change')&&filterStatus==='OVERDUE';return Number(bo)-Number(ao)||a.i-b.i;});
- document.getElementById('checklistTasks').innerHTML=visible.map(({x,i})=>{const overdue=activeChecklist==='MAINTENANCE'&&x[0].startsWith('Monthly Filter Change')&&filterStatus==='OVERDUE';return '<article class="check-task '+(state[i]?'done':'')+(overdue&&!state[i]?' overdue':'')+'">'+(x[0].startsWith('Monthly Filter Change')?'<button type="button" class="task-check task-filter-link" data-open-filter-pm>OPEN FILTER PM</button>':'<button type="button" class="task-check" data-i="'+i+'">'+(state[i]?'✓':'')+'</button>')+'<div><h4>'+(i+1)+'. '+(x[0]==='Clean Grill'&&new Date().getDay()===5?'Clean Grill (Full Clean)':x[0])+(overdue&&!state[i]?' <span class="task-overdue-badge">OVERDUE</span>':'')+'</h4><p>'+x[1]+(overdue&&!state[i]?' It was due on the 1st and has not been completed.':'')+'</p></div><button type="button" class="task-exception" data-i="'+i+'">EXCEPTION</button>'+(activeChecklist==='MAINTENANCE'?'<button type="button" class="task-issue-photo" data-maint-issue="'+i+'">📷 ISSUE / WORK ORDER</button>':'')+'</article>';}).join('');
+ const closed=checklistClosedState[activeChecklist];
+ document.getElementById('checklistTasks').innerHTML=(closed?'<div class="checklist-complete-banner"><strong>'+checklistCompletionLabel_(activeChecklist,closed)+'</strong><span>Read-only operational record</span></div>':'')+visible.map(({x,i})=>{const overdue=activeChecklist==='MAINTENANCE'&&x[0].startsWith('Monthly Filter Change')&&filterStatus==='OVERDUE';return '<article class="check-task '+(state[i]?'done':'')+(overdue&&!state[i]?' overdue':'')+'">'+(closed?'<span class="task-check task-check-readonly">✓</span>':(x[0].startsWith('Monthly Filter Change')?'<button type="button" class="task-check task-filter-link" data-open-filter-pm>OPEN FILTER PM</button>':'<button type="button" class="task-check" data-i="'+i+'">'+(state[i]?'✓':'')+'</button>'))+'<div><h4>'+(i+1)+'. '+(x[0]==='Clean Grill'&&new Date().getDay()===5?'Clean Grill (Full Clean)':x[0])+(overdue&&!state[i]?' <span class="task-overdue-badge">OVERDUE</span>':'')+'</h4><p>'+x[1]+(overdue&&!state[i]?' It was due on the 1st and has not been completed.':'')+'</p></div>'+(closed?'':'<button type="button" class="task-exception" data-i="'+i+'">EXCEPTION</button>'+(activeChecklist==='MAINTENANCE'?'<button type="button" class="task-issue-photo" data-maint-issue="'+i+'">📷 ISSUE / WORK ORDER</button>':''))+'</article>';}).join('');
+ const completeBtn=document.getElementById('completeShift');if(completeBtn){completeBtn.hidden=!!closed;completeBtn.disabled=!!closed;}
  const applicable=list.map((x,i)=>({x,i})).filter(({x,i})=>!(activeChecklist==='MAINTENANCE'&&x[0].startsWith('Monthly Filter Change')&&filterStatus==='COMPLETE'));
  const done=applicable.filter(({i})=>state[i]).length,pct=applicable.length?Math.round(done/applicable.length*100):0;
  document.getElementById('detailPercent').textContent=maintenanceMorning?'Morning Launch':pct+'%';
@@ -1097,6 +1132,7 @@ document.querySelectorAll('.shift-card,.maintenance-check-card').forEach(b=>b.ad
 document.addEventListener('click',e=>{const card=e.target.closest('.shift-card,.maintenance-check-card');if(!card)return;if(card.dataset.shift)openChecklist(card.dataset.shift)});
 document.getElementById('backToChecklists').addEventListener('click',openChecklistHub);
 document.getElementById('checklistTasks').addEventListener('click',e=>{
+ if(checklistClosedState[activeChecklist])return;
  const issue=e.target.closest('[data-maint-issue]');
  if(issue){
    e.preventDefault();
@@ -1325,7 +1361,9 @@ document.getElementById('completeShift').addEventListener('click',async function
  try{
   const r=await apiPost({action:'completeChecklistShift',sessionId:localStorage.getItem('relaySessionId'),businessDate:housekeepingBusinessDate(),shift:shiftBeingSaved,tasks:list.map((x,i)=>({taskIndex:i,taskName:x[0],status:state[i]?'COMPLETE':'INCOMPLETE'}))});
   if(!r.ok)throw new Error(r.reason||r.error||'Unknown error');
-  taskState[shiftBeingSaved]={};clearChecklistDraft_(shiftBeingSaved);alert('✓ '+shiftBeingSaved+' shift saved to RELAY.');openChecklistHub();
+  taskState[shiftBeingSaved]={};clearChecklistDraft_(shiftBeingSaved);
+  checklistClosedState[shiftBeingSaved]={completedAt:new Date().toISOString(),completedBy:currentUser?.name||''};
+  alert('✓ '+shiftBeingSaved+' shift saved to RELAY.');openChecklistHub();
  }catch(err){alert('Shift could not be saved: '+err.message)}finally{btn.disabled=false;btn.textContent=old}
 });
 document.getElementById('checklistDate').textContent=new Date().toLocaleDateString('en-US',{weekday:'long',month:'long',day:'numeric'});
@@ -1936,9 +1974,10 @@ async function loadDailyOperationsReport_(){
  document.getElementById('dorInspection').innerHTML=[dorMetric_('Rooms Inspected',ins.length),dorMetric_('Rooms Passed',passed),dorMetric_('Deficiencies Found',issues.length),dorMetric_('Inspector Fixed',fixed),dorMetric_('Sent Back to HK',rework),dorMetric_('Photos Taken',issues.filter(x=>x.photoRef).length)].join('');
  document.getElementById('dorMaintenance').innerHTML=[dorMetric_('Issues Logged',maint.length),dorMetric_('Resolved',maintResolved.length),dorMetric_('Still Open',maintOpen.length),dorMetric_('PM Completed',pmRows.length),dorMetric_('PM Active Min',pmRows.reduce((n,x)=>n+Number(x.activeMinutes||x.active_minutes||0),0).toFixed(2)),dorMetric_('Repair Active Min',(maintenanceReport.work||maintenanceReport.workSessions||maintenanceReport.sessions||[]).reduce((n,x)=>n+Number(x.activeMinutes||x.active_minutes||0),0).toFixed(2))].join('');
  if(!maintenanceReport.ok&&maintToday.length===0)document.getElementById('dorMaintenance').insertAdjacentHTML('beforeend','<span class="dor-pm-checklist">PM detail unavailable; maintenance fallback loaded from daily state.</span>');
- const checklistRows=shiftResults.flatMap(r=>r.ok?r.checklistActivity||[]:[]),latestChecklist=new Map();checklistRows.forEach(x=>latestChecklist.set(x.shift+':'+x.taskIndex,x));const maintenanceChecklist=[...latestChecklist.values()].filter(x=>x.shift==='MAINTENANCE');if(maintenanceChecklist.length)document.getElementById('dorMaintenance').insertAdjacentHTML('beforeend','<span class="dor-pm-checklist">Maintenance checklist: '+maintenanceChecklist.filter(x=>x.status==='COMPLETE').length+'/'+maintenanceChecklist.length+'</span>');
+ const checklistRows=shiftResults.flatMap(r=>r.ok?r.checklistActivity||[]:[]),latestChecklist=new Map();checklistRows.forEach(x=>latestChecklist.set(String(x.shift||'').toUpperCase()+':'+Number(x.taskIndex??x.task_index),x));const maintenanceChecklist=[...latestChecklist.values()].filter(x=>String(x.shift||'').toUpperCase()==='MAINTENANCE');if(maintenanceChecklist.length)document.getElementById('dorMaintenance').insertAdjacentHTML('beforeend','<span class="dor-pm-checklist">Maintenance checklist: '+maintenanceChecklist.filter(x=>x.status==='COMPLETE').length+'/'+maintenanceChecklist.length+'</span>');
+ const checklistShiftSummary=['AM','PM','AUDIT'].map(name=>{const rows=[...latestChecklist.values()].filter(x=>String(x.shift||'').toUpperCase()===name),expected=(CHECKLISTS[name]||[]).length,done=rows.filter(x=>String(x.status||'').toUpperCase()==='COMPLETE').length;if(!rows.length)return name+': not started';const final=rows.find(x=>Number(x.taskIndex??x.task_index)===expected-1),closed=expected>0&&done===expected;return closed?name+' checklist complete'+(final?.completedBy||final?.completed_by?' • '+(final.completedBy||final.completed_by):''):name+': '+done+'/'+expected+' complete'}).join(' • ');
  const sideAll=work.ok?(work.sideWork||[]):[],side=sideAll.filter(x=>!x.businessDate||dorDateKey_(x.businessDate)===date),shiftAll=shift.ok?[...(shift.shiftNotes||[]),...(shift.notes||[]),...(shift.openNotes||[])]:[],shiftNotes=[...new Map(shiftAll.map(x=>[String(x.noteId||x.note_id||x.id||JSON.stringify(x)),x])).values()],openNotes=(shift.ok?(shift.openNotes||[]):[]).length?(shift.openNotes||[]):shiftNotes.filter(x=>!['RESOLVED','CLOSED','COMPLETE'].includes(String(x.status||'OPEN').toUpperCase())&&['ISSUE','FOLLOWUP','FOLLOW_UP'].includes(String(x.noteType||x.note_type||'').toUpperCase()));
- const noteTime=x=>x.createdAt||x.created_at||x.noteAt||x.note_at||x.enteredAt||x.entered_at||x.timestamp||x.updatedAt||x.updated_at||'',noteText=x=>x.issueInformation||x.issue_information||x.note||x.text||x.message||x.description||x.issue||'',noteShift=x=>String(x.shift||x.shiftName||x.shift_name||x.noteType||x.note_type||x.type||'PASS-ON').replace(/_/g,' '),noteBy=x=>x.enteredBy||x.entered_by||x.createdBy||x.created_by||x.author||x.user||x.actor||'';const reportDateKey=dorDateKey_(date),dailyNotes=shiftNotes.filter(x=>{const bd=x.businessDate||x.business_date||'';return !bd||dorDateKey_(bd)===reportDateKey}).sort((a,b)=>new Date(noteTime(a))-new Date(noteTime(b)));document.getElementById('dorFrontDesk').innerHTML=(dailyNotes.length?dailyNotes.slice(-5).map(x=>'<div class="dor3-passon-note"><b>'+dorEsc_(noteShift(x))+'</b><span>'+dorEsc_(noteText(x)||'Shift note recorded')+'</span><small>'+dorEsc_(noteBy(x))+(noteTime(x)?' • '+dorTime_(noteTime(x)):'')+'</small></div>').join(''):'<div class="dor3-passon-empty">No Front Desk pass-on notes recorded today.</div>')+'<div class="dor3-fd-foot">'+side.filter(x=>String(x.status).toUpperCase()==='COMPLETE').length+' side work complete • '+side.filter(x=>String(x.status).toUpperCase()!=='COMPLETE').length+' outstanding • '+openNotes.length+' open follow-up'+(openNotes.length===1?'':'s')+'</div>';
+ const noteTime=x=>x.createdAt||x.created_at||x.noteAt||x.note_at||x.enteredAt||x.entered_at||x.timestamp||x.updatedAt||x.updated_at||'',noteText=x=>x.issueInformation||x.issue_information||x.note||x.text||x.message||x.description||x.issue||'',noteShift=x=>String(x.shift||x.shiftName||x.shift_name||x.noteType||x.note_type||x.type||'PASS-ON').replace(/_/g,' '),noteBy=x=>x.enteredBy||x.entered_by||x.createdBy||x.created_by||x.author||x.user||x.actor||'';const reportDateKey=dorDateKey_(date),dailyNotes=shiftNotes.filter(x=>{const bd=x.businessDate||x.business_date||'';return !bd||dorDateKey_(bd)===reportDateKey}).sort((a,b)=>new Date(noteTime(a))-new Date(noteTime(b)));document.getElementById('dorFrontDesk').innerHTML=(dailyNotes.length?dailyNotes.slice(-5).map(x=>'<div class="dor3-passon-note"><b>'+dorEsc_(noteShift(x))+'</b><span>'+dorEsc_(noteText(x)||'Shift note recorded')+'</span><small>'+dorEsc_(noteBy(x))+(noteTime(x)?' • '+dorTime_(noteTime(x)):'')+'</small></div>').join(''):'<div class="dor3-passon-empty">No Front Desk pass-on notes recorded today.</div>')+'<div class="dor3-fd-foot">'+dorEsc_(checklistShiftSummary)+'</div><div class="dor3-fd-foot">'+side.filter(x=>String(x.status).toUpperCase()==='COMPLETE').length+' side work complete • '+side.filter(x=>String(x.status).toUpperCase()!=='COMPLETE').length+' outstanding • '+openNotes.length+' open follow-up'+(openNotes.length===1?'':'s')+'</div>';
  const logged=(lostFoundReport&&lostFoundReport.ok)?(lostFoundReport.logged||[]):[],due=(lostFoundReport&&lostFoundReport.ok)?(lostFoundReport.due||[]):[],lfDiag=lostFoundReport?.diagnostic||{};
  document.getElementById('dorLostFound').innerHTML=(!logged.length&&!due.length)?'<b>0</b> logged today <span>•</span> <b>0</b> due':logged.slice(0,2).map(x=>'<div><b>'+dorEsc_(x.id)+'</b> '+dorEsc_(x.description)+'</div>').concat(due.slice(0,2).map(x=>'<div class="dor-alert"><b>ACTION REQUIRED</b> '+dorEsc_(x.id)+' '+dorEsc_(x.description)+'</div>')).join('');
  const ex=[];if(Math.max(0,assignments.length-passed))ex.push(Math.max(0,assignments.length-passed)+' assigned room(s) not passed');if(holds.length){ex.push(holds.length+' room-blocking maintenance hold(s)');holds.forEach(x=>ex.push('Room '+(x.room||'—')+' — '+(x.description||'Maintenance hold')))}const nonBlockingOpen=Math.max(0,maintOpen.length-holds.length);if(nonBlockingOpen)ex.push(nonBlockingOpen+' non-blocking maintenance issue(s) still open');const openSide=side.filter(x=>String(x.status).toUpperCase()!=='COMPLETE');if(openSide.length){ex.push(openSide.length+' side-work item(s) outstanding');openSide.slice(0,3).forEach(x=>ex.push((x.task||'Side duty')+' — '+(x.location||x.assignedTo||x.assigned_to||'Unassigned')+' ('+String(x.status||'OPEN').replace(/_/g,' ').toLowerCase()+')'));}if(openNotes.length){ex.push(openNotes.length+' open shift follow-up(s)');openNotes.filter(n=>String(n.noteType||n.note_type||'').toUpperCase().includes('FOLLOW')).slice(0,3).forEach(n=>{const detail=String(n.follow_up||n.followUp||n.issue_information||n.issueInformation||n.note||'').trim();if(detail)ex.push('Follow-up: '+detail.replace(/\s+/g,' ').slice(0,220));});}if(due.length)ex.push(due.length+' Lost & Found item(s) due for disposition');
