@@ -1961,7 +1961,7 @@ async function loadDailyOperationsReport_(requestedDate=''){
  // ISO (yyyy-MM-dd), so historical reports must normalize before calling the
  // shared state endpoint. Without this, today's report worked but any loaded
  // historical date could return an empty/failing daily state.
- const dorBackendDate_=(()=>{const m=String(date||'').match(/^(\\d{4})-(\\d{2})-(\\d{2})$/);if(!m)return String(date||'');return Number(m[2])+'/'+Number(m[3])+'/'+m[1]})();
+ const dorBackendDate_=(()=>{const m=String(date||'').match(/^(\d{4})-(\d{2})-(\d{2})$/);if(!m)return String(date||'');return Number(m[2])+'/'+Number(m[3])+'/'+m[1]})();
  const dorSafe_= (promise,fallback={ok:false}) => Promise.resolve(promise).catch(err=>({ ...fallback, ok:false, error:String(err?.message||err) }));
  const [today,work,lostFoundReport,maintenanceReport,maintenanceBoard,pmBoard,hotelPerformanceResult,...shiftResults]=await Promise.all([
   dorSafe_(apiPost({action:'getToday',businessDate:dorBackendDate_},45000)),
