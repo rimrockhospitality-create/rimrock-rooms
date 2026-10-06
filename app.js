@@ -1965,7 +1965,7 @@ async function loadDailyOperationsReport_(requestedDate=''){
  const dorSafe_= (promise,fallback={ok:false}) => Promise.resolve(promise).catch(err=>({ ...fallback, ok:false, error:String(err?.message||err) }));
  const [today,work,lostFoundReport,maintenanceReport,maintenanceBoard,pmBoard,hotelPerformanceResult,...shiftResults]=await Promise.all([
   dorSafe_(apiPost({action:'getToday',businessDate:dorBackendDate_},45000)),
-  dorSafe_(apiPost({action:'getWorkBoard'},45000)),
+  dorSafe_(apiPost({action:'getWorkBoard',businessDate:dorBackendDate_},45000)),
   dorSafe_(apiPost({action:'getLostFoundReport',sessionId:sid,businessDate:date},45000)),
   dorSafe_(apiPost({action:'getMaintenanceReport',sessionId:sid,businessDate:date},45000)),
   dorSafe_(apiPost({action:'getMaintenanceBoard',sessionId:sid,businessDate:date,worker:currentUser.name},45000)),
