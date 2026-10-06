@@ -1030,7 +1030,15 @@ async function loadChecklistServerState_(onlyName=''){
     checklistClosedState[name]={completedAt:last.completedAt||last.completed_at||last.updatedAt||last.updated_at||'',completedBy:last.completedBy||last.completed_by||''};
     taskState[name]=Object.fromEntries(list.map((_,i)=>[i,true]));
     clearChecklistDraft_(name);
-   }else delete checklistClosedState[name];
+   }else{
+    delete checklistClosedState[name];
+    const serverState={};
+    latest.forEach((row,i)=>{
+      if(i>=0 && row && String(row.status||'').toUpperCase()==='COMPLETE') serverState[i]=true;
+    });
+    const localState=taskState[name]||{};
+    taskState[name]={...serverState,...localState};
+   }
   });
  }catch(e){console.error('Checklist completion-state load failed',e)}
 }
@@ -1149,9 +1157,22 @@ document.getElementById('checklistTasks').addEventListener('click',e=>{
  }
  const b=e.target.closest('.task-check');if(!b)return;
  const s=taskState[activeChecklist]||(taskState[activeChecklist]={});
- s[b.dataset.i]=!s[b.dataset.i];
+ const taskIndex=Number(b.dataset.i);
+ s[taskIndex]=!s[taskIndex];
  saveChecklistDraft_(activeChecklist);
- renderChecklist()
+ renderChecklist();
+ const task=(CHECKLISTS[activeChecklist]||[])[taskIndex];
+ if(task){
+   apiPost({
+     action:'saveChecklistTask',
+     sessionId:localStorage.getItem('relaySessionId'),
+     businessDate:housekeepingBusinessDate(),
+     shift:activeChecklist,
+     taskIndex:taskIndex,
+     taskName:task[0],
+     status:s[taskIndex]?'COMPLETE':'INCOMPLETE'
+   },45000).catch(err=>console.error('Checklist task save failed',err));
+ }
 });
 
 function openMaintenanceChecklistIssue_(taskIndex){
