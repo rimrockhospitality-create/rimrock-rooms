@@ -5,7 +5,7 @@
  * Everhome Suites Denver Airport (CO534)
  * September 2026
  */
-const API_URL='https://script.google.com/macros/s/AKfycby4lxHCqEsiURHZzUv93rDs5rv1Vkdv_yuyanbLVg3aU6PrBf4yhlpZogiGct0zSRmB7w/exec';
+const API_URL='https://script.google.com/macros/s/AKfycbzvFCK1B_rfyaQcyY-tX871ciQ8xiP2eey265lrN7SiuAeifaU6M-Jlv1NEAhXbWsyK3A/exec';
 const QR_TEST_ROOM='122';
 const QR_TEST_ID='CO534-RM-122';
 const ROLE_VIEWS={
