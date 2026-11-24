@@ -243,6 +243,11 @@ validateImport.addEventListener('click',async()=>{
   finally{validateImport.disabled=false;validateImport.textContent='Continue to Validate →'}
 });
 async function apiPost(payload,timeoutMs=20000){
+  // Attach the current session centrally; login must remain independent of stale sessions.
+  if(payload?.action && payload.action !== 'authLogin' && !payload.sessionId){
+    const sessionId=localStorage.getItem('relaySessionId');
+    if(sessionId) payload={...payload,sessionId};
+  }
   const controller=new AbortController(),timer=setTimeout(()=>controller.abort(),timeoutMs);
   try{
     const r=await fetch(API_URL,{method:'POST',headers:{'Content-Type':'text/plain;charset=utf-8'},body:JSON.stringify(payload),redirect:'follow',signal:controller.signal});
