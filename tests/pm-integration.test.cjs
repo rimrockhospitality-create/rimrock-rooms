@@ -35,7 +35,8 @@ const row=sheets.PM_SESSIONS.rows[1];row[6]=new FixedDate(FixedDate.now()-180000
 sheets.MAINTENANCE.failAppend=true;assert.throws(()=>call('savePmCompletion_',{pmSessionId:session.pmSessionId,items:data}),/interruption/);
 const result=call('savePmCompletion_',{pmSessionId:session.pmSessionId,items:data});
 assert.equal(result.workOrders,1);assert.equal(result.activeMinutes,2);assert.equal(sheets.MAINTENANCE.rows.length,2);assert.equal(sheets.MAINTENANCE.rows[1][6],true);
-assert.equal(sheets.PM_ITEMS.rows.length,20);assert.equal(sheets.PM_COMPLETIONS.rows.length,2);
+assert.equal(sheets.PM_ITEMS.rows.length,items().length+1); // 20 PM tasks plus the sheet header
+assert.equal(sheets.PM_ITEMS.rows.slice(1).filter(row=>row[1]===session.pmSessionId).length,items().length);assert.equal(sheets.PM_COMPLETIONS.rows.length,2);
 assert.equal(call('savePmCompletion_',{pmSessionId:session.pmSessionId,items:data}).alreadyComplete,true);
 assert.equal(sheets.MAINTENANCE.rows.length,2);
 const report=call('getMaintenanceReport_',{businessDate:'9/24/2026'});assert.equal(report.pmCompletions.length,1);assert.equal(report.maintenance.length,1);assert.equal(report.pmCompletions[0].activeMinutes,2);
