@@ -32,7 +32,7 @@ click('#pmBack');await settle();click('[data-pm-room="102"]');await settle();ass
 click('#pmPause');await settle();assert.equal(get('#pmPause').textContent,'PAUSE PM');
 for(let i=2;i<run('ROOM_PM_TASKS.length');i++)change(`[data-pm-status="${i}"]`,'PASS');await settle();click('#pmComplete');await settle();
 assert.equal(sheets.PM_SCHEDULE.rows.find(r=>r[0]==='102')[2],'2026-12-17');assert.equal(get('[data-pm-room="102"]').disabled,true);assert.equal(sheets.PM_COMPLETIONS.rows.length,3);assert.equal(sheets.MAINTENANCE.rows.length,3);assert.equal(get('#pmCalendar').hidden,false);click('[data-pm-tab="history"]');assert.match(get('#pmCalendar').textContent,/ROOM 102/);
-await run("currentUser.roles=['ADMIN'];loadDailyOperationsReport_()");assert.match(get('#dorMaintenance').textContent,/2PM Completed/);
+await run("currentUser.roles=['ADMIN'];loadDailyOperationsReport_()");assert.match(get('#dorMaintenance').textContent,/2Room PM Done/);
 assert.equal(alerts.length,1,alerts.join('\n'));assert.match(alerts[0],/PM saved/);
 console.log('PASS: DOM integration with actual app.js + pm.js + mocked Sheets backend: selected values, saved notes, pause/restore/resume, completion, repair ticket, history, report totals.');w.close();
 })().catch(e=>{console.error(e);w.close();process.exit(1);});
