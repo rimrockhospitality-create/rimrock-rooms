@@ -66,10 +66,26 @@ function pmSaveDraft(){
 }
 async function pmStartRoom(room,button){
  button.disabled=true;
+ let scanner=null;
  try{
-  const r=await pmApi('startPm',{room});
+  // Resume a session owned by this worker without another room scan.
+  const existing=pmBoard?.schedule?.find(x=>String(x.room)===String(room))?.session;
+  let qrId='';
+  if(!existing){
+   scanner=document.createElement('section');
+   scanner.id='pmQrScanner';
+   scanner.setAttribute('role','region');
+   scanner.setAttribute('aria-label','Scan room QR to start preventive maintenance');
+   scanner.innerHTML='<p><strong>Room '+pmEsc(room)+'</strong> · Scan the room QR code to begin PM.</p><div class="pm-qr-video"></div><p class="pm-qr-status" role="status">Starting camera…</p><button type="button" class="pm-qr-cancel">CANCEL SCAN</button>';
+   document.getElementById('pmView').appendChild(scanner);
+   scanner.querySelector('.pm-qr-cancel').addEventListener('click',()=>{scanner.hidden=true;});
+   qrId=await relayScanQr_(scanner,scanner.querySelector('.pm-qr-video'),scanner.querySelector('.pm-qr-status'),'Point the camera at the room QR code.');
+   if(scanner.hidden)throw new Error('Scan cancelled');
+  }
+  const r=await pmApi('startPm',{room,qrId});
   pmOpenSession(r.session);
- }catch(e){alert('Could not open PM: '+e.message);}finally{button.disabled=false;}
+ }catch(e){if(!/Scanner closed|Scan cancelled/.test(e.message))alert('Could not open PM: '+e.message);}
+ finally{scanner?.remove();button.disabled=false;}
 }
 document.getElementById('pmView').addEventListener('click',async e=>{
  const room=e.target.closest('[data-pm-room]');if(room){await pmStartRoom(room.dataset.pmRoom,room);return;}
