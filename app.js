@@ -1553,12 +1553,7 @@ document.addEventListener('click',function(e){
   e.preventDefault();e.stopImmediatePropagation();
   openFilterPmWork_();return;
  }
- const task=e.target.closest('.task-check');
- if(task){
-  e.preventDefault();e.stopImmediatePropagation();
-  const state=taskState[activeChecklist]||(taskState[activeChecklist]={});
-  state[task.dataset.i]=!state[task.dataset.i];renderChecklist();return;
- }
+ // Checklist task clicks are handled by the checklistTasks listener, which persists changes.
  const resolve=e.target.closest('.maint-resolve');
  if(resolve){
   e.preventDefault();e.stopImmediatePropagation();
