@@ -10,7 +10,7 @@ const QR_TEST_ROOM='122';
 const QR_TEST_ID='CO534-RM-122';
 const ROLE_VIEWS={
   ADMIN:['Home','Checklists','Housekeeping','Inspections','Maintenance','Preventive Maintenance','Reports','Property Settings','Users','Settings'],
-  INSPECTOR:['Home','Checklists','Housekeeping','Inspections','Maintenance','Preventive Maintenance','Reports'],
+  INSPECTOR:['Home','Checklists','Housekeeping','Inspections','Maintenance','Preventive Maintenance'],
   'FRONT DESK':['Home','Checklists','Housekeeping','Maintenance','Lost & Found','Reports'],
   HOUSEKEEPER:['Housekeeping'],
   MAINTENANCE:['Maintenance','Preventive Maintenance','Checklists']
