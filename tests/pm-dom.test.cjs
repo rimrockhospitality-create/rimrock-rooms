@@ -1,11 +1,14 @@
 const {JSDOM}=require('jsdom'),fs=require('fs'),vm=require('vm'),assert=require('node:assert/strict');
 const {call,sheets,setActor}=require('./pm-integration.test.cjs');
 setActor('u1','ADMIN');sheets.PM_SCHEDULE.rows=[sheets.PM_SCHEDULE.rows[0]];sheets.ROOM_QR.appendRow(['CO534','102','CO534-RM-102','','TRUE']);
-const dom=new JSDOM(fs.readFileSync('index.html','utf8'),{url:'http://localhost',runScripts:'outside-only',pretendToBeVisual:true}),w=dom.window,context=dom.getInternalVMContext(),alerts=[];
+const dom=new JSDOM(fs.readFileSync('index.html','utf8'),{url:'http://localhost',runScripts:'outside-only',pretendToBeVisual:true}),w=dom.window,context=dom.getInternalVMContext(),alerts=[],requests=[];let filterSession=null;
 w.alert=s=>alerts.push(s);w.HTMLElement.prototype.scrollIntoView=function(){};w.fetch=async(url,opts)=>{
  if(String(url).startsWith('data/'))return {ok:true,json:async()=>JSON.parse(fs.readFileSync(url,'utf8'))};
- const b=JSON.parse(opts.body);let out;
+ const b=JSON.parse(opts.body);let out;requests.push(b.action);
  try{if(['getPmBoard','initializePmSchedule','startPm','updatePmSession','savePmCompletion','getMaintenanceReport'].includes(b.action))out=call(b.action+'_',b);
+ else if(b.action==='getFilterPmBoard')out={ok:true,businessDate:'2026-09-24',summary:{},schedule:[{assetId:'MECH1',assetName:'Mechanical 1',dueDate:'2026-09-24',session:filterSession}]};
+ else if(b.action==='startFilterPm'){filterSession={userId:'u1',worker:'Brad',startedAt:'2026-09-24T12:00:00Z'};out={ok:true};}
+ else if(b.action==='completeFilterPm'){filterSession=null;out={ok:true};}
  else if(b.action==='getBusinessDay')out={ok:true,businessDate:'9/24/2026'};
  else out={ok:true,businessDate:'9/24/2026',maintenanceIssues:[],assignments:[],cleaningSessions:[],sideWork:[],notes:[],openNotes:[],checklistActivity:[],items:[]};}
  catch(e){out={ok:false,error:e.message};}
@@ -33,6 +36,13 @@ click('#pmPause');await settle();assert.equal(get('#pmPause').textContent,'PAUSE
 for(let i=2;i<run('ROOM_PM_TASKS.length');i++)change(`[data-pm-status="${i}"]`,'PASS');await settle();click('#pmComplete');await settle();
 assert.equal(sheets.PM_SCHEDULE.rows.find(r=>r[0]==='102')[2],'2026-12-17');assert.equal(get('[data-pm-room="102"]').disabled,true);assert.equal(sheets.PM_COMPLETIONS.rows.length,3);assert.equal(sheets.MAINTENANCE.rows.length,3);assert.equal(get('#pmCalendar').hidden,false);click('[data-pm-tab="history"]');assert.match(get('#pmCalendar').textContent,/ROOM 102/);
 await run("currentUser.roles=['ADMIN'];loadDailyOperationsReport_()");assert.match(get('#dorMaintenance').textContent,/2Room PM Done/);
+run("currentUser={userId:'u1',name:'Brad',roles:['MAINTENANCE'],propertyId:'CO534'};show('Checklists');openChecklist('MAINTENANCE');");await settle();
+const before=requests.length;click('[data-open-filter-pm]');await settle();
+assert.ok(get('#filterPmWorkPanel'));assert.equal(get('#filterPmReport').hidden,true);
+assert.equal(requests.slice(before).filter(x=>x==='getFilterPmBoard').length,1);
+click('[data-filter-asset="MECH1"]');await settle();assert.match(get('[data-filter-asset="MECH1"]').textContent,/COMPLETE FILTER/);
+click('[data-filter-asset="MECH1"]');await settle();assert.match(get('[data-filter-asset="MECH1"]').textContent,/START FILTER PM/);
+click('#closeFilterPmWork');assert.equal(get('#filterPmWorkPanel'),null);
 assert.equal(alerts.length,1,alerts.join('\n'));assert.match(alerts[0],/PM saved/);
 console.log('PASS: DOM integration with actual app.js + pm.js + mocked Sheets backend: selected values, saved notes, pause/restore/resume, completion, repair ticket, history, report totals.');w.close();
 })().catch(e=>{console.error(e);w.close();process.exit(1);});
