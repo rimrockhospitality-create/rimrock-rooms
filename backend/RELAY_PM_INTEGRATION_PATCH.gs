@@ -59,7 +59,6 @@ function startPm_(body){
  if(!schedule)throw new Error('PM_SCHEDULE_REQUIRED');
  const sh=relayEnsureWorkSheet_(ss,PM_SESSION_TAB,PM_SESSION_HEADERS),active=pmRows_(ss,PM_SESSION_TAB).find(r=>r[1]===PROPERTY_ID&&String(r[3])===room&&r[7]!=='COMPLETE');
  if(active){if(active[4]!==actor.id)throw new Error('PM_IN_PROGRESS_BY_'+active[5]);return jsonResponse_({ok:true,session:pmSession_(active)});}
- if(!relayVerifyRoomQr_(ss,room,String(body.qrId||'')))throw new Error('INVALID_ROOM_QR');
  if(pmRows_(ss,PM_SESSION_TAB).some(r=>r[1]===PROPERTY_ID&&r[4]===actor.id&&['IN_PROGRESS','SAVING'].includes(r[7])))throw new Error('PAUSE_CURRENT_PM_FIRST');
  const bd=currentBusinessDayRecord_().businessDate;
  if(pmRows_(ss,TAB.PM_COMPLETIONS).some(r=>r[1]===PROPERTY_ID&&String(r[3])===room&&pmDate_(r[2])===pmDate_(bd)&&r[11]==='COMPLETE'))throw new Error('PM_ALREADY_COMPLETE_TODAY');
