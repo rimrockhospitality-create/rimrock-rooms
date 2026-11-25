@@ -1,10 +1,10 @@
 const {JSDOM}=require('jsdom'),fs=require('fs'),vm=require('vm'),assert=require('node:assert/strict');
 const {call,sheets,setActor}=require('./pm-integration.test.cjs');
 setActor('u1','ADMIN');sheets.PM_SCHEDULE.rows=[sheets.PM_SCHEDULE.rows[0]];sheets.ROOM_QR.appendRow(['CO534','102','CO534-RM-102','','TRUE']);
-const dom=new JSDOM(fs.readFileSync('index.html','utf8'),{url:'http://localhost',runScripts:'outside-only',pretendToBeVisual:true}),w=dom.window,context=dom.getInternalVMContext(),alerts=[],requests=[];let filterSession=null;
+const dom=new JSDOM(fs.readFileSync('index.html','utf8'),{url:'http://localhost',runScripts:'outside-only',pretendToBeVisual:true}),w=dom.window,context=dom.getInternalVMContext(),alerts=[],requests=[],taskWrites=[];let filterSession=null;
 w.alert=s=>alerts.push(s);w.HTMLElement.prototype.scrollIntoView=function(){};w.fetch=async(url,opts)=>{
  if(String(url).startsWith('data/'))return {ok:true,json:async()=>JSON.parse(fs.readFileSync(url,'utf8'))};
- const b=JSON.parse(opts.body);let out;requests.push(b.action);
+ const b=JSON.parse(opts.body);let out;requests.push(b.action);if(b.action==='saveChecklistTask')taskWrites.push(b);
  try{if(['getPmBoard','initializePmSchedule','startPm','updatePmSession','savePmCompletion','getMaintenanceReport'].includes(b.action))out=call(b.action+'_',b);
  else if(b.action==='getFilterPmBoard')out={ok:true,businessDate:'2026-09-24',summary:{},schedule:[{assetId:'MECH1',assetName:'Mechanical 1',dueDate:'2026-09-24',session:filterSession}]};
  else if(b.action==='startFilterPm'){filterSession={userId:'u1',worker:'Brad',startedAt:'2026-09-24T12:00:00Z'};out={ok:true};}
@@ -43,6 +43,14 @@ assert.equal(requests.slice(before).filter(x=>x==='getFilterPmBoard').length,1);
 click('[data-filter-asset="MECH1"]');await settle();assert.match(get('[data-filter-asset="MECH1"]').textContent,/COMPLETE FILTER/);
 click('[data-filter-asset="MECH1"]');await settle();assert.match(get('[data-filter-asset="MECH1"]').textContent,/START FILTER PM/);
 click('#closeFilterPmWork');assert.equal(get('#filterPmWorkPanel'),null);
+const taskButton=get('#checklistTasks button.task-check[data-i]');assert.ok(taskButton);
+const selector='#checklistTasks button.task-check[data-i="'+taskButton.dataset.i+'"]';
+click(selector);await settle();click(selector);await settle();
+assert.equal(taskWrites.length,2);assert.notEqual(taskWrites[0].status,taskWrites[1].status);
+assert.equal(taskWrites[0].taskIndex,Number(taskButton.dataset.i));
+run("checklistClosedState[activeChecklist]={completedAt:new Date().toISOString()};");
+click(selector);await settle();assert.equal(taskWrites.length,2);
+
 assert.equal(alerts.length,1,alerts.join('\n'));assert.match(alerts[0],/PM saved/);
 console.log('PASS: DOM integration with actual app.js + pm.js + mocked Sheets backend: selected values, saved notes, pause/restore/resume, completion, repair ticket, history, report totals.');w.close();
 })().catch(e=>{console.error(e);w.close();process.exit(1);});
