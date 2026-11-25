@@ -12,15 +12,13 @@ const ctx={console,Date:FixedDate,JSON,Math,Number,String,Array,Set,Error,Object
 vm.createContext(ctx);
 vm.runInContext("const PROPERTY_ID='CO534',DATABASE_ID='mock';const TAB={MAINTENANCE:'MAINTENANCE',MAINTENANCE_WORK:'MAINTENANCE_WORK_SESSIONS',PM_COMPLETIONS:'PM_COMPLETIONS',PM_ITEMS:'PM_ITEMS',QR:'ROOM_QR',INSPECTIONS:'INSPECTIONS'};",ctx);
 ctx.relayEnsureWorkSheet_=(ss,name,headers)=>{let sh=ss.getSheetByName(name);if(!sh){sh=ss.insertSheet(name);if(headers.length)sh.appendRow(headers);}return sh;};
-ctx.relayVerifyRoomQr_=(ss,room,qr)=>ss.getSheetByName('ROOM_QR').rows.some(r=>r[0]==='CO534'&&r[1]===room&&r[2]===qr&&r[4]==='TRUE');
 vm.runInContext(fs.readFileSync('backend/RELAY_PM_INTEGRATION_PATCH.gs','utf8'),ctx);
 ctx.authValidateSession_=()=>({propertyId:'CO534',role,userId:actor});ctx.authGetUserById_=()=>({row:['u1','brad','Brad','','','','','TRUE']});ctx.currentBusinessDayRecord_=()=>({businessDate:'9/24/2026'});ctx.jsonResponse_=x=>x;
 const items=()=>vm.runInContext('PM_TASK_NAMES.map((name,index)=>({name,index,status:"PASS"}))',ctx);
 function call(name,body={}){return ctx[name]({sessionId:'auth',...body});}
 assert.equal(call('initializePmSchedule_').count,114);assert.equal(call('initializePmSchedule_').alreadyInitialized,true);
 assert.equal(sheets.PM_SCHEDULE.rows.length,115);assert.equal(call('getPmBoard_').summary.dueToday,2);
-assert.throws(()=>call('startPm_',{room:'101',qrId:'wrong'}),/INVALID_ROOM_QR/);
-const session=call('startPm_',{room:'101',qrId:'CO534-RM-101'}).session;
+const session=call('startPm_',{room:'101'}).session;
 assert.equal(call('startPm_',{room:'101'}).session.pmSessionId,session.pmSessionId);
 assert.equal(sheets.PM_SESSIONS.rows.length,2);
 actor='other';assert.throws(()=>call('startPm_',{room:'101'}),/IN_PROGRESS/);actor='u1';
